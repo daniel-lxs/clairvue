@@ -1,5 +1,5 @@
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
-import type { RSSFeed } from './rssFeed';
+import { rssFeedSchema, type RSSFeed } from './rssFeed';
 
 export const feedSchema = sqliteTable('feeds', {
 	id: text('id').primaryKey().notNull(),
@@ -10,11 +10,22 @@ export const feedSchema = sqliteTable('feeds', {
 	updatedAt: integer('updatedAt', { mode: 'timestamp' }).notNull()
 });
 
+export const rssFeedToFeed = sqliteTable('rssFeedToFeed', {
+	rssFeedId: text('rssFeedId')
+		.notNull()
+		.references(() => rssFeedSchema.id),
+	feedId: text('feedId')
+		.notNull()
+		.references(() => feedSchema.id)
+});
+
+export type NewFeed = Pick<Feed, 'slug' | 'name' | 'editCode'>;
+
 export type Feed = {
 	id: string;
 	slug: string;
 	name: string;
-	RSSFeed: RSSFeed;
+	RSSFeeds: RSSFeed[];
 	editCode: string;
 	createdAt: Date;
 	updatedAt: Date;
