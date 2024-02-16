@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { Separator } from '../../lib/components/ui/separator';
+	import MainContainer from '@/components/main-container.svelte';
+	import { Separator } from '@/components/ui/separator';
 	import type { PageData } from './$types';
 	export let data: PageData;
 
@@ -16,10 +17,13 @@
 	}
 </script>
 
-<div class="container mx-auto max-w-screen-lg pt-20">
+<MainContainer>
 	<div class="space-y-8">
 		<div class="space-y-6">
-			<a class="font-bold text-primary" href={data.post?.url} target="_blank">{data.post?.domain}</a
+			<a
+				class="font-bold text-primary hover:text-primary-foreground hover:underline"
+				href={data.post?.url}
+				target="_blank">{data.post?.domain}</a
 			>
 			<h1 class="text-3xl font-bold">{data.post?.title}</h1>
 
@@ -39,7 +43,7 @@
 			</article>
 		</div>
 	</div>
-</div>
+</MainContainer>
 
 <style lang="postcss">
 	.parsed-content :global(h2) {
@@ -85,7 +89,7 @@
 	}
 
 	.parsed-content :global(a) {
-		@apply text-primary underline;
+		@apply text-primary hover:text-primary-foreground hover:underline;
 	}
 
 	.parsed-content :global(blockquote) {
@@ -114,5 +118,9 @@
 
 	.parsed-content :global(table) :global(th) {
 		@apply p-2;
+	}
+
+	.parsed-content :global(figure) {
+		@apply mb-6;
 	}
 </style>
