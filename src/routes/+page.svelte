@@ -1,5 +1,5 @@
 <script>
-	import WelcomeCard from '@/components/ui/welcome-card.svelte';
+	import WelcomeCard from '@/components/welcome-card.svelte';
 </script>
 
 <div class="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center">
