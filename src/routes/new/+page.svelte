@@ -1,6 +1,6 @@
 <script>
-	import { Separator } from '@/components/ui/separator';
-	import * as Table from '$lib/components/ui/table';
+	import PageHeader from '@/components/page-header.svelte';
+	import * as Table from '@/components/ui/table';
 	import Label from '@/components/ui/label/label.svelte';
 	import { Input } from '@/components/ui/input';
 
@@ -51,11 +51,7 @@
 </script>
 
 <div class="container mx-auto max-w-screen-lg pt-20">
-	<div class="space-y-2">
-		<h1 class="text-3xl font-bold">Feed</h1>
-		<p class="text-md text-muted-foreground">Create or manage your feed</p>
-	</div>
-	<Separator class="my-6" />
+	<PageHeader title="New feed" />
 	<div class="space-y-8">
 		<div class="space-y-2">
 			<Label>Feed name</Label>
