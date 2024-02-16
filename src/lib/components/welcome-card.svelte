@@ -1,7 +1,7 @@
 <script lang="ts">
-	import * as Card from '$lib/components/ui/card';
-	import { Input } from '$lib/components/ui/input';
-	import Button from './button/button.svelte';
+	import * as Card from '@/components/ui/card';
+	import { Input } from '@/components/ui/input';
+	import Button from '@/components/ui/button/button.svelte';
 
 	let isInputVisible = false;
 	let feedCode = '';
