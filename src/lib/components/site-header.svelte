@@ -1,6 +1,6 @@
 <script>
 	import { BookOpenText } from 'lucide-svelte';
-	import LightSwitch from './ui/light-switch.svelte';
+	import LightSwitch from '@/components/light-switch.svelte';
 </script>
 
 <header
@@ -10,7 +10,7 @@
 		<div class="mr-4 hidden md:flex">
 			<a href="/" class="mr-6 flex items-center space-x-2">
 				<BookOpenText />
-				<span class="hidden font-bold hover:text-primary sm:inline-block">readabless</span>
+				<span class="hidden font-bold hover:text-primary sm:inline-block">ReadableSS</span>
 			</a>
 		</div>
 		<div class="flex flex-1 items-center justify-between space-x-2 md:justify-end">
