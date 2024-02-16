@@ -1,23 +1,28 @@
 import { Readability } from '@mozilla/readability';
 import axios, { isAxiosError } from 'axios';
 import { JSDOM } from 'jsdom';
-import { URL } from 'url'; // Import URL module for working with URLs
+import { URL } from 'url';
+import he from 'he';
 
 export async function load({ request }) {
 	const headers = request.headers;
 	const userAgent = headers.get('user-agent');
 
-	const url = 'https://lineageos.org/Changelog-28/';
+	const url =
+		'https://www.bleepingcomputer.com/news/microsoft/microsoft-says-it-fixed-a-windows-metadata-server-issue-thats-still-broken/';
 	const domainMatch = url.match(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:/\n?]+)\//i);
 
 	try {
-		const page = await axios.get(url, {
+		const page = await axios.get<string>(url, {
 			headers: {
 				'User-Agent': userAgent // Set the user agent to prevent blocking
-			}
+			},
+			responseType: 'text'
 		}); // Fetching from the test URL
 
-		const dom = new JSDOM(page.data);
+		const decodedPage = he.decode(page.data);
+
+		const dom = new JSDOM(decodedPage);
 		const document = dom.window.document;
 
 		// Modify image paths to absolute URLs
