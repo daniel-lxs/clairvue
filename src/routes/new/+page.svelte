@@ -1,87 +1,82 @@
-<script>
+<script lang="ts">
+	import PageContainer from '@/components/page-container.svelte';
 	import PageHeader from '@/components/page-header.svelte';
-	import * as Table from '@/components/ui/table';
-	import Label from '@/components/ui/label/label.svelte';
+	import RssfeedsTable from '@/components/rssfeeds-table.svelte';
+	import Button from '@/components/ui/button/button.svelte';
 	import { Input } from '@/components/ui/input';
+	import Label from '@/components/ui/label/label.svelte';
+	import type { RSSFeed } from '@/data/schema';
 
-	const invoices = [
+	const RSSFeeds: RSSFeed[] = [
 		{
-			invoice: 'INV001',
-			paymentStatus: 'Paid',
-			totalAmount: '$250.00',
-			paymentMethod: 'Credit Card'
+			id: '1',
+			name: 'Feed 1',
+			description: 'Feed 1 description',
+			link: 'https://example.com/feed1',
+			createdAt: new Date(),
+			updatedAt: new Date()
 		},
 		{
-			invoice: 'INV002',
-			paymentStatus: 'Pending',
-			totalAmount: '$150.00',
-			paymentMethod: 'PayPal'
+			id: '2',
+			name: 'Feed 2',
+			description: 'Feed 2 description',
+			link: 'https://example.com/feed2',
+			createdAt: new Date(),
+			updatedAt: new Date()
 		},
 		{
-			invoice: 'INV003',
-			paymentStatus: 'Unpaid',
-			totalAmount: '$350.00',
-			paymentMethod: 'Bank Transfer'
+			id: '3',
+			name: 'Feed 3',
+			description: 'Feed 3 description',
+			link: 'https://example.com/feed3',
+			createdAt: new Date(),
+			updatedAt: new Date()
 		},
 		{
-			invoice: 'INV004',
-			paymentStatus: 'Paid',
-			totalAmount: '$450.00',
-			paymentMethod: 'Credit Card'
+			id: '4',
+			name: 'Feed 4',
+			description: 'Feed 4 description',
+			link: 'https://example.com/feed4',
+			createdAt: new Date(),
+			updatedAt: new Date()
 		},
 		{
-			invoice: 'INV005',
-			paymentStatus: 'Paid',
-			totalAmount: '$550.00',
-			paymentMethod: 'PayPal'
+			id: '5',
+			name: 'Feed 5',
+			description: 'Feed 5 description',
+			link: 'https://example.com/feed5',
+			createdAt: new Date(),
+			updatedAt: new Date()
 		},
 		{
-			invoice: 'INV006',
-			paymentStatus: 'Pending',
-			totalAmount: '$200.00',
-			paymentMethod: 'Bank Transfer'
+			id: '6',
+			name: 'Feed 6',
+			description: 'Feed 6 description',
+			link: 'https://example.com/feed6',
+			createdAt: new Date(),
+			updatedAt: new Date()
 		},
 		{
-			invoice: 'INV007',
-			paymentStatus: 'Unpaid',
-			totalAmount: '$300.00',
-			paymentMethod: 'Credit Card'
+			id: '7',
+			name: 'Feed 7',
+			description: 'Feed 7 description',
+			link: 'https://example.com/feed7',
+			createdAt: new Date(),
+			updatedAt: new Date()
 		}
 	];
 </script>
 
-<div class="container mx-auto max-w-screen-lg pt-20">
+<PageContainer>
 	<PageHeader title="New feed" />
 	<div class="space-y-8">
 		<div class="space-y-2">
 			<Label>Feed name</Label>
 			<Input type="text" placeholder="Feed name" />
 		</div>
-		<div class="space-y-2">
-			<Label for="feedUrls">RSS feeds</Label>
-			<p class="text-sm text-muted-foreground">Add, edit or remove RSS feeds</p>
-			<div>
-				<Table.Root>
-					<Table.Header>
-						<Table.Row>
-							<Table.Head class="w-[100px]">Invoice</Table.Head>
-							<Table.Head>Status</Table.Head>
-							<Table.Head>Method</Table.Head>
-							<Table.Head class="text-right">Amount</Table.Head>
-						</Table.Row>
-					</Table.Header>
-					<Table.Body>
-						{#each invoices as invoice, i (i)}
-							<Table.Row>
-								<Table.Cell class="font-medium">{invoice.invoice}</Table.Cell>
-								<Table.Cell>{invoice.paymentStatus}</Table.Cell>
-								<Table.Cell>{invoice.paymentMethod}</Table.Cell>
-								<Table.Cell class="text-right">{invoice.totalAmount}</Table.Cell>
-							</Table.Row>
-						{/each}
-					</Table.Body>
-				</Table.Root>
-			</div>
+		<RssfeedsTable {RSSFeeds} />
+		<div>
+			<Button>Save feed</Button>
 		</div>
 	</div>
-</div>
+</PageContainer>
