@@ -4,7 +4,7 @@ import type { Article } from './article';
 export const rssFeedSchema = sqliteTable('rssFeeds', {
 	id: text('id').primaryKey().notNull(),
 	name: text('name').notNull(),
-	description: text('description'),
+	description: text('description').notNull().default('No description'),
 	link: text('link').notNull(),
 	createdAt: integer('createdAt', { mode: 'timestamp' }).notNull(),
 	updatedAt: integer('updatedAt', { mode: 'timestamp' }).notNull()
@@ -13,9 +13,9 @@ export const rssFeedSchema = sqliteTable('rssFeeds', {
 export type RSSFeed = {
 	id: string;
 	name: string;
-	description?: string;
+	description: string;
 	link: string;
-	articles: Article[];
+	articles?: Article[];
 	createdAt: Date;
 	updatedAt: Date;
 };

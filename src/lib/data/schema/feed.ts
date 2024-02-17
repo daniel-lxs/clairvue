@@ -2,7 +2,7 @@ import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 import { rssFeedSchema, type RSSFeed } from './rssFeed';
 
 export const feedSchema = sqliteTable('feeds', {
-	id: text('id').primaryKey().notNull(),
+	id: integer('id').primaryKey().notNull(),
 	slug: text('slug').notNull(),
 	name: text('name').notNull(),
 	editCode: text('editCode').notNull(),
@@ -19,10 +19,8 @@ export const rssFeedToFeed = sqliteTable('rssFeedToFeed', {
 		.references(() => feedSchema.id)
 });
 
-export type NewFeed = Pick<Feed, 'slug' | 'name' | 'editCode'>;
-
 export type Feed = {
-	id: string;
+	id: number;
 	slug: string;
 	name: string;
 	RSSFeeds: RSSFeed[];
