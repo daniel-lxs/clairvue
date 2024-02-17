@@ -1,8 +1,8 @@
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
-import { rssFeedSchema, type RSSFeed } from './rssFeed';
+import { rssFeedSchema, type rssFeed } from './rssFeed';
 
-export const feedSchema = sqliteTable('feeds', {
-	id: integer('id').primaryKey().notNull(),
+export const boardSchema = sqliteTable('boards', {
+	id: text('id').primaryKey().notNull(),
 	slug: text('slug').notNull(),
 	name: text('name').notNull(),
 	editCode: text('editCode').notNull(),
@@ -10,20 +10,20 @@ export const feedSchema = sqliteTable('feeds', {
 	updatedAt: integer('updatedAt', { mode: 'timestamp' }).notNull()
 });
 
-export const rssFeedToFeed = sqliteTable('rssFeedToFeed', {
+export const rssFeedToBoard = sqliteTable('rssFeedToFeed', {
 	rssFeedId: text('rssFeedId')
 		.notNull()
 		.references(() => rssFeedSchema.id),
-	feedId: text('feedId')
+	boardId: text('boardId')
 		.notNull()
-		.references(() => feedSchema.id)
+		.references(() => boardSchema.id)
 });
 
-export type Feed = {
-	id: number;
+export type Board = {
+	id: string;
 	slug: string;
 	name: string;
-	RSSFeeds: RSSFeed[];
+	rssFeeds?: rssFeed[];
 	editCode: string;
 	createdAt: Date;
 	updatedAt: Date;
