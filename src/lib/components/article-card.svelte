@@ -5,7 +5,7 @@
 	import { badgeVariants } from '@/components/ui/badge';
 
 	export let article: Article;
-	export let RSSFeedName: string;
+	export let rssFeedName: string;
 
 	let age = calculateAge(article.pubDate);
 
@@ -35,7 +35,7 @@
 			class="{badgeVariants({
 				variant: 'secondary'
 			})} hover: bg-muted-foreground text-popover transition-colors hover:text-primary"
-			>{RSSFeedName}</a
+			>{rssFeedName}</a
 		>
 	</Card.Footer>
 </Card.Root>
