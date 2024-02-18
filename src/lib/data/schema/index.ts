@@ -1,3 +1,3 @@
 export * from './article';
-export * from './feed';
+export * from './board';
 export * from './rssFeed';
