@@ -7,7 +7,7 @@ export const articleSchema = sqliteTable('articles', {
 	link: text('link').notNull(),
 	excerpt: text('excerpt').notNull(),
 	pubDate: integer('pubDate', { mode: 'timestamp' }),
-	RSSFeedId: text('rssFeedId').references(() => rssFeedSchema.id),
+	rssFeedId: text('rssFeedId').references(() => rssFeedSchema.id),
 	createdAt: integer('createdAt', { mode: 'timestamp' }).notNull()
 });
 
@@ -15,7 +15,7 @@ export type Article = {
 	id: string;
 	title: string;
 	excerpt: string;
-	RSSFeedId: string;
+	rssFeedId: string;
 	link: string;
 	pubDate: Date;
 };

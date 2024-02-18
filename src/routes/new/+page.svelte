@@ -5,9 +5,9 @@
 	import Button from '@/components/ui/button/button.svelte';
 	import { Input } from '@/components/ui/input';
 	import Label from '@/components/ui/label/label.svelte';
-	import type { RSSFeed } from '@/data/schema';
+	import type { rssFeed } from '@/data/schema';
 
-	const RSSFeeds: RSSFeed[] = [
+	const rssFeeds: rssFeed[] = [
 		{
 			id: '1',
 			name: 'Feed 1',
@@ -74,7 +74,7 @@
 			<Label>Feed name</Label>
 			<Input type="text" placeholder="Feed name" />
 		</div>
-		<RssfeedsTable {RSSFeeds} />
+		<RssfeedsTable {rssFeeds} />
 		<div>
 			<Button>Save feed</Button>
 		</div>
