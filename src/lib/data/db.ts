@@ -1,7 +1,15 @@
-import { drizzle } from 'drizzle-orm/better-sqlite3';
-import Database  from 'better-sqlite3';
+import postgres from 'postgres';
+import * as schema from './schema';
+import { drizzle } from 'drizzle-orm/postgres-js';
 
-const sqlite = new Database('./src/lib/data/sqlite.db');
-const db = drizzle(sqlite);
+const queryClient = postgres(process.env.DB_PG_URL, {
+	keep_alive: 30000
+});
 
-export default db;
+export function getClient() {
+	if (!queryClient) {
+		throw new Error('Connection: Database is invalid or nonexistent');
+	}
+
+	return drizzle(queryClient, { schema });
+}
