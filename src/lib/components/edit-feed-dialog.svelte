@@ -3,10 +3,11 @@
 	import * as Dialog from '@/components/ui/dialog';
 	import { Input } from '@/components/ui/input';
 	import { Label } from '@/components/ui/label';
-	import type { rssFeed } from '@/data/schema';
+	import type { RssFeed } from '@/data/schema';
+	import { createRssFeed, getRssInfo, updateRssFeed } from '../api';
 
 	export let mode: keyof typeof settings = 'create';
-	export let rssFeed: rssFeed | undefined = undefined;
+	export let rssFeed: RssFeed | undefined = undefined;
 
 	let open: boolean;
 	let link = rssFeed?.link ?? '';
@@ -49,55 +50,43 @@
 				return; // TODO: Show error
 			}
 
-			const rssInfo: { title: string; description: string } = await fetch(
-				`/api/rssFeedInfo?link=${btoa(link)}`
-			).then((response) => response.json());
+			const rssInfo = await getRssInfo(rssFeed.link);
 
 			if (!rssInfo || !rssInfo.title || !rssInfo.description) {
 				return; // TODO: Show error
 			}
 
-			const response = await fetch('/api/rssFeed', {
-				method: 'PATCH',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({
-					id: rssFeed.id,
-					name: rssInfo.title,
-					description: rssFeed.description,
-					link: rssFeed.link
-				})
-			});
-
-			// TODO: Handle errors
-			if (response.ok) {
-				open = false;
+			try {
+				updateRssFeed(
+					rssFeed.id,
+					rssInfo.title,
+					rssInfo.description,
+					rssFeed.link,
+					'IStillDontHaveTheIdOfTheBoard'
+				); // TODO: Fix
+			} catch (error) {
+				console.error('Error occurred while updating RSS feed:', error);
+				// TODO: Show error
+				return;
 			}
 		} else if (mode === 'create') {
-			const rssInfo: { title: string; description: string } = await fetch(
-				`/api/rssFeedInfo?link=${btoa(link)}`
-			).then((response) => response.json());
+			const rssInfo = await getRssInfo(link);
 
 			if (!rssInfo || !rssInfo.title || !rssInfo.description) {
 				return; // TODO: Show error
 			}
 
-			const response = await fetch('/api/rssFeed', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({
-					name: rssInfo.title,
-					description: rssInfo.description,
-					link: link
-				})
-			});
-
-			// TODO: Handle errors
-			if (response.ok) {
-				open = false;
+			try {
+				const rssFeed = await createRssFeed(
+					rssInfo.title,
+					rssInfo.description,
+					link,
+					'iStillDontHaveTheIdOfTheBoard'
+				); // TODO: Fix
+			} catch (error) {
+				console.error('Error occurred while creating RSS feed:', error);
+				// TODO: Show error
+				return;
 			}
 		}
 	}
