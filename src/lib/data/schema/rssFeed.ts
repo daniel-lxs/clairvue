@@ -1,21 +1,22 @@
-import { sqliteTable, integer, text } from 'drizzle-orm/sqlite-core';
-import type { Article } from './article';
+import { pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { boardsToRssFeeds } from './board';
+import { articleSchema, type Article } from './article';
+import { relations, type InferSelectModel } from 'drizzle-orm';
 
-export const rssFeedSchema = sqliteTable('rssFeeds', {
-	id: text('id').primaryKey().notNull(),
+export const rssFeedSchema = pgTable('rssFeeds', {
+	id: varchar('id', { length: 8 }).primaryKey().notNull(),
 	name: text('name').notNull(),
 	description: text('description').notNull().default('No description'),
 	link: text('link').unique().notNull(),
-	createdAt: integer('createdAt', { mode: 'timestamp' }).notNull(),
-	updatedAt: integer('updatedAt', { mode: 'timestamp' }).notNull()
+	createdAt: timestamp('createdAt').notNull().defaultNow(),
+	updatedAt: timestamp('updatedAt').notNull().defaultNow()
 });
 
-export type rssFeed = {
-	id: string;
-	name: string;
-	link: string;
-	description?: string;
+export const rssFeedRelations = relations(rssFeedSchema, ({ many }) => ({
+	boardsToRssFeeds: many(boardsToRssFeeds),
+	articles: many(articleSchema)
+}));
+
+export type RssFeed = InferSelectModel<typeof rssFeedSchema> & {
 	articles?: Article[];
-	createdAt: Date;
-	updatedAt: Date;
 };
