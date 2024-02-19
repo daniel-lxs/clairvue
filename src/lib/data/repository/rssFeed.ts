@@ -1,14 +1,18 @@
-import { rssFeedSchema, type rssFeed, rssFeedToBoard } from '../schema';
+import * as schema from '../schema';
 import feedRepository from './board';
-import db from '../db';
-import { eq } from 'drizzle-orm';
+import { getClient } from '../db';
+import { and, eq } from 'drizzle-orm';
 import ShortUniqueId from 'short-unique-id';
 
-function create(
-	newRssFeed: Pick<rssFeed, 'name' | 'description' | 'link'>,
+async function create(
+	newRssFeed: Pick<schema.RssFeed, 'name' | 'description' | 'link'>,
 	boardId: string
-): rssFeed | undefined {
-	const feed = feedRepository.findById(boardId, true);
+): Promise<schema.RssFeed | undefined> {
+	const db = getClient();
+
+	const { rssFeedSchema, boardsToRssFeeds } = schema;
+
+	const feed = await feedRepository.findById(boardId, true);
 	if (!feed) {
 		return undefined;
 	}
@@ -22,61 +26,61 @@ function create(
 
 	try {
 		//check if rss feed already exists and if so relate it
-		const existingRssFeed = findByLink(newRssFeed.link);
+		const existingRssFeed = await findByLink(newRssFeed.link);
 		if (existingRssFeed) {
-			db.insert(rssFeedToBoard)
+			await db
+				.insert(boardsToRssFeeds)
 				.values({
 					rssFeedId: existingRssFeed.id,
 					boardId
 				})
-				.run();
+				.execute();
 
 			return existingRssFeed;
 		}
 
 		const { randomUUID } = new ShortUniqueId({ length: 8 });
 		const id = randomUUID();
-		const createdAt = new Date();
-		const updatedAt = new Date();
 
-		db.insert(rssFeedSchema)
+		const result = await db
+			.insert(rssFeedSchema)
 			.values({
 				id,
 				name: newRssFeed.name,
 				description: newRssFeed.description,
-				link: newRssFeed.link,
-				createdAt,
-				updatedAt
+				link: newRssFeed.link
 			})
 			.returning({
-				id: rssFeedSchema.id
+				id: rssFeedSchema.id,
+				name: rssFeedSchema.name,
+				description: rssFeedSchema.description,
+				link: rssFeedSchema.link,
+				createdAt: rssFeedSchema.createdAt,
+				updatedAt: rssFeedSchema.updatedAt
 			})
-			.get();
+			.execute();
 
-		db.insert(rssFeedToBoard)
+		//insert relation
+		await db
+			.insert(boardsToRssFeeds)
 			.values({
 				rssFeedId: id,
 				boardId
 			})
-			.run();
+			.execute();
 
-		return {
-			id,
-			name: newRssFeed.name,
-			description: newRssFeed.description,
-			link: newRssFeed.link,
-			createdAt,
-			updatedAt
-		};
+		return result[0];
 	} catch (error) {
 		console.error('Error occurred while creating new RSS feed:', error);
 		return undefined;
 	}
 }
 
-function findById(id: string): rssFeed | undefined {
+async function findById(id: string): Promise<schema.RssFeed | undefined> {
 	try {
-		const result = db.select().from(rssFeedSchema).where(eq(rssFeedSchema.id, id)).all();
+		const db = getClient();
+		const { rssFeedSchema } = schema;
+		const result = await db.select().from(rssFeedSchema).where(eq(rssFeedSchema.id, id)).execute();
 
 		const rssFeed = result[0];
 		if (!rssFeed) return undefined;
@@ -88,9 +92,15 @@ function findById(id: string): rssFeed | undefined {
 	}
 }
 
-function findByLink(link: string): rssFeed | undefined {
+async function findByLink(link: string): Promise<schema.RssFeed | undefined> {
 	try {
-		const result = db.select().from(rssFeedSchema).where(eq(rssFeedSchema.link, link)).all();
+		const db = getClient();
+		const { rssFeedSchema } = schema;
+		const result = await db
+			.select()
+			.from(rssFeedSchema)
+			.where(eq(rssFeedSchema.link, link))
+			.execute();
 
 		const rssFeed = result[0];
 		if (!rssFeed) return undefined;
@@ -102,16 +112,18 @@ function findByLink(link: string): rssFeed | undefined {
 	}
 }
 
-function update(updatedRssFeed: Pick<rssFeed, 'id' | 'name' | 'description' | 'link'>) {
+function update(updatedRssFeed: Pick<schema.RssFeed, 'id' | 'name' | 'description' | 'link'>) {
 	try {
+		const db = getClient();
+		const { rssFeedSchema } = schema;
 		const currentDate = new Date();
-		db.update(rssFeedSchema)
+		db
+			.update(rssFeedSchema)
 			.set({
 				...updatedRssFeed,
 				updatedAt: currentDate
 			})
-			.where(eq(rssFeedSchema.id, updatedRssFeed.id))
-			.run();
+			.where(eq(rssFeedSchema.id, updatedRssFeed.id)).execute;
 	} catch (error) {
 		console.error('Error occurred while updating RSS feed:', error);
 		throw error;
@@ -119,10 +131,15 @@ function update(updatedRssFeed: Pick<rssFeed, 'id' | 'name' | 'description' | 'l
 }
 
 //delete is a ts keyword
-function remove(id: string) {
+async function remove(id: string, boardId: string) {
 	try {
-		db.delete(rssFeedSchema).where(eq(rssFeedSchema.id, id)).run();
-		db.delete(rssFeedToBoard).where(eq(rssFeedToBoard.rssFeedId, id)).run();
+		const db = getClient();
+		const { boardsToRssFeeds } = schema;
+
+		await db
+			.delete(boardsToRssFeeds)
+			.where(and(eq(boardsToRssFeeds.boardId, boardId), eq(boardsToRssFeeds.rssFeedId, id)))
+			.execute();
 	} catch (error) {
 		console.error('Error occurred while deleting RSS feed:', error);
 	}

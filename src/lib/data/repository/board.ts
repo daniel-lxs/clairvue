@@ -1,27 +1,27 @@
 import ShortUniqueId from 'short-unique-id';
-import db from '../db';
-import { boardSchema, type Board, rssFeedToBoard, rssFeedSchema } from '../schema';
+import { getClient } from '../db';
+import * as schema from '../schema';
 import { eq } from 'drizzle-orm';
 
-function create(newBoard: Pick<Board, 'name'>): { slug: string; editCode: string } | undefined {
+async function create(newBoard: Pick<schema.Board, 'name'>) {
 	try {
+		const db = getClient();
+		const { boardSchema } = schema;
 		const { randomUUID } = new ShortUniqueId({ length: 8 });
 
 		const id = randomUUID();
 		const slug = randomUUID();
 		const editCode = randomUUID();
-		const currentDate = new Date();
 
-		db.insert(boardSchema)
+		await db
+			.insert(boardSchema)
 			.values({
 				...newBoard,
 				id,
 				slug,
-				editCode,
-				createdAt: currentDate,
-				updatedAt: currentDate
+				editCode
 			})
-			.run();
+			.execute();
 		return {
 			slug,
 			editCode
@@ -32,80 +32,94 @@ function create(newBoard: Pick<Board, 'name'>): { slug: string; editCode: string
 	}
 }
 
-function findById(id: string, withRelated: boolean = false): Board | undefined {
+async function findById(
+	id: string,
+	withRelated: boolean = false
+): Promise<schema.Board | undefined> {
 	try {
-		const query = db.select().from(boardSchema).where(eq(boardSchema.id, id));
+		const db = getClient();
+
+		const { boardSchema, rssFeedSchema, boardsToRssFeeds } = schema;
 
 		if (withRelated) {
-			const result = query
-				.leftJoin(rssFeedSchema, eq(rssFeedToBoard.rssFeedId, rssFeedSchema.id))
-				.all();
+			const { boards, rssFeeds } = (
+				await db
+					.select()
+					.from(boardsToRssFeeds)
+					.leftJoin(boardSchema, eq(boardsToRssFeeds.boardId, boardSchema.id))
+					.leftJoin(rssFeedSchema, eq(boardsToRssFeeds.rssFeedId, rssFeedSchema.id))
+					.where(eq(boardSchema.id, id))
+					.execute()
+			)[0];
 
-			const Board = result[0];
-			if (!Board) return undefined;
-			const { rssFeeds, ...rest } = Board;
+			if (!boards) return undefined;
+
 			return {
-				...rest.boards,
+				...boards,
 				rssFeeds: rssFeeds ? [rssFeeds] : []
 			};
 		}
 
-		const result = query.all();
-		const Board = result[0];
-		if (!Board) return undefined;
-		return Board;
-	} catch (error) {
-		console.error('Error occurred while finding Board by id:', error);
-		return undefined;
-	}
-}
-
-function findBySlug(slug: string, withRelated: boolean = false): Board | undefined {
-	try {
-		const query = db.select().from(boardSchema).where(eq(boardSchema.slug, slug));
-
-		if (withRelated) {
-			const result = query
-				.leftJoin(rssFeedSchema, eq(rssFeedToBoard.rssFeedId, rssFeedSchema.id))
-				.all();
-
-			const Board = result[0];
-			if (!Board) return undefined;
-			const { rssFeeds, ...rest } = Board;
-			return {
-				...rest.boards,
-				rssFeeds: rssFeeds ? [rssFeeds] : []
-			};
-		}
-
-		const result = query.all();
-		const Board = result[0];
-		if (!Board) return undefined;
-		return Board;
-	} catch (error) {
-		console.error('Error occurred while finding Board by id:', error);
-		return undefined;
-	}
-}
-
-function update(updatedBoard: Pick<Board, 'slug' | 'name'>) {
-	try {
-		const currentDate = new Date();
-		db.update(boardSchema)
-			.set({
-				...updatedBoard,
-				updatedAt: currentDate
+		const result = await db.query.boardSchema
+			.findFirst({
+				where: eq(boardSchema.id, id)
 			})
-			.where(eq(boardSchema.slug, updatedBoard.slug))
-			.run();
+			.execute();
+
+		if (result) return undefined;
+
+		return result;
 	} catch (error) {
-		console.error('Error occurred while updating Board:', error);
+		console.error('Error occurred while finding Board by id:', error);
+		return undefined;
+	}
+}
+
+async function findBySlug(
+	slug: string,
+	withRelated: boolean = false
+): Promise<schema.Board | undefined> {
+	try {
+		const db = getClient();
+
+		const { boardSchema, rssFeedSchema, boardsToRssFeeds } = schema;
+
+		if (withRelated) {
+			const { boards, rssFeeds } = (
+				await db
+					.select()
+					.from(boardsToRssFeeds)
+					.leftJoin(boardSchema, eq(boardsToRssFeeds.boardId, boardSchema.id))
+					.leftJoin(rssFeedSchema, eq(boardsToRssFeeds.rssFeedId, rssFeedSchema.id))
+					.where(eq(boardSchema.slug, slug))
+					.execute()
+			)[0];
+
+			if (!boards) return undefined;
+
+			return {
+				...boards,
+				rssFeeds: rssFeeds ? [rssFeeds] : []
+			};
+		}
+
+		const result = await db.query.boardSchema
+			.findFirst({
+				where: eq(boardSchema.slug, slug)
+			})
+			.execute();
+
+		if (result) return undefined;
+
+		return result;
+	} catch (error) {
+		console.error('Error occurred while finding Board by id:', error);
+		return undefined;
 	}
 }
 
 export default {
 	create,
 	findById,
-	findBySlug,
-	update
+	findBySlug
 };
