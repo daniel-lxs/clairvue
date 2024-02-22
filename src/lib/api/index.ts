@@ -1,3 +1,2 @@
-export * from './getRssInfo';
-export * from './updateRssFeed';
-export * from './createRssFeed';
+export * from './board';
+export * from './rssFeed';
