@@ -35,5 +35,5 @@ export const boardsToRssFeedsRelations = relations(boardsToRssFeeds, ({ one }) =
 }));
 
 export type Board = InferSelectModel<typeof boardSchema> & {
-	rssFeeds?: RssFeed[] | null;
+	rssFeeds: RssFeed[];
 };
