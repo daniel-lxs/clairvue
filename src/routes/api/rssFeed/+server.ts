@@ -1,6 +1,7 @@
 import type { RequestHandler } from '@sveltejs/kit';
-import rssFeedRepository from '@/data/repository/rssFeed';
-import { createRssFeedDto, updateRssFeedDto } from '@/dto/rssFeedDto';
+import rssFeedRepository from '@/data/repositories/rssFeed';
+import { createRssFeedDto, updateRssFeedDto, type CreateRssFeedDto } from '@/dto/rssFeedDto';
+import type { CreateRssFeedResult } from '../../../lib/types/CreateRssFeedResult';
 
 export const GET: RequestHandler = async ({ url }) => {
 	const rssFeedId = url.searchParams.get('id');
@@ -19,23 +20,38 @@ export const GET: RequestHandler = async ({ url }) => {
 };
 
 export const POST: RequestHandler = async ({ request }) => {
-	const requestBody = await request.json();
+	const requestBody: CreateRssFeedDto[] = await request.json();
 
 	if (!requestBody) {
 		return new Response('Missing body', { status: 400 });
 	}
+	const validationResults = requestBody.map((rssFeed) => createRssFeedDto.safeParse(rssFeed));
 
-	const validationResult = createRssFeedDto.safeParse(requestBody);
-
-	if (!validationResult.success) {
-		return new Response(JSON.stringify(validationResult.error), { status: 400 });
+	if (!validationResults.every((result) => result.success)) {
+		return new Response(JSON.stringify(validationResults), { status: 400 });
 	}
 
-	const { boardId, ...newRssFeedData } = validationResult.data;
+	const newRssFeeds: CreateRssFeedResult[] = [];
 
-	const createdRssFeed = await rssFeedRepository.create(newRssFeedData, boardId);
+	for (const result of validationResults) {
+		try {
+			if (!result.success) {
+				newRssFeeds.push({ result: 'error', data: null, reason: result.error.message });
+				continue;
+			}
+			const { boardId, ...newRssFeedData } = result.data;
+			const createdRssFeed = await rssFeedRepository.create(newRssFeedData, boardId);
+			if (!createdRssFeed) {
+				newRssFeeds.push({ result: 'error', data: null, reason: 'Unable to create' });
+				continue;
+			}
+			newRssFeeds.push({ result: 'success', data: createdRssFeed, reason: null });
+		} catch (error) {
+			newRssFeeds.push({ result: 'error', data: null, reason: 'Internal error' });
+		}
+	}
 
-	return new Response(JSON.stringify(createdRssFeed), { status: 200 });
+	return new Response(JSON.stringify(newRssFeeds), { status: 200 });
 };
 
 export const PATCH: RequestHandler = async ({ request }) => {
