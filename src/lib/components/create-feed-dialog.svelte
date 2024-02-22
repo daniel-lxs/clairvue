@@ -8,11 +8,10 @@
 	import { createEventDispatcher } from 'svelte';
 
 	const dispatch = createEventDispatcher<{
-		edit: RssFeed;
+		create: Pick<RssFeed, 'name' | 'description' | 'link'>;
 	}>();
 
-	export let feed: RssFeed;
-
+	let newRssFeed: Pick<RssFeed, 'name' | 'description' | 'link'>;
 	let open: boolean;
 	let link: string = '';
 
@@ -20,31 +19,27 @@
 		const rssInfo = await getRssInfo(link);
 
 		if (rssInfo) {
-			feed.name = rssInfo.title;
-			feed.description = rssInfo.description;
-			feed.link = link;
+			newRssFeed.name = rssInfo.title;
+			newRssFeed.description = rssInfo.description;
+			newRssFeed.link = link;
 			open = false;
-			dispatch('edit', feed);
+			dispatch('create', newRssFeed);
 			return;
 		}
 
 		//TODO: handle error
 	}
 
-	$: if (feed) {
-		link = feed.link;
-	}
+	$: link = newRssFeed.link;
 </script>
 
 <Dialog.Root bind:open>
-	<Dialog.Trigger class={buttonVariants({ variant: 'default' })}>Edit</Dialog.Trigger>
+	<Dialog.Trigger class={buttonVariants({ variant: 'secondary' })}>Add RSS feed</Dialog.Trigger>
 
 	<Dialog.Content class="sm:max-w-[425px]">
 		<Dialog.Header>
-			<Dialog.Title>Edit RSS feed</Dialog.Title>
-			<Dialog.Description
-				>Edit the link of the RSS feed. Click save when you're done</Dialog.Description
-			>
+			<Dialog.Title>Create RSS feed</Dialog.Title>
+			<Dialog.Description>Create a new RSS feed. Click save when you're done</Dialog.Description>
 		</Dialog.Header>
 		<div class="grid gap-4 py-4">
 			<div class="grid grid-cols-4 items-center gap-4">
