@@ -1,7 +1,7 @@
-import type { RssFeed } from '../data/schema';
-import type { CreateRssFeedDto } from '../dto/rssFeedDto';
+import type { CreateRssFeedDto } from '@/dto/rssFeedDto';
+import type { CreateRssFeedResult } from '@/types/CreateRssFeedResult';
 
-export async function createRssFeeds(rssFeeds: CreateRssFeedDto[]): Promise<RssFeed> {
+export async function createRssFeeds(rssFeeds: CreateRssFeedDto[]): Promise<CreateRssFeedResult[]> {
 	try {
 		const response = await fetch('/api/rssFeed', {
 			method: 'POST',
