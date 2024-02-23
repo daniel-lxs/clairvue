@@ -1,8 +1,9 @@
 import postgres from 'postgres';
 import * as schema from './schema';
 import { drizzle } from 'drizzle-orm/postgres-js';
+import { PRIVATE_DB_URL } from '$env/static/private';
 
-const queryClient = postgres(process.env.DB_PG_URL, {
+const queryClient = postgres(PRIVATE_DB_URL, {
 	keep_alive: 30000
 });
 

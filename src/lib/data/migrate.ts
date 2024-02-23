@@ -8,7 +8,7 @@ const retryInterval = 5000; // 5 seconds
 async function runMigrations() {
 	for (let i = 0; i < maxRetries; i++) {
 		try {
-			const migrationClient = postgres(process.env.DB_PG_URL, { max: 1 });
+			const migrationClient = postgres(process.env.PRIVATE_DB_URL, { max: 1 });
 			await migrate(drizzle(migrationClient), {
 				migrationsFolder: './drizzle'
 			});
