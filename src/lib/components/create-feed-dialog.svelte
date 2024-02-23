@@ -6,31 +6,40 @@
 	import type { RssFeed } from '@/data/schema';
 	import { getRssInfo } from '../api';
 	import { createEventDispatcher } from 'svelte';
+	import { Loader2 } from 'lucide-svelte';
 
 	const dispatch = createEventDispatcher<{
 		create: Pick<RssFeed, 'name' | 'description' | 'link'>;
 	}>();
 
-	let newRssFeed: Pick<RssFeed, 'name' | 'description' | 'link'>;
+	let isLoading = false;
+	let newRssFeed: Pick<RssFeed, 'name' | 'description' | 'link'> = {
+		name: '',
+		description: '',
+		link: ''
+	};
 	let open: boolean;
 	let link: string = '';
 
 	async function save() {
+		isLoading = true;
 		const rssInfo = await getRssInfo(link);
 
 		if (rssInfo) {
 			newRssFeed.name = rssInfo.title;
 			newRssFeed.description = rssInfo.description;
 			newRssFeed.link = link;
+
 			open = false;
+			isLoading = false;
+
 			dispatch('create', newRssFeed);
 			return;
 		}
 
 		//TODO: handle error
+		isLoading = false;
 	}
-
-	$: link = newRssFeed.link;
 </script>
 
 <Dialog.Root bind:open>
@@ -51,7 +60,14 @@
 			</p>
 		</div>
 		<Dialog.Footer>
-			<Button type="submit" on:click={save}>Save</Button>
+			<Button disabled={isLoading} type="submit" on:click={save}>
+				{#if isLoading}
+					<Loader2 class="mr-2 h-4 w-4 animate-spin" />
+					Saving...
+				{:else}
+					Save
+				{/if}
+			</Button>
 		</Dialog.Footer>
 	</Dialog.Content>
 </Dialog.Root>

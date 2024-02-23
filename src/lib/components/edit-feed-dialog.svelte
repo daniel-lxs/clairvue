@@ -6,6 +6,7 @@
 	import type { RssFeed } from '@/data/schema';
 	import { getRssInfo } from '../api';
 	import { createEventDispatcher } from 'svelte';
+	import { Loader2 } from 'lucide-svelte';
 
 	const dispatch = createEventDispatcher<{
 		edit: RssFeed;
@@ -13,10 +14,12 @@
 
 	export let feed: RssFeed;
 
+	let isLoading = false;
 	let open: boolean;
 	let link: string = '';
 
 	async function save() {
+		isLoading = true;
 		const rssInfo = await getRssInfo(link);
 
 		if (rssInfo) {
@@ -24,11 +27,13 @@
 			feed.description = rssInfo.description;
 			feed.link = link;
 			open = false;
+			isLoading = false;
 			dispatch('edit', feed);
 			return;
 		}
 
 		//TODO: handle error
+		isLoading = false;
 	}
 
 	$: if (feed) {
@@ -56,7 +61,14 @@
 			</p>
 		</div>
 		<Dialog.Footer>
-			<Button type="submit" on:click={save}>Save</Button>
+			<Button disabled={isLoading} type="submit" on:click={save}>
+				{#if isLoading}
+					<Loader2 class="mr-2 h-4 w-4 animate-spin" />
+					Saving...
+				{:else}
+					Save
+				{/if}
+			</Button>
 		</Dialog.Footer>
 	</Dialog.Content>
 </Dialog.Root>
