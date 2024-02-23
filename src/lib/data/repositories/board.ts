@@ -23,6 +23,7 @@ async function create(newBoard: Pick<schema.Board, 'name'>) {
 			})
 			.execute();
 		return {
+			id,
 			slug,
 			editCode
 		};
@@ -45,8 +46,8 @@ async function findById(
 			const { boards, rssFeeds } = (
 				await db
 					.select()
-					.from(boardsToRssFeeds)
-					.leftJoin(boardSchema, eq(boardsToRssFeeds.boardId, boardSchema.id))
+					.from(boardSchema)
+					.leftJoin(boardsToRssFeeds, eq(boardsToRssFeeds.boardId, boardSchema.id))
 					.leftJoin(rssFeedSchema, eq(boardsToRssFeeds.rssFeedId, rssFeedSchema.id))
 					.where(eq(boardSchema.id, id))
 					.execute()
