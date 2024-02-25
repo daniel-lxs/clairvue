@@ -1,12 +1,11 @@
 import ShortUniqueId from 'short-unique-id';
 import { getClient } from '../db';
-import * as schema from '../schema';
+import {boardSchema, rssFeedSchema, boardsToRssFeeds, type Board} from '../schema';
 import { eq } from 'drizzle-orm';
 
-async function create(newBoard: Pick<schema.Board, 'name'>) {
+async function create(newBoard: Pick<Board, 'name'>) {
 	try {
 		const db = getClient();
-		const { boardSchema } = schema;
 		const { randomUUID } = new ShortUniqueId({ length: 8 });
 
 		const id = randomUUID();
@@ -36,11 +35,9 @@ async function create(newBoard: Pick<schema.Board, 'name'>) {
 async function findById(
 	id: string,
 	withRelated: boolean = false
-): Promise<schema.Board | undefined> {
+): Promise<Board | undefined> {
 	try {
 		const db = getClient();
-
-		const { boardSchema, rssFeedSchema, boardsToRssFeeds } = schema;
 
 		if (withRelated) {
 			const { boards, rssFeeds } = (
@@ -79,11 +76,9 @@ async function findById(
 async function findBySlug(
 	slug: string,
 	withRelated: boolean = false
-): Promise<schema.Board | undefined> {
+): Promise<Board | undefined> {
 	try {
 		const db = getClient();
-
-		const { boardSchema, rssFeedSchema, boardsToRssFeeds } = schema;
 
 		if (withRelated) {
 			const { boards, rssFeeds } = (

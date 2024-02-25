@@ -1,16 +1,14 @@
-import * as schema from '../schema';
-import feedRepository from './board';
-import { getClient } from '../db';
 import { and, eq } from 'drizzle-orm';
 import ShortUniqueId from 'short-unique-id';
+import { getClient } from '../db';
+import { boardsToRssFeeds, rssFeedSchema, type RssFeed } from '../schema';
+import feedRepository from './board';
 
 async function create(
-	newRssFeed: Pick<schema.RssFeed, 'name' | 'description' | 'link'>,
+	newRssFeed: Pick<RssFeed, 'name' | 'description' | 'link'>,
 	boardId: string
-): Promise<schema.RssFeed | undefined> {
+): Promise<RssFeed | undefined> {
 	const db = getClient();
-
-	const { rssFeedSchema, boardsToRssFeeds } = schema;
 
 	const feed = await feedRepository.findById(boardId, true);
 	if (!feed) {
@@ -69,17 +67,16 @@ async function create(
 			})
 			.execute();
 
-		return result[0];
+		return result[0]; //TODO: why would we return it again?
 	} catch (error) {
 		console.error('Error occurred while creating new RSS feed:', error);
 		return undefined;
 	}
 }
 
-async function findById(id: string): Promise<schema.RssFeed | undefined> {
+async function findById(id: string): Promise<RssFeed | undefined> {
 	try {
 		const db = getClient();
-		const { rssFeedSchema } = schema;
 		const result = await db.select().from(rssFeedSchema).where(eq(rssFeedSchema.id, id)).execute();
 
 		const rssFeed = result[0];
@@ -92,10 +89,9 @@ async function findById(id: string): Promise<schema.RssFeed | undefined> {
 	}
 }
 
-async function findByLink(link: string): Promise<schema.RssFeed | undefined> {
+async function findByLink(link: string): Promise<RssFeed | undefined> {
 	try {
 		const db = getClient();
-		const { rssFeedSchema } = schema;
 		const result = await db
 			.select()
 			.from(rssFeedSchema)
@@ -112,10 +108,9 @@ async function findByLink(link: string): Promise<schema.RssFeed | undefined> {
 	}
 }
 
-function update(updatedRssFeed: Pick<schema.RssFeed, 'id' | 'name' | 'description' | 'link'>) {
+function update(updatedRssFeed: Pick<RssFeed, 'id' | 'name' | 'description' | 'link'>) {
 	try {
 		const db = getClient();
-		const { rssFeedSchema } = schema;
 		const currentDate = new Date();
 		db
 			.update(rssFeedSchema)
@@ -134,7 +129,6 @@ function update(updatedRssFeed: Pick<schema.RssFeed, 'id' | 'name' | 'descriptio
 async function remove(id: string, boardId: string) {
 	try {
 		const db = getClient();
-		const { boardsToRssFeeds } = schema;
 
 		await db
 			.delete(boardsToRssFeeds)
