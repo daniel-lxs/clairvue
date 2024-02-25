@@ -6,8 +6,10 @@ export const articleSchema = pgTable('articles', {
 	id: varchar('id', { length: 8 }).primaryKey().notNull(),
 	title: text('title').notNull(),
 	link: text('link').notNull(),
-	excerpt: text('excerpt').notNull(),
 	rssFeedId: text('rssFeedId').notNull(),
+	description: text('description'),
+	siteName: text('siteName'),
+	image: text('image'),
 	publishedAt: timestamp('publishedAt').defaultNow(),
 	createdAt: timestamp('createdAt').defaultNow(),
 	updatedAt: timestamp('updatedAt').defaultNow()
