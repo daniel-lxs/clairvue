@@ -108,6 +108,20 @@ async function findByLink(link: string): Promise<RssFeed | undefined> {
 	}
 }
 
+async function findAll(take = 20, skip = 0): Promise<RssFeed[]> {
+	try {
+		const db = getClient();
+
+		take = take > 100 ? 100 : take;
+
+		const result = await db.select().from(rssFeedSchema).limit(take).offset(skip).execute();
+		return result;
+	} catch (error) {
+		console.error('Error occurred while finding all RSS feeds:', error);
+		return [];
+	}
+}
+
 function update(updatedRssFeed: Pick<RssFeed, 'id' | 'name' | 'description' | 'link'>) {
 	try {
 		const db = getClient();
@@ -143,6 +157,7 @@ export default {
 	create,
 	findById,
 	findByLink,
+	findAll,
 	update,
 	remove
 };
