@@ -2,8 +2,10 @@ CREATE TABLE IF NOT EXISTS "articles" (
 	"id" varchar(8) PRIMARY KEY NOT NULL,
 	"title" text NOT NULL,
 	"link" text NOT NULL,
-	"excerpt" text NOT NULL,
 	"rssFeedId" text NOT NULL,
+	"description" text,
+	"siteName" text,
+	"image" text,
 	"publishedAt" timestamp DEFAULT now(),
 	"createdAt" timestamp DEFAULT now(),
 	"updatedAt" timestamp DEFAULT now()

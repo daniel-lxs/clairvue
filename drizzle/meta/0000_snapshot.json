@@ -1,5 +1,5 @@
 {
-  "id": "31e06b6e-b2df-4d65-b2d6-1d0f1ed592a2",
+  "id": "6f9585c8-58b8-4f63-bb8e-7b4a747bbf7b",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "5",
   "dialect": "pg",
@@ -26,17 +26,29 @@
           "primaryKey": false,
           "notNull": true
         },
-        "excerpt": {
-          "name": "excerpt",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
         "rssFeedId": {
           "name": "rssFeedId",
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "siteName": {
+          "name": "siteName",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "image": {
+          "name": "image",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "publishedAt": {
           "name": "publishedAt",
