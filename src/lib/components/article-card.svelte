@@ -7,7 +7,7 @@
 	export let article: Article;
 	export let rssFeedName: string;
 
-	let age = calculateAge(article.pubDate);
+	let age = calculateAge(new Date(article.publishedAt));
 
 	const domainMatch = article.link.match(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:/\n?]+)\//i);
 	let domain = domainMatch?.[1];
@@ -24,7 +24,7 @@
 	</Card.Header>
 	<Card.Content class="py-2">
 		<p>
-			{article.excerpt}
+			{article.description}
 		</p>
 	</Card.Content>
 	<Card.Footer>
