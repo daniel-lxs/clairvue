@@ -3,9 +3,7 @@ import { getClient } from '../db';
 import { articleSchema, type Article } from '../schema';
 import { eq } from 'drizzle-orm';
 
-export async function create(
-	newArticle: Omit<Article, 'id' | 'publishedAt' | 'createdAt' | 'updatedAt'>
-) {
+export async function create(newArticle: Omit<Article, 'id' | 'createdAt' | 'updatedAt'>) {
 	const db = getClient();
 
 	const { randomUUID } = new ShortUniqueId({ length: 8 });
@@ -53,8 +51,24 @@ export async function findByLink(link: string) {
 	}
 }
 
+async function findByRssFeedId(rssFeedId: string) {
+	try {
+		const db = getClient();
+		const result = await db
+			.select()
+			.from(articleSchema)
+			.where(eq(articleSchema.rssFeedId, rssFeedId))
+			.execute();
+		return result;
+	} catch (error) {
+		console.error('Error occurred while finding Article by rssFeedId:', error);
+		return undefined;
+	}
+}
+
 export default {
 	create,
 	findById,
-	findByLink
+	findByLink,
+	findByRssFeedId
 };
