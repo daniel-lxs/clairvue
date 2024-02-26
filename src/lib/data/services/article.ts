@@ -62,7 +62,7 @@ export async function syncArticlesParallel(rssFeed: RssFeed) {
 				description: article.description || linkPreview.description || '',
 				siteName: linkPreview.siteName,
 				image: linkPreview.images?.[0] || '',
-				publishedAt: article.pubDate
+				publishedAt: new Date(article.pubDate as string)
 			};
 
 			console.log(newArticle);
@@ -75,6 +75,7 @@ export async function syncArticlesParallel(rssFeed: RssFeed) {
 		})
 	);
 
+	console.log(`[Sync] Synced ${createdArticles.length} articles.`);
 	return createdArticles;
 }
 
@@ -82,6 +83,8 @@ export async function syncArticlesSequential(rssFeed: RssFeed) {
 	const orderedArticles = await fetchRssFeedArticles(rssFeed.link);
 
 	if (!orderedArticles) return;
+
+	console.log(`[Sync] Syncing ${orderedArticles.length} articles...`);
 
 	const createdArticles: string[] = [];
 
@@ -115,24 +118,22 @@ export async function syncArticlesSequential(rssFeed: RssFeed) {
 
 		const newArticle = {
 			rssFeedId: rssFeed.id,
-			title: linkPreview.title,
+			title: article.title || linkPreview.title,
 			link: article.link,
 			description: article.description || linkPreview.description || '',
 			siteName: linkPreview.siteName,
 			image: linkPreview.images?.[0] || '',
-			publishedAt: article.pubDate
+			publishedAt: new Date(article.pubDate as string)
 		};
-
-		console.log(newArticle);
 
 		const articleId = await articleRepository.create(newArticle);
 
 		if (articleId) {
 			createdArticles.push(articleId);
-			break; // Exit the loop after creating the first article
 		}
 	}
 
+	console.log(`[Sync] Synced ${createdArticles.length} articles.`);
 	return createdArticles;
 }
 
