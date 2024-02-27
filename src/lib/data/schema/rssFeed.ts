@@ -9,7 +9,8 @@ export const rssFeedSchema = pgTable('rssFeeds', {
 	description: text('description').notNull().default('No description'),
 	link: text('link').unique().notNull(),
 	createdAt: timestamp('createdAt').notNull().defaultNow(),
-	updatedAt: timestamp('updatedAt').notNull().defaultNow()
+	updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+	syncedAt: timestamp('syncedAt').notNull().defaultNow()
 });
 
 export const rssFeedRelations = relations(rssFeedSchema, ({ many }) => ({

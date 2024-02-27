@@ -122,17 +122,32 @@ async function findAll(take = 20, skip = 0): Promise<RssFeed[]> {
 	}
 }
 
-function update(updatedRssFeed: Pick<RssFeed, 'id' | 'name' | 'description' | 'link'>) {
+async function update(updatedRssFeed: Pick<RssFeed, 'id' | 'name' | 'description' | 'link'>) {
 	try {
 		const db = getClient();
 		const currentDate = new Date();
-		db
+		await db
 			.update(rssFeedSchema)
 			.set({
 				...updatedRssFeed,
 				updatedAt: currentDate
 			})
 			.where(eq(rssFeedSchema.id, updatedRssFeed.id)).execute;
+	} catch (error) {
+		console.error('Error occurred while updating RSS feed:', error);
+		throw error;
+	}
+}
+
+async function updateLastSync(id: string, lastSync: Date) {
+	try {
+		const db = getClient();
+		await db
+			.update(rssFeedSchema)
+			.set({
+				syncedAt: lastSync
+			})
+			.where(eq(rssFeedSchema.id, id)).execute;
 	} catch (error) {
 		console.error('Error occurred while updating RSS feed:', error);
 		throw error;
@@ -159,5 +174,6 @@ export default {
 	findByLink,
 	findAll,
 	update,
+	updateLastSync,
 	remove
 };
