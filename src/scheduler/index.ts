@@ -1,5 +1,5 @@
 import { CronJob } from 'cron';
-import { syncArticlesSequential } from '../lib/data/services/article';
+import { syncArticles } from '../lib/data/services/article';
 import rssFeedRepository from '../lib/data/repositories/rssFeed';
 import type { RssFeed } from '../lib/data/schema';
 
@@ -19,7 +19,7 @@ const job = new CronJob('*/5 * * * *', async () => {
 			console.log(`[Scheduler] Syncing ${rssFeeds.length} RSS feeds...`);
 			await Promise.all(
 				rssFeeds.map(async (rssFeed) => {
-					await syncArticlesSequential(rssFeed);
+					await syncArticles(rssFeed, false);
 				})
 			);
 		}
