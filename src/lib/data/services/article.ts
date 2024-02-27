@@ -1,101 +1,72 @@
 import Parser from 'rss-parser';
 import articleRepository from '../repositories/article';
+import rssFeedRepository from '../repositories/rssFeed';
 import type { RssFeed } from '../schema';
 import { getLinkPreview } from 'link-preview-js';
+import type { NewArticle } from '@/types/NewArticle';
 
 export async function fetchRssFeedArticles(link: string) {
-	const parser = new Parser();
-	const feed = await parser.parseURL(link);
+	try {
+		const parser = new Parser();
+		const feed = await parser.parseURL(link);
 
-	if (!feed || !feed.items || feed.items.length === 0) return undefined;
-
-	feed.items.sort((a, b) => {
-		if (a.pubDate && b.pubDate) {
-			return new Date(b.pubDate).valueOf() - new Date(a.pubDate).valueOf();
-		} else {
-			return 0; // Or handle the case where pubDate is undefined
+		if (!feed || !feed.items || feed.items.length === 0) {
+			throw new Error('No feed items found');
 		}
-	});
 
-	return feed.items;
+		feed.items.sort((a, b) => {
+			if (a.pubDate && b.pubDate) {
+				return new Date(b.pubDate).valueOf() - new Date(a.pubDate).valueOf();
+			} else {
+				return 0; // Or handle the case where pubDate is undefined
+			}
+		});
+
+		return feed.items;
+	} catch (error) {
+		console.error('Error fetching or parsing RSS feed:', error);
+		return undefined;
+	}
 }
 
-export async function syncArticlesParallel(rssFeed: RssFeed) {
-	const orderedArticles = await fetchRssFeedArticles(rssFeed.link);
+export async function syncArticles(rssFeed: RssFeed, parallel: boolean) {
+	try {
+		const orderedArticles = await fetchRssFeedArticles(rssFeed.link);
 
-	if (!orderedArticles) return;
+		if (!orderedArticles) return;
 
-	const createdArticles: string[] = [];
+		console.log(`[Sync] Syncing ${orderedArticles.length} articles...`);
 
-	await Promise.all(
-		orderedArticles.map(async (article) => {
-			if (!article.link) return;
+		const newArticles = await processArticles(rssFeed, orderedArticles, parallel);
 
-			const articleExists = await articleRepository.findByLink(article.link);
-			if (articleExists) {
-				return; // Skip further processing if article exists
-			}
+		const createdArticles = await createArticles(newArticles);
 
-			const linkPreview = await getLinkPreview(article.link, {
-				timeout: 2000,
-				headers: {
-					'User-Agent':
-						'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'
-				}
-			});
+		if (!createdArticles) {
+			console.log('[Sync] No new articles created.');
+			return;
+		}
 
-			if (!linkPreview || !isPreviewTypeHtml(linkPreview)) {
-				return; // Skip further processing if no link preview or not HTML
-			}
+		await rssFeedRepository.updateLastSync(rssFeed.id, new Date());
 
-			if (!linkPreview.siteName) {
-				const domainMatch = article.link.match(
-					/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:/\n?]+)\//i
-				);
-				linkPreview.siteName = domainMatch?.[1] || '';
-			}
-
-			const newArticle = {
-				rssFeedId: rssFeed.id,
-				title: linkPreview.title,
-				link: article.link,
-				description: article.description || linkPreview.description || '',
-				siteName: linkPreview.siteName,
-				image: linkPreview.images?.[0] || '',
-				publishedAt: new Date(article.pubDate as string)
-			};
-
-			console.log(newArticle);
-
-			const articleId = await articleRepository.create(newArticle);
-
-			if (articleId) {
-				createdArticles.push(articleId);
-			}
-		})
-	);
-
-	console.log(`[Sync] Synced ${createdArticles.length} articles.`);
-	return createdArticles;
+		console.log(`[Sync] Synced ${createdArticles.length} articles.`);
+		return createdArticles;
+	} catch (error) {
+		console.error('Error occurred during sync:', error);
+	}
 }
 
-export async function syncArticlesSequential(rssFeed: RssFeed) {
-	const orderedArticles = await fetchRssFeedArticles(rssFeed.link);
+async function processArticles(
+	rssFeed: RssFeed,
+	articles: Parser.Item[],
+	parallel: boolean
+): Promise<NewArticle[]> {
+	const newArticles: NewArticle[] = [];
 
-	if (!orderedArticles) return;
-
-	console.log(`[Sync] Syncing ${orderedArticles.length} articles...`);
-
-	const createdArticles: string[] = [];
-
-	// Check articles sequentially until finding the first unsaved article
-	for (const article of orderedArticles) {
-		if (!article.link) continue;
+	const processArticle = async (article: Parser.Item) => {
+		if (!article.link) return;
 
 		const articleExists = await articleRepository.findByLink(article.link);
-		if (articleExists) {
-			continue; // Skip further processing if article exists
-		}
+		if (articleExists) return;
 
 		const linkPreview = await getLinkPreview(article.link, {
 			timeout: 2000,
@@ -105,9 +76,7 @@ export async function syncArticlesSequential(rssFeed: RssFeed) {
 			}
 		});
 
-		if (!linkPreview || !isPreviewTypeHtml(linkPreview)) {
-			continue; // Skip further processing if no link preview or not HTML
-		}
+		if (!linkPreview || !isPreviewTypeHtml(linkPreview)) return;
 
 		if (!linkPreview.siteName) {
 			const domainMatch = article.link.match(
@@ -116,25 +85,33 @@ export async function syncArticlesSequential(rssFeed: RssFeed) {
 			linkPreview.siteName = domainMatch?.[1] || '';
 		}
 
-		const newArticle = {
+		const newArticle: NewArticle = {
 			rssFeedId: rssFeed.id,
 			title: article.title || linkPreview.title,
 			link: article.link,
-			description: article.description || linkPreview.description || '',
+			description: article.summary || linkPreview.description || '',
 			siteName: linkPreview.siteName,
 			image: linkPreview.images?.[0] || '',
 			publishedAt: new Date(article.pubDate as string)
 		};
 
-		const articleId = await articleRepository.create(newArticle);
+		newArticles.push(newArticle);
+	};
 
-		if (articleId) {
-			createdArticles.push(articleId);
+	if (parallel) {
+		await Promise.all(articles.map(processArticle));
+	} else {
+		for (const article of articles) {
+			await processArticle(article);
 		}
 	}
 
-	console.log(`[Sync] Synced ${createdArticles.length} articles.`);
-	return createdArticles;
+	return newArticles;
+}
+
+async function createArticles(newArticles: NewArticle[]): Promise<string[] | undefined> {
+	const createdIds = await articleRepository.create(newArticles);
+	return createdIds;
 }
 
 function isPreviewTypeHtml(linkPreview: unknown): linkPreview is {
