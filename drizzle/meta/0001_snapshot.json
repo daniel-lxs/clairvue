@@ -1,6 +1,6 @@
 {
-  "id": "926f3a6a-fa49-4841-bebd-1e69dc154c10",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "7358c081-fa4c-46c8-a40b-7c0b0f6043d2",
+  "prevId": "926f3a6a-fa49-4841-bebd-1e69dc154c10",
   "version": "5",
   "dialect": "pg",
   "tables": {
@@ -206,8 +206,8 @@
           "notNull": true,
           "default": "now()"
         },
-        "fetchedAt": {
-          "name": "fetchedAt",
+        "syncedAt": {
+          "name": "syncedAt",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true,

@@ -1,0 +1,1 @@
+ALTER TABLE "rssFeeds" RENAME COLUMN "fetchedAt" TO "syncedAt";

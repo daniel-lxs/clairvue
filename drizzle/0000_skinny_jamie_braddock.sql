@@ -6,9 +6,10 @@ CREATE TABLE IF NOT EXISTS "articles" (
 	"description" text,
 	"siteName" text,
 	"image" text,
-	"publishedAt" timestamp DEFAULT now(),
+	"publishedAt" timestamp DEFAULT now() NOT NULL,
 	"createdAt" timestamp DEFAULT now(),
-	"updatedAt" timestamp DEFAULT now()
+	"updatedAt" timestamp DEFAULT now(),
+	CONSTRAINT "articles_link_unique" UNIQUE("link")
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "boards" (
@@ -33,5 +34,6 @@ CREATE TABLE IF NOT EXISTS "rssFeeds" (
 	"link" text NOT NULL,
 	"createdAt" timestamp DEFAULT now() NOT NULL,
 	"updatedAt" timestamp DEFAULT now() NOT NULL,
+	"fetchedAt" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "rssFeeds_link_unique" UNIQUE("link")
 );
