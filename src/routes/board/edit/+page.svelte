@@ -34,7 +34,6 @@
 	async function saveBoard() {
 		isLoading = true;
 		try {
-			console.log(JSON.stringify($board));
 			if ($board.id !== '') {
 				await updateBoard($board.id, $board.name);
 			} else {

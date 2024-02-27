@@ -6,8 +6,8 @@
 
 	let fomattedDate: string;
 
-	if (data.post?.publishedTime) {
-		fomattedDate = new Date(data.post?.publishedTime).toLocaleDateString('en-US', {
+	if (data.article?.publishedTime) {
+		fomattedDate = new Date(data.article?.publishedTime).toLocaleDateString('en-US', {
 			year: 'numeric',
 			month: 'long',
 			day: 'numeric',
@@ -15,23 +15,25 @@
 			minute: 'numeric'
 		});
 	}
+
+	//TODO: add a speed reading option in the future
 </script>
 
 <PageContainer>
 	<div class="space-y-8">
 		<div class="space-y-6">
 			<a
-				class="font-bold text-primary hover:text-primary-foreground hover:underline"
-				href={data.post?.url}
-				target="_blank">{data.post?.domain}</a
+				class="font-bold text-primary hover:text-foreground hover:underline"
+				href={data.article?.link}
+				target="_blank">{data.article?.domain}</a
 			>
-			<h1 class="text-3xl font-bold">{data.post?.title}</h1>
+			<h1 class="text-3xl font-bold">{data.article?.title}</h1>
 
-			{#if data.post?.byline}
-				<p class="text-md text-muted-foreground">{data.post?.byline}</p>
+			{#if data.article?.byline}
+				<p class="text-md text-muted-foreground">{data.article?.byline}</p>
 			{/if}
 
-			{#if data.post?.publishedTime && fomattedDate}
+			{#if data.article?.publishedTime && fomattedDate}
 				<p class="text-sm text-muted-foreground">{fomattedDate}</p>
 			{/if}
 			<!--TODO: add read time based on length-->
@@ -39,7 +41,7 @@
 		<Separator class="my-6" />
 		<div class="parsed-content">
 			<article>
-				{@html data.post?.content}
+				{@html data.article?.content}
 			</article>
 		</div>
 	</div>
@@ -63,15 +65,15 @@
 	}
 
 	.parsed-content :global(ul) {
-		@apply mb-4 list-inside list-disc;
+		@apply mb-4 list-disc pl-4;
 	}
 
-	.parsed-content :global(ul) :global(ul:first-child) {
+	.parsed-content :global(ul) :global(ul) {
 		@apply mt-4 pl-4;
 	}
 
 	.parsed-content :global(ol) {
-		@apply mb-2 list-inside list-decimal;
+		@apply mb-2 list-decimal pl-4;
 	}
 
 	.parsed-content :global(li) {
@@ -89,7 +91,7 @@
 	}
 
 	.parsed-content :global(a) {
-		@apply text-primary hover:text-primary-foreground hover:underline;
+		@apply text-primary hover:text-foreground hover:underline;
 	}
 
 	.parsed-content :global(blockquote) {
