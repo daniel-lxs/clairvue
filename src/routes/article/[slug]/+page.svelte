@@ -2,12 +2,21 @@
 	import PageContainer from '@/components/page-container.svelte';
 	import { Separator } from '@/components/ui/separator';
 	import type { PageData } from './$types';
+
 	export let data: PageData;
 
 	let fomattedDate: string;
 
-	if (data.article?.publishedTime) {
-		fomattedDate = new Date(data.article?.publishedTime).toLocaleDateString('en-US', {
+	if (data.parsedArticle?.publishedTime) {
+		fomattedDate = new Date(data.parsedArticle?.publishedTime).toLocaleDateString('en-US', {
+			year: 'numeric',
+			month: 'long',
+			day: 'numeric',
+			hour: 'numeric',
+			minute: 'numeric'
+		});
+	} else if (data.article?.publishedAt) {
+		fomattedDate = new Date(data.article?.publishedAt).toLocaleDateString('en-US', {
 			year: 'numeric',
 			month: 'long',
 			day: 'numeric',
@@ -29,11 +38,11 @@
 			>
 			<h1 class="text-3xl font-bold">{data.article?.title}</h1>
 
-			{#if data.article?.byline}
-				<p class="text-md text-muted-foreground">{data.article?.byline}</p>
+			{#if data.parsedArticle?.byline}
+				<p class="text-md text-muted-foreground">{data.parsedArticle?.byline}</p>
 			{/if}
 
-			{#if data.article?.publishedTime && fomattedDate}
+			{#if fomattedDate}
 				<p class="text-sm text-muted-foreground">{fomattedDate}</p>
 			{/if}
 			<!--TODO: add read time based on length-->
@@ -41,7 +50,7 @@
 		<Separator class="my-6" />
 		<div class="parsed-content">
 			<article>
-				{@html data.article?.content}
+				{@html data.parsedArticle?.content}
 			</article>
 		</div>
 	</div>
@@ -124,5 +133,13 @@
 
 	.parsed-content :global(figure) {
 		@apply mb-6;
+	}
+
+	.parsed-content :global(img) {
+		@apply bg-muted;
+	}
+
+	.parsed-content :global(pre) {
+		@apply mb-4 overflow-x-auto rounded-lg bg-muted px-4 py-2;
 	}
 </style>
