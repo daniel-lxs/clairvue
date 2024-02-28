@@ -1,6 +1,6 @@
 import ShortUniqueId from 'short-unique-id';
 import { getClient } from '../db';
-import {boardSchema, rssFeedSchema, boardsToRssFeeds, type Board} from '../schema';
+import { boardSchema, rssFeedSchema, boardsToRssFeeds, type Board } from '../schema';
 import { eq } from 'drizzle-orm';
 
 async function create(newBoard: Pick<Board, 'name'>) {
@@ -32,29 +32,26 @@ async function create(newBoard: Pick<Board, 'name'>) {
 	}
 }
 
-async function findById(
-	id: string,
-	withRelated: boolean = false
-): Promise<Board | undefined> {
+async function findById(id: string, withRelated: boolean = false): Promise<Board | undefined> {
 	try {
 		const db = getClient();
 
 		if (withRelated) {
-			const { boards, rssFeeds } = (
-				await db
-					.select()
-					.from(boardSchema)
-					.leftJoin(boardsToRssFeeds, eq(boardsToRssFeeds.boardId, boardSchema.id))
-					.leftJoin(rssFeedSchema, eq(boardsToRssFeeds.rssFeedId, rssFeedSchema.id))
-					.where(eq(boardSchema.id, id))
-					.execute()
-			)[0];
+			const result = await db
+				.select()
+				.from(boardSchema)
+				.leftJoin(boardsToRssFeeds, eq(boardsToRssFeeds.boardId, boardSchema.id))
+				.leftJoin(rssFeedSchema, eq(boardsToRssFeeds.rssFeedId, rssFeedSchema.id))
+				.where(eq(boardSchema.id, id))
+				.execute();
 
-			if (!boards) return undefined;
+			if (!result || result.length === 0) return undefined;
+
+			const rssFeeds = result.map((r) => (r.rssFeeds ? [r.rssFeeds] : []));
 
 			return {
-				...boards,
-				rssFeeds: rssFeeds ? [rssFeeds] : []
+				...result[0].boards,
+				rssFeeds: rssFeeds.flat()
 			};
 		}
 
@@ -73,10 +70,7 @@ async function findById(
 	}
 }
 
-async function findBySlug(
-	slug: string,
-	withRelated: boolean = false
-): Promise<Board | undefined> {
+async function findBySlug(slug: string, withRelated: boolean = false): Promise<Board | undefined> {
 	try {
 		const db = getClient();
 
