@@ -1,5 +1,5 @@
 import { pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core';
-import { rssFeedSchema } from './rssFeed';
+import { rssFeedSchema, type RssFeed } from './rssFeed';
 import { relations, type InferSelectModel } from 'drizzle-orm';
 
 export const articleSchema = pgTable('articles', {
@@ -19,4 +19,6 @@ export const articleRelations = relations(articleSchema, ({ one }) => ({
 	rssFeed: one(rssFeedSchema, { fields: [articleSchema.rssFeedId], references: [rssFeedSchema.id] })
 }));
 
-export type Article = InferSelectModel<typeof articleSchema>;
+export type Article = InferSelectModel<typeof articleSchema> & {
+	rssFeed?: RssFeed;
+};
