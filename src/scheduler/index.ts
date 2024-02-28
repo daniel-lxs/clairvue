@@ -4,8 +4,8 @@ import rssFeedRepository from '../lib/data/repositories/rssFeed';
 import type { RssFeed } from '../lib/data/schema';
 
 console.log(`[Scheduler] Started at ${new Date().toLocaleString()}`);
-const job = new CronJob('*/5 * * * *', async () => {
-	// Every 5 minutes
+const job = new CronJob('*/10 * * * *', async () => {
+	// Every 2 minutes
 	console.log(`[Scheduler] Running job at ${new Date().toLocaleString()}`);
 
 	let page = 1;
