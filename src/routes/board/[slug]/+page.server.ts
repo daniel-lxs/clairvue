@@ -15,7 +15,7 @@ export async function load({ params }) {
 	//const articles = await boardRepository.getArticlesByBoardId(board.id);
 
 	//for now we only have one rss feed
-	const articles = await articlesRepository.findByRssFeedId(board.rssFeeds[0].id);
+	const articles = await articlesRepository.findByBoardId(board.id);
 
 	return {
 		board,
