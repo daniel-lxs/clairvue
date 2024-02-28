@@ -1,7 +1,8 @@
 import type { RequestHandler } from '@sveltejs/kit';
 import rssFeedRepository from '@/data/repositories/rssFeed';
 import { createRssFeedDto, updateRssFeedDto, type CreateRssFeedDto } from '@/dto/rssFeedDto';
-import type { CreateRssFeedResult } from '../../../lib/types/CreateRssFeedResult';
+import type { CreateRssFeedResult } from '@/types/CreateRssFeedResult';
+import { syncArticles } from '@/data/services/article';
 
 export const GET: RequestHandler = async ({ url }) => {
 	const rssFeedId = url.searchParams.get('id');
@@ -33,6 +34,7 @@ export const POST: RequestHandler = async ({ request }) => {
 
 	const newRssFeeds: CreateRssFeedResult[] = [];
 
+	//TODO: improve response
 	for (const result of validationResults) {
 		try {
 			if (!result.success) {
@@ -45,6 +47,7 @@ export const POST: RequestHandler = async ({ request }) => {
 				newRssFeeds.push({ result: 'error', data: null, reason: 'Unable to create' });
 				continue;
 			}
+			syncArticles(createdRssFeed, true);
 			newRssFeeds.push({ result: 'success', data: createdRssFeed, reason: null });
 		} catch (error) {
 			newRssFeeds.push({ result: 'error', data: null, reason: 'Internal error' });
