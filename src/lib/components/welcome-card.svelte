@@ -4,7 +4,13 @@
 	import Button from '@/components/ui/button/button.svelte';
 
 	let isInputVisible = false;
-	let feedCode = '';
+	let boardCode = '';
+
+	function onBoardCodeSubmit() {
+		if (boardCode) {
+			window.location.href = `/board/${boardCode}`;
+		}
+	}
 </script>
 
 <Card.Root
@@ -16,16 +22,19 @@
 	</Card.Header>
 	<Card.Content class="space-y-4">
 		{#if isInputVisible}
-			<form class="flex w-full max-w-sm items-center space-x-2">
-				<Input type="text" autofocus placeholder="Enter your feed code" bind:value={feedCode} />
+			<form
+				on:submit|preventDefault={onBoardCodeSubmit}
+				class="flex w-full max-w-sm items-center space-x-2"
+			>
+				<Input type="text" autofocus placeholder="Enter your board code" bind:value={boardCode} />
 				<Button type="submit">Submit</Button>
 			</form>
 		{:else}
-			<Button on:click={() => (isInputVisible = true)}>Enter feed code</Button>
+			<Button on:click={() => (isInputVisible = true)}>Enter board code</Button>
 		{/if}
 		<div class="flex flex-col items-center gap-4">
 			<span>Or</span>
-			<Button>Create a new feed</Button>
+			<Button>Create a new board</Button>
 		</div>
 	</Card.Content>
 	<Card.Footer>
