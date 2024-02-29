@@ -7,9 +7,9 @@ import { JSDOM } from 'jsdom';
 import { getLinkPreview } from 'link-preview-js';
 import Parser from 'rss-parser';
 import articleRepository from '../repositories/article';
-import rssFeedRepository from '@/data/repositories/rssFeed';
+import rssFeedRepository from '@/server/data/repositories/rssFeed';
 import type { RssFeed } from '../schema';
-import type { ParsedArticle } from '../../types/ParsedArticle';
+import type { ParsedArticle } from '../../../types/ParsedArticle';
 
 export async function fetchRssFeedArticles(link: string) {
 	try {

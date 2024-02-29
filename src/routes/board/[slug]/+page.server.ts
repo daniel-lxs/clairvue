@@ -1,5 +1,5 @@
-import boardRepository from '$lib/data/repositories/board';
-import articlesRepository from '$lib/data/repositories/article';
+import boardRepository from '@/server/data/repositories/board';
+import articlesRepository from '@/server/data/repositories/article';
 
 export async function load({ params }) {
 	const slug = params.slug;

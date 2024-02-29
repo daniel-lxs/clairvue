@@ -1,4 +1,4 @@
-import type { Board } from '../data/schema';
+import type { Board } from '../server/data/schema';
 
 export async function createBoard(name: string): Promise<Board | undefined> {
 	try {

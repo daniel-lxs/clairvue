@@ -1,4 +1,4 @@
-import type { RssFeed } from '@/data/schema';
+import type { RssFeed } from '@/server/data/schema';
 
 export type CreateRssFeedResult = {
 	result: 'success' | 'error';

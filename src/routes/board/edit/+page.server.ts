@@ -1,5 +1,5 @@
 import type { PageServerLoad } from './$types';
-import boardRepository from '@/data/repositories/board';
+import boardRepository from '@/server/data/repositories/board';
 
 export const load: PageServerLoad = async ({ url }) => {
 	const slug = url.searchParams.get('slug');

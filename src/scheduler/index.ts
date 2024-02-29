@@ -1,7 +1,7 @@
 import { CronJob } from 'cron';
-import { syncArticles } from '../lib/data/services/article';
-import rssFeedRepository from '../lib/data/repositories/rssFeed';
-import type { RssFeed } from '../lib/data/schema';
+import { syncArticles } from '../lib/server/data/services/article';
+import rssFeedRepository from '../lib/server/data/repositories/rssFeed';
+import type { RssFeed } from '../lib/server/data/schema';
 
 console.log(`[Scheduler] Started at ${new Date().toLocaleString()}`);
 const job = new CronJob('*/10 * * * *', async () => {

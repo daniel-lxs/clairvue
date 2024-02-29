@@ -1,6 +1,6 @@
-import articleRepository from '$lib/data/repositories/article';
+import articleRepository from '@/server/data/repositories/article.js';
 import { redirect } from '@sveltejs/kit';
-import { parseReadableArticle } from '../../../lib/data/services/article.js';
+import { parseReadableArticle } from '../../../lib/server/data/services/article.js';
 
 export async function load({ request, params }) {
 	const slug = params.slug;

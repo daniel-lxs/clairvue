@@ -1,6 +1,6 @@
 import type { RequestHandler } from '@sveltejs/kit';
-import boardRepository from '@/data/repositories/board';
-import { createBoardDto } from '@/dto/boardDto';
+import boardRepository from '@/server/data/repositories/board';
+import { createBoardDto } from '@/server/dto/boardDto';
 
 export const GET: RequestHandler = async ({ url }) => {
 	const boardSlug = url.searchParams.get('slug');

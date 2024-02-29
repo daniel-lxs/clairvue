@@ -1,4 +1,4 @@
-import type { Article } from '@/data/schema';
+import type { Article } from '@/server/data/schema';
 import type { PaginatedList } from '@/types/PaginatedList';
 
 export async function getArticlesByBoardId(

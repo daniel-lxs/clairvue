@@ -4,7 +4,7 @@ import { articleSchema, type Article } from '../schema';
 import { count, eq, or, sql } from 'drizzle-orm';
 import type { NewArticle } from '@/types/NewArticle';
 import boardRepository from './board';
-import type { PaginatedList } from '../../types/PaginatedList';
+import type { PaginatedList } from '../../../types/PaginatedList';
 
 async function create(newArticles: NewArticle | NewArticle[]): Promise<string[] | undefined> {
 	const db = getClient();

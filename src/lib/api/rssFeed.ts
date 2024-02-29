@@ -1,4 +1,4 @@
-import type { CreateRssFeedDto } from '@/dto/rssFeedDto';
+import type { CreateRssFeedDto } from '@/server/dto/rssFeedDto';
 import type { CreateRssFeedResult } from '@/types/CreateRssFeedResult';
 
 export async function createRssFeeds(rssFeeds: CreateRssFeedDto[]): Promise<CreateRssFeedResult[]> {
