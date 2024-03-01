@@ -2,7 +2,7 @@ import type { RequestHandler } from '@sveltejs/kit';
 import rssFeedRepository from '@/server/data/repositories/rssFeed';
 import { createRssFeedDto, updateRssFeedDto, type CreateRssFeedDto } from '@/server/dto/rssFeedDto';
 import type { CreateRssFeedResult } from '@/types/CreateRssFeedResult';
-import { syncArticles } from '@/server/data/services/article';
+import { syncArticles } from '@/server/services/article';
 
 export const GET: RequestHandler = async ({ url }) => {
 	const rssFeedId = url.searchParams.get('id');

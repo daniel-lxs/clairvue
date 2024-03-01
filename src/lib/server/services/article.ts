@@ -6,10 +6,10 @@ import he from 'he';
 import { JSDOM } from 'jsdom';
 import { getLinkPreview } from 'link-preview-js';
 import Parser from 'rss-parser';
-import articleRepository from '../repositories/article';
+import articleRepository from '@/server/data/repositories/article';
 import rssFeedRepository from '@/server/data/repositories/rssFeed';
-import type { RssFeed } from '../schema';
-import type { ParsedArticle } from '../../../types/ParsedArticle';
+import type { RssFeed } from '@/server/data/schema';
+import type { ParsedArticle } from '@/types/ParsedArticle';
 
 export async function fetchRssFeedArticles(link: string) {
 	try {

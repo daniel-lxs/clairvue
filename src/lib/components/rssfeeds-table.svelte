@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Board, RssFeed } from '@/data/schema';
+	import type { Board, RssFeed } from '@/server/data/schema';
 	import { Label } from '@/components/ui/label';
 	import * as Card from '@/components/ui/card';
 	import EditFeedDialog from '@/components/edit-feed-dialog.svelte';
@@ -16,7 +16,8 @@
 			...e.detail,
 			id: '',
 			createdAt: new Date(),
-			updatedAt: new Date()
+			updatedAt: new Date(),
+			syncedAt: new Date()
 		};
 
 		if ($board && $board.rssFeeds && newRssFeed) {

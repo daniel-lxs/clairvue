@@ -1,6 +1,6 @@
 <script lang="ts">
 	import * as Card from '@/components/ui/card';
-	import type { Article } from '@/data/schema';
+	import type { Article } from '@/server/data/schema';
 	import { calculateAge } from '@/utils';
 	import { badgeVariants } from '@/components/ui/badge';
 

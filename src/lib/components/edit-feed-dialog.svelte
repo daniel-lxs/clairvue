@@ -3,7 +3,7 @@
 	import * as Dialog from '@/components/ui/dialog';
 	import { Input } from '@/components/ui/input';
 	import { Label } from '@/components/ui/label';
-	import type { RssFeed } from '@/data/schema';
+	import type { RssFeed } from '@/server/data/schema';
 	import { getRssInfo } from '../api';
 	import { createEventDispatcher } from 'svelte';
 	import { Loader2 } from 'lucide-svelte';

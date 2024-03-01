@@ -5,11 +5,11 @@
 	import Button from '@/components/ui/button/button.svelte';
 	import { Input } from '@/components/ui/input';
 	import Label from '@/components/ui/label/label.svelte';
-	import type { Board, RssFeed } from '@/data/schema';
+	import type { Board, RssFeed } from '@/server/data/schema';
 	import { writable } from 'svelte/store';
 	import type { PageData } from './$types';
 	import { createBoard, createRssFeeds, updateBoard } from '@/api';
-	import type { CreateRssFeedDto } from '../../../lib/dto/rssFeedDto';
+	import type { CreateRssFeedDto } from '@/server/dto/rssFeedDto';
 	import { Loader2 } from 'lucide-svelte';
 
 	export let data: PageData;
