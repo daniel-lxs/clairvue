@@ -13,8 +13,8 @@
     "format": "prettier --write .",
     "test:integration": "playwright test",
     "test:unit": "vitest",
-    "generate-migrations": "bunx drizzle-kit generate:pg --schema ./src/lib/data/schema/index.ts",
-    "run-migrations": "bun run ./src/lib/data/migrate.ts"
+    "generate-migrations": "bunx drizzle-kit generate:pg --schema ./src/lib/server/data/schema/index.ts",
+    "run-migrations": "bun run ./src/lib/server/data/migrate.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.28.1",
@@ -33,6 +33,7 @@
     "eslint": "^8.56.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-svelte": "^2.35.1",
+    "pg": "^8.11.3",
     "postcss": "^8.4.32",
     "postcss-load-config": "^5.0.2",
     "prettier": "^3.1.1",
