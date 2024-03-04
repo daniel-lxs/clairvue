@@ -10,6 +10,7 @@ import articleRepository from '@/server/data/repositories/article';
 import rssFeedRepository from '@/server/data/repositories/rssFeed';
 import type { RssFeed } from '@/server/data/schema';
 import type { ParsedArticle } from '@/types/ParsedArticle';
+import { z } from 'zod';
 
 export async function fetchRssFeedArticles(link: string) {
 	try {
@@ -78,48 +79,46 @@ async function processArticles(
 			try {
 				if (!article.link) return;
 
+				if (z.string().url().safeParse(article.link).success === false) return;
+
 				const articleExists = await articleRepository.findByLink(article.link);
 				if (articleExists) return;
+
+				console.log(`[Sync] Processing article: ${article.link}`);
 
 				const linkPreview = await getLinkPreview(article.link, {
 					timeout: 2000,
 					headers: {
 						'User-Agent':
 							'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'
-					},
-					followRedirects: `manual`,
-					handleRedirects: (baseURL: string, forwardedURL: string) => {
-						const urlObj = new URL(baseURL);
-						const forwardedURLObj = new URL(forwardedURL);
-						// Check if the forwarded URL is within the same domain
-						if (
-							forwardedURLObj.hostname === urlObj.hostname ||
-							forwardedURLObj.hostname === 'www.' + urlObj.hostname ||
-							'www.' + forwardedURLObj.hostname === urlObj.hostname
-						) {
-							return true;
-						} else {
-							return false;
-						}
 					}
 				});
 
-				if (!linkPreview || !isPreviewTypeHtml(linkPreview)) return;
+				const domainMatch = article.link.match(
+					/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:/\n?]+)\//i
+				);
 
-				if (!linkPreview.siteName) {
-					const domainMatch = article.link.match(
-						/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:/\n?]+)\//i
-					);
-					linkPreview.siteName = domainMatch?.[1] || '';
+				let siteName = domainMatch?.[1] || '';
+				let title = article.title;
+				let description = article.summary;
+				let image = '';
+
+				if (linkPreview && isPreviewTypeHtml(linkPreview)) {
+					siteName = linkPreview.siteName || siteName;
+					title = linkPreview.title || title;
+					description = linkPreview.description || description;
+					image = linkPreview.images?.[0] || '';
 				}
+
+				if (!title || !siteName) return;
 
 				const newArticle: NewArticle = {
 					rssFeedId: rssFeed.id,
-					title: article.title || linkPreview.title,
+					title: title,
 					link: article.link,
-					description: article.summary || linkPreview.description || '',
-					siteName: linkPreview.siteName,
-					image: linkPreview.images?.[0] || '',
+					description: description || null,
+					siteName: siteName,
+					image: image || null,
 					publishedAt: new Date(article.pubDate as string)
 				};
 
