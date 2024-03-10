@@ -3,28 +3,25 @@ import { getClient } from '../db';
 import { boardSchema, rssFeedSchema, boardsToRssFeeds, type Board } from '../schema';
 import { eq } from 'drizzle-orm';
 
-async function create(newBoard: Pick<Board, 'name'>) {
+async function create(newBoard: Pick<Board, 'name' | 'userId'>) {
 	try {
 		const db = getClient();
 		const { randomUUID } = new ShortUniqueId({ length: 8 });
 
 		const id = randomUUID();
 		const slug = randomUUID();
-		const editCode = randomUUID();
 
 		await db
 			.insert(boardSchema)
 			.values({
 				...newBoard,
 				id,
-				slug,
-				editCode
+				slug
 			})
 			.execute();
 		return {
 			id,
-			slug,
-			editCode
+			slug
 		};
 	} catch (error) {
 		console.error('Error occurred while creating new Board:', error);
