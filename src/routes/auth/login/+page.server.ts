@@ -6,6 +6,7 @@ import type { Actions } from './$types';
 import { eq } from 'drizzle-orm';
 import { getClient } from '@/server/data/db';
 import { userSchema } from '@/server/data/schema';
+import { z } from 'zod';
 
 export const actions: Actions = {
 	default: async (event) => {
@@ -13,42 +14,48 @@ export const actions: Actions = {
 		const username = formData.get('username');
 		const password = formData.get('password');
 
-		if (
-			typeof username !== 'string' ||
-			username.length < 3 ||
-			username.length > 31 ||
-			!/^[a-z0-9_-]+$/.test(username)
-		) {
-			return fail(400, {
-				message: 'Invalid username'
-			});
-		}
-		if (typeof password !== 'string' || password.length < 6 || password.length > 255) {
-			return fail(400, {
-				message: 'Invalid password'
-			});
+		const validateForm = z.object({
+			username: z
+				.string()
+				.regex(/^[a-z0-9_-]+$/i, 'Username must only consist of lowercase letters, 0-9, -, and _')
+				.min(4, 'Username must be between 4 ~ 31 characters')
+				.max(31, 'Username must be between 4 ~ 31 characters'),
+			password: z
+				.string()
+				.min(6, 'Password must be at least 6 characters')
+				.max(255, 'Password too long')
+		});
+
+		const result = validateForm.safeParse({ username, password });
+		if (!result.success) {
+			return {
+				errors: result.error.formErrors.fieldErrors
+			};
 		}
 
 		const db = getClient();
+
 		const existingUser = (
-			await db.select().from(userSchema).where(eq(userSchema.username, username)).execute()
-		)[0];
+			await db
+				.select()
+				.from(userSchema)
+				.where(eq(userSchema.username, username as string))
+				.execute()
+		)[0]; //TODO: it's necessary to improve this by rate limiting 
+
+		// Simulate a delay to prevent timing attacks
+		await new Promise((resolve) => setTimeout(resolve, 1000));
+
 		if (!existingUser) {
-			// NOTE:
-			// Returning immediately allows malicious actors to figure out valid usernames from response times,
-			// allowing them to only focus on guessing passwords in brute-force attacks.
-			// As a preventive measure, you may want to hash passwords even for invalid usernames.
-			// However, valid usernames can be already be revealed with the signup page among other methods.
-			// It will also be much more resource intensive.
-			// Since protecting against this is none-trivial,
-			// it is crucial your implementation is protected against brute-force attacks with login throttling etc.
-			// If usernames are public, you may outright tell the user that the username is invalid.
 			return fail(400, {
 				message: 'Incorrect username or password'
 			});
 		}
 
-		const validPassword = await new Argon2id().verify(existingUser.hashedPassword, password);
+		const validPassword = await new Argon2id().verify(
+			existingUser.hashedPassword,
+			password as string
+		);
 		if (!validPassword) {
 			return fail(400, {
 				message: 'Incorrect username or password'
