@@ -54,7 +54,8 @@ async function create(
 				description: rssFeedSchema.description,
 				link: rssFeedSchema.link,
 				createdAt: rssFeedSchema.createdAt,
-				updatedAt: rssFeedSchema.updatedAt
+				updatedAt: rssFeedSchema.updatedAt,
+				syncedAt: rssFeedSchema.syncedAt
 			})
 			.execute();
 
@@ -67,7 +68,7 @@ async function create(
 			})
 			.execute();
 
-		return result[0]; //TODO: why would we return it again?
+		return result[0];
 	} catch (error) {
 		console.error('Error occurred while creating new RSS feed:', error);
 		return undefined;
