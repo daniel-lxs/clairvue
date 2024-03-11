@@ -23,7 +23,6 @@
 			delete form.errors.password;
 			form = form;
 		}
-		console.log(form);
 	}
 </script>
 
@@ -77,7 +76,7 @@
 				</div>
 			</Card.Content>
 			<Card.Footer>
-				<a href="/signin" class="text-sm text-muted-foreground">Already have an account? Sign in</a>
+				<a href="/login" class="text-sm text-muted-foreground">Already have an account? Sign in</a>
 			</Card.Footer>
 		</Card.Root>
 	</div>
