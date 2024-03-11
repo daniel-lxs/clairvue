@@ -1,6 +1,7 @@
 import type { RequestHandler } from '@sveltejs/kit';
 import boardRepository from '@/server/data/repositories/board';
 import { createBoardDto } from '@/server/dto/boardDto';
+import { lucia } from '@/server/services/auth';
 
 export const GET: RequestHandler = async ({ url }) => {
 	const boardSlug = url.searchParams.get('slug');
@@ -25,13 +26,30 @@ export const POST: RequestHandler = async ({ request }) => {
 		return new Response('Missing body', { status: 400 });
 	}
 
-	const validationResult = createBoardDto.safeParse(requestBody);
+	const cookieHeader = request.headers.get('Cookie');
+	if (!cookieHeader) {
+		return new Response('Unauthorized', { status: 401 });
+	}
 
+	const sessionId = lucia.readSessionCookie(cookieHeader);
+	if (!sessionId) {
+		return new Response('Unauthorized', { status: 401 });
+	}
+
+	const { session, user } = await lucia.validateSession(sessionId);
+	if (!session || !user || session.expiresAt < new Date()) {
+		return new Response('Unauthorized', { status: 401 });
+	}
+
+	const validationResult = createBoardDto.safeParse(requestBody);
 	if (!validationResult.success) {
 		return new Response(JSON.stringify(validationResult.error), { status: 400 });
 	}
 
-	const createdBoard = await boardRepository.create(validationResult.data);
+	const createdBoard = await boardRepository.create({
+		name: requestBody.name,
+		userId: user.id
+	});
 
 	return new Response(JSON.stringify(createdBoard), { status: 200 });
 };

@@ -24,7 +24,7 @@
 			id: '',
 			slug: '',
 			name: '',
-			editCode: '',
+      userId: '', //TODO: Get user id
 			rssFeeds: [],
 			createdAt: new Date(),
 			updatedAt: new Date()
@@ -36,7 +36,7 @@
 		try {
 			if ($board.id !== '') {
 				await updateBoard($board.id, $board.name);
-			} else {
+			} else if ($board.rssFeeds) {
 				const newBoard = await createBoard($board.name);
 
 				if (!newBoard) {
@@ -69,6 +69,8 @@
 
 				board.set(newBoard);
 			}
+
+      //TODO: Handle empty board
 		} catch (error) {
 			//TODO: Handle error
 			console.error('An error occurred while saving the board:', error);
