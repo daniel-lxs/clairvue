@@ -29,6 +29,7 @@ export const actions: Actions = {
 		const result = validateForm.safeParse({ username, password });
 		if (!result.success) {
 			return {
+				message: 'Invalid username or password',
 				errors: result.error.formErrors.fieldErrors
 			};
 		}
@@ -41,7 +42,7 @@ export const actions: Actions = {
 				.from(userSchema)
 				.where(eq(userSchema.username, username as string))
 				.execute()
-		)[0]; //TODO: it's necessary to improve this by rate limiting 
+		)[0]; //TODO: it's necessary to improve this by rate limiting
 
 		// Simulate a delay to prevent timing attacks
 		await new Promise((resolve) => setTimeout(resolve, 1000));
