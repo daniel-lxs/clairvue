@@ -26,12 +26,14 @@
 	}
 
 	function editRssFeed(e: CustomEvent<RssFeed>) {
-		$board.rssFeeds = $board.rssFeeds.map((rssFeed) => {
-			if (rssFeed.id === e.detail.id) {
-				return e.detail;
-			}
-			return rssFeed;
-		});
+		if ($board && $board.rssFeeds) {
+			$board.rssFeeds = $board.rssFeeds.map((rssFeed) => {
+				if (rssFeed.id === e.detail.id) {
+					return e.detail;
+				}
+				return rssFeed;
+			});
+		}
 	}
 </script>
 
@@ -41,11 +43,11 @@
 			<Label for="feedUrls">RSS feeds</Label>
 			<p class="text-sm text-muted-foreground">Add, edit or remove RSS feeds</p>
 		</div>
-		{#if $board?.rssFeeds.length > 0}
+		{#if $board?.rssFeeds && $board?.rssFeeds.length > 0}
 			<CreateFeedDialog on:create={saveNewRssFeed} />
 		{/if}
 	</div>
-	{#if $board?.rssFeeds.length > 0}
+	{#if $board?.rssFeeds && $board?.rssFeeds.length > 0}
 		{#each rssFeeds as rssFeed, i (i)}
 			<div class="hover-trigger">
 				<Card.Root class="relative transition-colors hover:bg-muted">
