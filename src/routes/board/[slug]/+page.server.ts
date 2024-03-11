@@ -1,24 +1,25 @@
 import boardRepository from '@/server/data/repositories/board';
 import articlesRepository from '@/server/data/repositories/article';
 
-export async function load({ params }) {
-	const slug = params.slug;
+export async function load({ params: { slug }, url: { searchParams } }) {
+	const page = searchParams.get('p') ?? '1';
+	const parsedPage = parseInt(page) ?? 1;
+
 	const board = await boardRepository.findBySlug(slug, true);
 
 	if (!board) {
 		return {
 			board: undefined,
-			articles: undefined
+			articles: undefined,
+			page: undefined
 		};
 	}
-	//TODO: good idea here
-	//const articles = await boardRepository.getArticlesByBoardId(board.id);
 
-	//for now we only have one rss feed
-	const articles = await articlesRepository.findByBoardId(board.id);
+	const articles = await articlesRepository.findByBoardId(board.id, parsedPage);
 
 	return {
 		board,
-		articles
+		articles,
+		page: parsedPage
 	};
 }
