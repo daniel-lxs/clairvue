@@ -80,9 +80,9 @@ async function findByBoardId(
 			return undefined;
 		}
 
-		const rssFeedIds = board.rssFeeds.map((rssFeed) => rssFeed.id);
+		const rssFeedIds = board.rssFeeds?.map((rssFeed) => rssFeed.id);
 
-		if (rssFeedIds.length === 0) {
+		if (!rssFeedIds || rssFeedIds?.length === 0 || !board.rssFeeds || board.rssFeeds.length === 0) {
 			return undefined;
 		}
 
@@ -105,11 +105,12 @@ async function findByBoardId(
 
 		const result = await Promise.all([queryResult, articleCount]);
 
-		result[0].forEach((article) => {
-			(article as Article).rssFeed = board.rssFeeds.find(
-				(rssFeed) => rssFeed.id === article.rssFeedId
-			);
-		});
+		for (const article of result[0]) {
+			const rssFeed = board.rssFeeds.find((rssFeed) => rssFeed.id === article.rssFeedId);
+			if (rssFeed) {
+				(article as Article).rssFeed = rssFeed;
+			}
+		}
 
 		return {
 			items: result[0],
