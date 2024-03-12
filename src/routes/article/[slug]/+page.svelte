@@ -49,7 +49,7 @@
 		</div>
 		<Separator class="my-6" />
 		<div class="parsed-content">
-			<article>
+			<article class="text-lg">
 				{@html data.parsedArticle?.content}
 			</article>
 		</div>
@@ -70,7 +70,7 @@
 	}
 
 	.parsed-content :global(h5) {
-		@apply mb-4 text-lg font-bold;
+		@apply mb-4 font-bold;
 	}
 
 	.parsed-content :global(ul) {
@@ -86,11 +86,11 @@
 	}
 
 	.parsed-content :global(li) {
-		@apply mb-2 text-lg;
+		@apply mb-2;
 	}
 
 	.parsed-content :global(p) {
-		@apply mb-6 text-lg;
+		@apply mb-6;
 	}
 
 	@media screen and (max-width: 640px) {
@@ -104,10 +104,10 @@
 	}
 
 	.parsed-content :global(blockquote) {
-		@apply mb-4 rounded-l border-l-4 border-muted-foreground p-2;
+		@apply mb-4 rounded-md border-l-4 border-muted-foreground p-2;
 	}
 
-	.parsed-content :global(blockquote) :global(p:first-child) {
+	.parsed-content :global(blockquote) :global(p) {
 		@apply mb-0 p-2;
 	}
 
