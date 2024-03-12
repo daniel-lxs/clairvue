@@ -107,7 +107,7 @@ async function processArticles(
 
 				const newArticle: NewArticle = {
 					rssFeedId: rssFeed.id,
-					title: articleMetadata.title || title || 'Untitled',
+					title: title || articleMetadata.title || 'Untitled',
 					link,
 					description: articleMetadata.description || null,
 					siteName,
@@ -215,14 +215,14 @@ function extractArticleMetadata(
 		return {};
 	}
 
-	// Extract title
 	const title =
 		metadata.title ||
 		metadata['og:title'] ||
 		metadata['twitter:title'] ||
-		(metadata.jsonld &&
-			(isNewsArticle(metadata.jsonld)
-				? metadata.jsonld.headline
+		(Array.isArray(metadata.jsonld) &&
+			metadata.jsonld.length > 0 &&
+			(isNewsArticle(metadata.jsonld[0])
+				? metadata.jsonld[0].headline
 				: metadata.jsonld.find(isNewsArticle)?.headline));
 
 	// Extract description
@@ -243,12 +243,6 @@ function extractArticleMetadata(
 	// Validate image URL
 	let validImageUrl: string | undefined;
 
-	//Check if the string can be separated by comma
-	if (image && image.includes(',')) {
-		const imageArray = image.split(',');
-		validImageUrl = imageArray[0];
-	}
-
 	// Check if image is a relative path and add domain if needed
 	if (image && !image.startsWith('http')) {
 		if (domain) {
@@ -262,6 +256,12 @@ function extractArticleMetadata(
 	} else {
 		// If image is already an absolute URL, use it as is
 		validImageUrl = image;
+	}
+
+	//Check if the string can be separated by comma
+	if (validImageUrl && validImageUrl.includes(',')) {
+		const imageArray = image.split(',');
+		validImageUrl = imageArray[0];
 	}
 
 	return { title, description, image: validImageUrl };
