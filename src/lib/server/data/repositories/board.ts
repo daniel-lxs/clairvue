@@ -4,7 +4,7 @@ import { boardSchema, rssFeedSchema, boardsToRssFeeds, type Board } from '../sch
 import { eq } from 'drizzle-orm';
 
 async function create(newBoard: Pick<Board, 'name' | 'userId'>) {
-  //TODO: Limit the number of boards per user to 5
+	//TODO: Limit the number of boards per user to 5
 	try {
 		const db = getClient();
 		const { randomUUID } = new ShortUniqueId({ length: 8 });
@@ -73,21 +73,21 @@ async function findBySlug(slug: string, withRelated: boolean = false): Promise<B
 		const db = getClient();
 
 		if (withRelated) {
-			const { boards, rssFeeds } = (
-				await db
-					.select()
-					.from(boardsToRssFeeds)
-					.leftJoin(boardSchema, eq(boardsToRssFeeds.boardId, boardSchema.id))
-					.leftJoin(rssFeedSchema, eq(boardsToRssFeeds.rssFeedId, rssFeedSchema.id))
-					.where(eq(boardSchema.slug, slug))
-					.execute()
-			)[0];
+			const result = await db
+				.select()
+				.from(boardSchema)
+				.leftJoin(boardsToRssFeeds, eq(boardsToRssFeeds.boardId, boardSchema.id))
+				.leftJoin(rssFeedSchema, eq(boardsToRssFeeds.rssFeedId, rssFeedSchema.id))
+				.where(eq(boardSchema.slug, slug))
+				.execute();
 
-			if (!boards) return undefined;
+			if (!result || result.length === 0) return undefined;
+
+			const rssFeeds = result.map((r) => (r.rssFeeds ? [r.rssFeeds] : []));
 
 			return {
-				...boards,
-				rssFeeds: rssFeeds ? [rssFeeds] : []
+				...result[0].boards,
+				rssFeeds: rssFeeds.flat()
 			};
 		}
 
@@ -107,23 +107,23 @@ async function findBySlug(slug: string, withRelated: boolean = false): Promise<B
 }
 
 async function findBoardsByUserId(userId: string): Promise<Board[]> {
-  try {
-    const db = getClient();
-    const result = await db
-      .select()
-      .from(boardSchema)
-      .where(eq(boardSchema.userId, userId))
-      .execute();
-    return result;
-  } catch (error) {
-    console.error('Error occurred while finding Board by id:', error);
-    return [];
-  }
+	try {
+		const db = getClient();
+		const result = await db
+			.select()
+			.from(boardSchema)
+			.where(eq(boardSchema.userId, userId))
+			.execute();
+		return result;
+	} catch (error) {
+		console.error('Error occurred while finding Board by id:', error);
+		return [];
+	}
 }
 
 export default {
 	create,
 	findById,
 	findBySlug,
-  findBoardsByUserId
+	findBoardsByUserId
 };
