@@ -75,3 +75,27 @@ export function calculateAge(date: Date): string {
 		return `${days}d ago`;
 	}
 }
+
+export function truncateDescription(description: string, maxLength: number = 160) {
+	if (description.length <= maxLength) return description;
+
+	const words = description.split(' ');
+	let truncatedDescription = '';
+
+	for (let i = 0; i < words.length; i++) {
+		const word = words[i];
+		const newLength = truncatedDescription.length + word.length;
+
+		if (newLength <= maxLength) {
+			truncatedDescription += `${word} `;
+		} else {
+			let result = truncatedDescription.trim();
+			if (result.endsWith(',')) {
+				result = result.slice(0, -1);
+			}
+			return `${result}`;
+		}
+	}
+
+	return truncatedDescription.trim();
+}
