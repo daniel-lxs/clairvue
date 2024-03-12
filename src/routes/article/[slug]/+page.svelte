@@ -1,7 +1,7 @@
 <script lang="ts">
-	import PageContainer from '@/components/page-container.svelte';
 	import { Separator } from '@/components/ui/separator';
 	import type { PageData } from './$types';
+	import PageContainer from '@/components/page-container.svelte';
 
 	export let data: PageData;
 
@@ -29,7 +29,7 @@
 </script>
 
 <PageContainer>
-	<div class="space-y-8">
+	<div class="mx-auto max-w-screen-md space-y-8">
 		<div class="space-y-6">
 			<a
 				class="font-bold text-primary hover:text-foreground hover:underline"
@@ -86,7 +86,7 @@
 	}
 
 	.parsed-content :global(li) {
-		@apply mb-2;
+		@apply mb-2 text-lg;
 	}
 
 	.parsed-content :global(p) {
@@ -136,10 +136,14 @@
 	}
 
 	.parsed-content :global(img) {
-		@apply bg-muted;
+		@apply mb-4 bg-muted;
 	}
 
 	.parsed-content :global(pre) {
 		@apply mb-4 overflow-x-auto rounded-lg bg-muted px-4 py-2;
+	}
+
+	.parsed-content :global(center) {
+		@apply mb-6;
 	}
 </style>
