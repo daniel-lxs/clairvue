@@ -2,80 +2,106 @@
 	import * as Card from '@/components/ui/card';
 	import type { Article } from '@/server/data/schema';
 	import { calculateAge, truncateDescription } from '@/utils';
-	import { badgeVariants } from '@/components/ui/badge';
 	import ArticleCardImage from './article-card-image.svelte';
 
 	export let article: Article;
 
 	$: imageLoaded = false;
 	$: imageError = false;
+	$: imageObjectType = 'contain';
 	$: age = calculateAge(new Date(article.publishedAt));
 	$: domain = new URL(article.link).hostname.replace(/^www\./, '');
+
+	let imageWidth: number;
+	let imageHeight: number;
+	let aspectRatio: number;
+
+	let descriptionLength: number = 300;
+
+	const loadImage = () => {
+		if (!article.image || imageError) {
+			descriptionLength = 500;
+			return;
+		}
+		const img = new Image();
+		img.src = article.image as string;
+		img.onload = () => {
+			imageWidth = img.naturalWidth;
+			imageHeight = img.naturalHeight;
+			aspectRatio = imageWidth / imageHeight;
+
+			if (aspectRatio > 1.3) {
+				imageObjectType = 'cover';
+				descriptionLength = 200;
+			}
+
+			imageLoaded = true;
+		};
+	};
+
+	$: {
+		if (imageError) {
+			descriptionLength = 500;
+		}
+	}
+
+	loadImage();
 </script>
 
 <div>
-	{#if article.image && !imageError}
-		<Card.Root class="flex px-2 py-6 transition-colors hover:bg-muted">
-			<div class="flex w-full flex-row">
-				<div class="flex w-3/4 flex-col justify-between">
-					<div>
-						<Card.Header class="pb-2 pt-0">
-							<Card.Title tag="h1" class="text-lg font-bold transition-colors hover:text-primary">
-								<a href="/article/{article.id}">{article.title}</a>
-							</Card.Title>
-							<Card.Description class="text-sm">
-								<a href={article.link} class="hover:text-primary">({domain})</a>
-							</Card.Description>
+	<Card.Root class="flex p-2 transition-colors hover:bg-muted">
+		<div class="flex w-full flex-col">
+			<div class="flex w-full">
+				<div class="flex flex-col justify-between">
+					<div class="space-y-2">
+						<Card.Header class="space-y-2 p-2">
+							<div class="flex items-center">
+								<a
+									href="/dashboard"
+									class="mr-2 text-sm font-bold transition-colors hover:text-primary"
+									>{article.rssFeed?.name}</a
+								>
+							</div>
+							<div class="flex flex-col gap-1">
+								<Card.Title tag="h1" class="text-xl font-bold transition-colors hover:text-primary">
+									<a href="/article/{article.id}">{article.title}</a>
+								</Card.Title>
+								<Card.Description class="text-md">
+									<a href={article.link} class="hover:text-primary">({domain})</a>
+									<span class="text-md text-muted-foreground"> - {age} ago</span>
+								</Card.Description>
+							</div>
 						</Card.Header>
-						<Card.Content class="py-2">
+						<Card.Content class="p-2">
 							{#if article.description}
-								<p>
-									{truncateDescription(article.description, 160)}
+								<p class="text-md">
+									{truncateDescription(article.description, descriptionLength)}
 								</p>
 							{/if}
 						</Card.Content>
 					</div>
-					<Card.Footer class="flex items-center pb-0 pr-6 pt-2">
-						<span class="text-sm text-muted-foreground">{age} ago</span>
-						<a
-							href="/dashboard"
-							class="ml-4 {badgeVariants({ variant: 'default' })} transition-colors hover:bg-muted"
-							>{article.rssFeed?.name}</a
-						>
-					</Card.Footer>
 				</div>
-				<div class="w-1/4 pr-4">
-					<ArticleCardImage {article} bind:imageLoaded bind:imageError />
-				</div>
-			</div>
-		</Card.Root>
-	{:else}
-		<Card.Root class="flex px-2 py-4 transition-colors hover:bg-muted">
-			<div class="flex w-full flex-col">
-				<Card.Header class="pb-2 pt-2">
-					<Card.Title tag="h1" class="text-lg font-bold transition-colors hover:text-primary">
-						<a href="/article/{article.id}">{article.title}</a>
-					</Card.Title>
-					<Card.Description class="text-sm">
-						<a href={article.link} class="hover:text-primary">({domain})</a>
-					</Card.Description>
-				</Card.Header>
-				{#if article.description}
-					<Card.Content class="py-2">
-						<p>
-							{truncateDescription(article.description, 200)}
-						</p>
-					</Card.Content>
+				{#if article.image && !imageError && imageObjectType === 'contain'}
+					<div class="ml-4 w-1/3 p-2">
+						<ArticleCardImage
+							{article}
+							bind:imageLoaded
+							bind:imageError
+							objectType={imageObjectType}
+						/>
+					</div>
 				{/if}
-				<Card.Footer class="flex items-center pb-2 pr-6 pt-2">
-					<span class="text-sm text-muted-foreground">{age} ago</span>
-					<a
-						href="/dashboard"
-						class="ml-4 {badgeVariants({ variant: 'default' })} transition-colors hover:bg-muted"
-						>{article.rssFeed?.name}</a
-					>
-				</Card.Footer>
 			</div>
-		</Card.Root>
-	{/if}
+			{#if article.image && !imageError && imageObjectType === 'cover'}
+				<div class="w-full p-2">
+					<ArticleCardImage
+						{article}
+						bind:imageLoaded
+						bind:imageError
+						objectType={imageObjectType}
+					/>
+				</div>
+			{/if}
+		</div>
+	</Card.Root>
 </div>

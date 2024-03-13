@@ -6,41 +6,24 @@
 
 	export let imageLoaded = false;
 	export let imageError = false;
+	export let objectType = 'cover';
 </script>
 
-<div class="relative h-48 w-full overflow-hidden rounded-lg">
+<div class="relative w-full overflow-hidden rounded-lg">
 	{#if !imageLoaded}
-		<Skeleton class="h-full w-full object-cover" />
+		<Skeleton class="h-48 object-contain" />
 	{/if}
-	<a href="/article/{article.id}">
-		<img
-			src={article.image}
-			alt={article.title}
-			loading="lazy"
-			class="h-full w-full object-cover opacity-0 blur-md transition-opacity {imageLoaded
-				? 'opacity-100'
-				: ''}"
-			style="height: 100%; width: 100%;"
-			on:load={() => {
-				imageLoaded = true;
-			}}
-			on:error={() => {
-				imageError = true;
-			}}
-		/>
-	</a>
 
 	<a href="/article/{article.id}">
 		<img
 			src={article.image}
 			alt={article.title}
 			loading="lazy"
-			class="absolute inset-0 h-full w-full object-contain opacity-0 transition-opacity {imageLoaded
+			class="h-full w-full bg-muted {objectType === 'cover'
+				? 'object-cover'
+				: 'max-h-48 min-w-36 object-contain'} opacity-0 transition-opacity {imageLoaded
 				? 'opacity-100'
 				: ''}"
-			on:load={() => {
-				imageLoaded = true;
-			}}
 			on:error={() => {
 				imageError = true;
 			}}
