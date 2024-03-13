@@ -68,11 +68,11 @@ export function calculateAge(date: Date): string {
 	const days: number = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
 
 	if (minutes < 60) {
-		return `${minutes}m ago`;
+		return `${minutes}m`;
 	} else if (hours < 24) {
-		return `${hours}h ago`;
+		return `${hours}h`;
 	} else {
-		return `${days}d ago`;
+		return `${days}d`;
 	}
 }
 
