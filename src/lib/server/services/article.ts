@@ -104,10 +104,12 @@ async function createNewArticle(
 
 	if (!z.string().url().safeParse(link).success) return;
 
-	const existingArticle = await articleRepository.findByLink(link);
+	const existingArticle = await articleRepository.existsWithLink(link);
 
 	// TODO: Allow duplicate articles if the existing article is too old
 	if (existingArticle) return;
+
+	console.log(`[Sync] Processing article: ${link}`);
 
 	const articleMetadata = metadata || (await fetchArticleMetadata(link));
 
@@ -152,9 +154,6 @@ async function processArticles(
 			const newArticle = await createNewArticle(rssFeed, article);
 			if (newArticle) {
 				newArticles.push(newArticle);
-			} else {
-				console.log('First article already exists, skipping feed...', article.link);
-				break;
 			}
 		}
 	}

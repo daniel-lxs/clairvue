@@ -42,13 +42,18 @@ async function findById(id: string): Promise<Article | undefined> {
 	}
 }
 
-async function findByLink(link: string): Promise<Article | undefined> {
+async function existsWithLink(link: string): Promise<boolean | undefined> {
 	try {
 		const db = getClient();
-		const result = await db.query.articleSchema.findFirst({
-			where: eq(articleSchema.link, link)
-		});
-		return result;
+		const [{ exists }]: { exists: boolean }[] = await db.execute(sql`
+    SELECT EXISTS (
+      SELECT 1
+      FROM ${articleSchema}
+      WHERE ${articleSchema.link} = ${link}
+      LIMIT 1
+    )
+  `);
+		return exists;
 	} catch (error) {
 		console.error('Error occurred while finding Article by link:', error);
 		return undefined;
@@ -124,7 +129,7 @@ async function findByBoardId(
 export default {
 	create,
 	findById,
-	findByLink,
+	existsWithLink,
 	findByRssFeedId,
 	findByBoardId
 };
