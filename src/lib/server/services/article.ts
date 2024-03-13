@@ -1,4 +1,3 @@
-import type { NewArticle } from '@/types/NewArticle';
 import { isProbablyReaderable, Readability } from '@mozilla/readability';
 import axios from 'axios';
 import DOMPurify from 'isomorphic-dompurify';
@@ -12,6 +11,12 @@ import type { RssFeed } from '@/server/data/schema';
 import type { ParsedArticle } from '@/types/ParsedArticle';
 import { z } from 'zod';
 import type { ArticleMetadata } from '@/types/ArticleMetadata';
+import type { NewArticle } from '@/types/NewArticle';
+
+interface ProcessArticlesOptions {
+	chunkSize?: number;
+	parallelDelay?: number;
+}
 
 export async function fetchRssFeedArticles(link: string) {
 	try {
@@ -52,7 +57,7 @@ export async function syncArticles(rssFeed: RssFeed, parallel: boolean) {
 			return;
 		}
 
-		const createdArticles = await createArticles(newArticles);
+		const createdArticles = await saveArticles(newArticles);
 
 		if (!createdArticles) {
 			console.log('[Sync] No new articles created.');
@@ -68,82 +73,96 @@ export async function syncArticles(rssFeed: RssFeed, parallel: boolean) {
 	}
 }
 
-async function processArticles(
-	rssFeed: RssFeed,
-	articles: Parser.Item[],
-	parallel: boolean
-): Promise<NewArticle[]> {
+async function fetchArticleMetadata(link: string): Promise<ArticleMetadata | undefined> {
 	try {
-		const newArticles: NewArticle[] = [];
-		const chunkSize = 10;
-		const processArticle = async (article: Parser.Item) => {
-			try {
-				const { link, title, pubDate } = article;
-				if (!link || !z.string().url().safeParse(link).success) return;
-
-				const articleExists = await articleRepository.findByLink(link);
-				if (articleExists) return;
-
-				console.log(`[Sync] Processing article: ${link}`);
-
-				const metadata = await urlMetadata(link, {
-					timeout: 10000,
-					requestHeaders: {
-						'User-Agent':
-							'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'
-					}
-				}).catch((error) => {
-					if (error instanceof Error) {
-						console.log('Error occurred while fetching metadata:', error.message);
-					} else {
-						console.log('Error occurred while fetching metadata');
-					}
-					return undefined;
-				});
-
-				const siteName = new URL(link).hostname;
-
-				const articleMetadata = extractArticleMetadata(metadata, siteName);
-
-				const newArticle: NewArticle = {
-					rssFeedId: rssFeed.id,
-					title: title || articleMetadata.title || 'Untitled',
-					link,
-					description: articleMetadata.description || null,
-					siteName,
-					image: articleMetadata.image || null,
-					publishedAt: new Date(pubDate as string)
-				};
-
-				newArticles.push(newArticle);
-			} catch (error) {
-				console.error('Error occurred while processing article:', error);
+		const metadata = await urlMetadata(link, {
+			timeout: 10000,
+			requestHeaders: {
+				'User-Agent':
+					'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'
 			}
-		};
+		});
 
-		if (parallel) {
-			const chunks = Array.from({ length: Math.ceil(articles.length / chunkSize) }, (_, i) =>
-				articles.slice(i * chunkSize, i * chunkSize + chunkSize)
-			);
-
-			for (const chunk of chunks) {
-				await Promise.all(chunk.map(processArticle));
-				await new Promise((resolve) => setTimeout(resolve, 1000)); // 1 second delay
-			}
-		} else {
-			for (const article of articles) {
-				await processArticle(article);
-			}
-		}
-
-		return newArticles;
+		return extractArticleMetadata(metadata, new URL(link).hostname);
 	} catch (error) {
-		console.error('Error occurred during article processing:', error);
-		return [];
+		if (error instanceof Error) {
+			console.error('Error occurred while fetching metadata:', error.message);
+		} else {
+			console.error('Error occurred while fetching metadata');
+		}
 	}
 }
 
-async function createArticles(newArticles: NewArticle[]): Promise<string[] | undefined> {
+async function createNewArticle(
+	rssFeed: RssFeed,
+	article: Parser.Item,
+	metadata?: { title: string; description: string; image: string }
+): Promise<NewArticle | undefined> {
+	const { link, pubDate, title } = article;
+
+	if (!link) return;
+
+	if (!z.string().url().safeParse(link).success) return;
+
+	const existingArticle = await articleRepository.findByLink(link);
+
+	// TODO: Allow duplicate articles if the existing article is too old
+	if (existingArticle) return;
+
+	const articleMetadata = metadata || (await fetchArticleMetadata(link));
+
+	if (!articleMetadata) return;
+
+	const newArticle: NewArticle = {
+		rssFeedId: rssFeed.id,
+		title: title || articleMetadata.title || 'Untitled',
+		link,
+		description: articleMetadata.description || null,
+		siteName: new URL(link).hostname,
+		image: articleMetadata.image || null,
+		publishedAt: new Date(pubDate as string)
+	};
+
+	return newArticle;
+}
+
+async function processArticles(
+	rssFeed: RssFeed,
+	articles: Parser.Item[],
+	parallel: boolean,
+	options: ProcessArticlesOptions = {}
+): Promise<NewArticle[]> {
+	const { chunkSize = 10, parallelDelay = 1000 } = options;
+	const newArticles: NewArticle[] = [];
+
+	if (parallel) {
+		const chunks = Array.from({ length: Math.ceil(articles.length / chunkSize) }, (_, i) =>
+			articles.slice(i * chunkSize, i * chunkSize + chunkSize)
+		);
+
+		for (const chunk of chunks) {
+			const chunkResults = await Promise.all(
+				chunk.map((article) => createNewArticle(rssFeed, article))
+			);
+			newArticles.push(...chunkResults.filter((article): article is NewArticle => !!article));
+			await new Promise((resolve) => setTimeout(resolve, parallelDelay));
+		}
+	} else {
+		for (const article of articles) {
+			const newArticle = await createNewArticle(rssFeed, article);
+			if (newArticle) {
+				newArticles.push(newArticle);
+			} else {
+				console.log('First article already exists, skipping feed...', article.link);
+				break;
+			}
+		}
+	}
+
+	return newArticles;
+}
+
+async function saveArticles(newArticles: NewArticle[]): Promise<string[] | undefined> {
 	const createdIds = await articleRepository.create(newArticles);
 	return createdIds;
 }
@@ -167,16 +186,21 @@ export async function parseReadableArticle(
 
 		const html = he.decode(pageResponse.data);
 
-		const sanitizedHtml = html
-			.replace(/<style([\S\s]*?)>([\S\s]*?)<\/style>/gim, '')
-			.replace(/<script([\S\s]*?)>([\S\s]*?)<\/script>/gim, '');
-
-		const cleanHtml = DOMPurify.sanitize(sanitizedHtml);
+		const cleanHtml = DOMPurify.sanitize(html, {
+			FORBID_TAGS: ['script', 'style', 'title', 'noscript', 'iframe'],
+			ALLOWED_ATTR: ['href', 'alt', 'title', 'src', 'class', 'id', 'data-amp-attr', 'data-amp-key']
+		});
 
 		const dom = new JSDOM(cleanHtml, { url: link });
 
 		document = dom.window.document;
+	} catch (error) {
+		console.error(`Error occurred while fetching article: ${error}`);
+		return undefined;
+	}
 
+	//TODO: play with the options of Readability
+	if (isProbablyReaderable(document)) {
 		// Modify image paths to absolute URLs
 		const images = document.querySelectorAll('img');
 		images.forEach((imgElement) => {
@@ -187,13 +211,7 @@ export async function parseReadableArticle(
 				imgElement.setAttribute('src', absoluteUrl);
 			}
 		});
-	} catch (error) {
-		console.error(`Error occurred while fetching article: ${error}`);
-		return undefined;
-	}
 
-	//TODO: play with the options of Readability
-	if (isProbablyReaderable(document)) {
 		// Parse the modified HTML using Readability
 		const readableArticle = new Readability(document).parse();
 
