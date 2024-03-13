@@ -11,11 +11,15 @@
 	import ChevronRight from 'lucide-svelte/icons/chevron-right';
 	import { onMount } from 'svelte';
 	import type { PageData } from './$types';
+	import { writable } from 'svelte/store';
 
 	export let data: PageData;
 	let count = data.articles?.totalCount;
 	let isLoading = true;
 	let hasNewArticles = false;
+
+	const newestArticleId = writable<string>();
+
 	const perPage = 20;
 	const siblingCount = 1;
 
@@ -32,15 +36,16 @@
 		searchParams.set('p', page.toString());
 		const newUrl = `${window.location.pathname}?${searchParams.toString()}`;
 
+		const paginatedArticles = await getArticlesByBoardId(data.board.id, page);
+		if (!paginatedArticles) return;
+
 		// Dont show the search param if the page is 1
 		if (page !== 1) {
 			goto(newUrl, { replaceState: true });
 		} else {
 			goto(window.location.pathname, { replaceState: true });
+			newestArticleId.set(paginatedArticles.items[0].id);
 		}
-
-		const paginatedArticles = await getArticlesByBoardId(data.board.id, page);
-		if (!paginatedArticles) return;
 
 		articles = paginatedArticles.items;
 		currentPage = page;
@@ -57,7 +62,7 @@
 		if (!data.board) return;
 		const newArticles = await getArticlesByBoardId(data.board.id, 1);
 
-		if (newArticles?.items[0].id !== articles?.[0].id) {
+		if (newArticles?.items[0].id !== $newestArticleId) {
 			hasNewArticles = true;
 		}
 	}
@@ -65,11 +70,16 @@
 	onMount(() => {
 		isLoading = false;
 
+		if (currentPage === 1) {
+			newestArticleId.set(articles?.[0].id || '');
+		}
+
 		// Loop to check for new articles every minute
 		setInterval(() => {
 			checkNewArticles();
 		}, 60 * 1000);
 	});
+	//TODO: create skeleton card components
 </script>
 
 <PageContainer>
@@ -79,7 +89,7 @@
 			<div class="relative w-full" id="new-articles">
 				<div class="flex justify-center">
 					<Button
-						class="absolute inset-x-0 mx-auto rounded-full px-4 py-2 text-white shadow-xl"
+						class="text-md absolute inset-x-0 mx-auto rounded-full px-4 py-2 shadow-xl"
 						on:click={showNewArticles}
 					>
 						Show new articles
@@ -87,9 +97,10 @@
 				</div>
 			</div>
 		{/if}
+
 		{#if isLoading}
 			{#each { length: perPage } as _}
-				<Skeleton class="h-48 w-full" />
+				<Skeleton class="h-96 w-full" />
 			{/each}
 		{:else if articles && count && articles.length > 0}
 			{#each articles as article}
