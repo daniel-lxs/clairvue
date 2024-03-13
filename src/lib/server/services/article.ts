@@ -187,7 +187,7 @@ export async function parseReadableArticle(
 
 		const cleanHtml = DOMPurify.sanitize(html, {
 			FORBID_TAGS: ['script', 'style', 'title', 'noscript', 'iframe'],
-			ALLOWED_ATTR: ['href', 'alt', 'title', 'src', 'class', 'id', 'data-amp-attr', 'data-amp-key']
+			FORBID_ATTR: ['style', 'class']
 		});
 
 		const dom = new JSDOM(cleanHtml, { url: link });
