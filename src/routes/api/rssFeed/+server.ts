@@ -3,6 +3,7 @@ import rssFeedRepository from '@/server/data/repositories/rssFeed';
 import { createRssFeedDto, updateRssFeedDto, type CreateRssFeedDto } from '@/server/dto/rssFeedDto';
 import type { CreateRssFeedResult } from '@/types/CreateRssFeedResult';
 import { syncArticles } from '@/server/services/article';
+import type { RssFeed } from '@/server/data/schema';
 
 export const GET: RequestHandler = async ({ url }) => {
 	const rssFeedId = url.searchParams.get('id');
@@ -47,7 +48,7 @@ export const POST: RequestHandler = async ({ request }) => {
 				newRssFeeds.push({ result: 'error', data: null, reason: 'Unable to create' });
 				continue;
 			}
-			syncArticles(createdRssFeed, true);
+			syncArticles(createdRssFeed);
 			newRssFeeds.push({ result: 'success', data: createdRssFeed, reason: null });
 		} catch (error) {
 			newRssFeeds.push({ result: 'error', data: null, reason: 'Internal error' });
@@ -70,8 +71,16 @@ export const PATCH: RequestHandler = async ({ request }) => {
 		return new Response(JSON.stringify(validationResult.error), { status: 400 });
 	}
 
+	const { data } = validationResult;
+
+	const feedToUpdate: Pick<RssFeed, 'name' | 'link' | 'description'> = {
+		name: data.name,
+		link: data.link,
+		description: data.description
+	};
+
 	try {
-		await rssFeedRepository.update(validationResult.data);
+		await rssFeedRepository.update(validationResult.data.id, feedToUpdate);
 	} catch (error) {
 		return new Response(JSON.stringify('Something went wrong'), { status: 500 });
 	}

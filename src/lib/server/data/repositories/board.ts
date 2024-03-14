@@ -1,7 +1,7 @@
 import ShortUniqueId from 'short-unique-id';
 import { getClient } from '../db';
 import { boardSchema, rssFeedSchema, boardsToRssFeeds, type Board } from '../schema';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 
 async function create(newBoard: Pick<Board, 'name' | 'userId'>) {
 	//TODO: Limit the number of boards per user to 5
@@ -27,6 +27,57 @@ async function create(newBoard: Pick<Board, 'name' | 'userId'>) {
 	} catch (error) {
 		console.error('Error occurred while creating new Board:', error);
 		return undefined;
+	}
+}
+
+async function update(id: string, newBoard: Pick<Board, 'name'>) {
+	try {
+		const db = getClient();
+		await db
+			.update(boardSchema)
+			.set({
+				...newBoard
+			})
+			.where(eq(boardSchema.id, id))
+			.execute();
+	} catch (error) {
+		console.error('Error occurred while updating Board:', error);
+		throw error;
+	}
+}
+
+async function assignRssFeed(boardId: string, rssFeedId: string) {
+	try {
+		const db = getClient();
+
+		const rssFeedExists = await db.query.rssFeedSchema
+			.findFirst({ where: eq(rssFeedSchema.id, rssFeedId) })
+			.execute();
+
+		if (!rssFeedExists) {
+			throw new Error('RSS feed does not exist');
+		}
+
+		const isAlreadyRelated = await db.query.boardsToRssFeeds
+			.findFirst({
+				where: and(eq(boardsToRssFeeds.boardId, boardId), eq(boardsToRssFeeds.rssFeedId, rssFeedId))
+			})
+			.execute();
+
+		if (isAlreadyRelated) {
+			return;
+		}
+
+		await db
+			.insert(boardsToRssFeeds)
+			.values({
+				boardId,
+				rssFeedId
+			})
+			.execute();
+	} catch (error) {
+		console.error('Error occurred while assigning RSS feed to Board:', error);
+		throw error;
 	}
 }
 
@@ -123,7 +174,9 @@ async function findBoardsByUserId(userId: string): Promise<Board[]> {
 
 export default {
 	create,
+	update,
 	findById,
 	findBySlug,
-	findBoardsByUserId
+	findBoardsByUserId,
+	assignRssFeed
 };

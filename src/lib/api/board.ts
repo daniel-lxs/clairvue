@@ -1,4 +1,5 @@
 import type { Board } from '../server/data/schema';
+import type { CreateRssFeedDto } from '../server/dto/rssFeedDto';
 
 export async function createBoard(name: string): Promise<Board | undefined> {
 	try {
@@ -39,7 +40,11 @@ export async function getBoardBySlug(slug: string): Promise<Board | undefined> {
 	}
 }
 
-export async function updateBoard(id: string, name: string): Promise<Board | undefined> {
+export async function updateBoard(
+	id: string,
+	name: string,
+	rssFeeds?: CreateRssFeedDto[]
+): Promise<Board | undefined> {
 	try {
 		const response = await fetch('/api/board', {
 			method: 'PATCH',
@@ -48,7 +53,8 @@ export async function updateBoard(id: string, name: string): Promise<Board | und
 			},
 			body: JSON.stringify({
 				id: id,
-				name: name
+				name: name,
+				rssFeeds: rssFeeds || []
 			})
 		});
 		if (response.status === 400) {
