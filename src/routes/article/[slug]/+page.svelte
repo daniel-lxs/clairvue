@@ -29,7 +29,7 @@
 </script>
 
 <PageContainer>
-	<div class="mx-auto max-w-screen-md space-y-8">
+	<div class="mx-auto space-y-8 px-4">
 		<div class="space-y-6">
 			<a
 				class="font-bold text-primary hover:text-foreground hover:underline"
