@@ -2,38 +2,17 @@ import { and, eq } from 'drizzle-orm';
 import ShortUniqueId from 'short-unique-id';
 import { getClient } from '../db';
 import { boardsToRssFeeds, rssFeedSchema, type RssFeed } from '../schema';
-import feedRepository from './board';
 
 async function create(
 	newRssFeed: Pick<RssFeed, 'name' | 'description' | 'link'>,
 	boardId: string
 ): Promise<RssFeed | undefined> {
-	const db = getClient();
-
-	const feed = await feedRepository.findById(boardId, true);
-	if (!feed) {
-		return undefined;
-	}
-
-	const isAlreadyRelated =
-		feed.rssFeeds?.find((rssFeed) => rssFeed.link === newRssFeed.link) !== undefined;
-
-	if (isAlreadyRelated) {
-		throw new Error('RSS feed already exists in this board');
-	}
-
 	try {
-		//check if rss feed already exists and if so relate it
-		const existingRssFeed = await findByLink(newRssFeed.link);
-		if (existingRssFeed) {
-			await db
-				.insert(boardsToRssFeeds)
-				.values({
-					rssFeedId: existingRssFeed.id,
-					boardId
-				})
-				.execute();
+		const db = getClient();
 
+		const existingRssFeed = await findByLink(newRssFeed.link);
+
+		if (existingRssFeed) {
 			return existingRssFeed;
 		}
 
@@ -123,7 +102,7 @@ async function findAll(take = 20, skip = 0): Promise<RssFeed[]> {
 	}
 }
 
-async function update(updatedRssFeed: Pick<RssFeed, 'id' | 'name' | 'description' | 'link'>) {
+async function update(id: string, updatedRssFeed: Pick<RssFeed, 'name' | 'description' | 'link'>) {
 	try {
 		const db = getClient();
 		const currentDate = new Date();
@@ -133,7 +112,7 @@ async function update(updatedRssFeed: Pick<RssFeed, 'id' | 'name' | 'description
 				...updatedRssFeed,
 				updatedAt: currentDate
 			})
-			.where(eq(rssFeedSchema.id, updatedRssFeed.id)).execute;
+			.where(eq(rssFeedSchema.id, id)).execute;
 	} catch (error) {
 		console.error('Error occurred while updating RSS feed:', error);
 		throw error;
