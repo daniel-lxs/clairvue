@@ -19,7 +19,7 @@ const job = new CronJob('*/10 * * * *', async () => {
 			console.log(`[Scheduler] Syncing ${rssFeeds.length} RSS feeds...`);
 			await Promise.all(
 				rssFeeds.map(async (rssFeed) => {
-					await syncArticles(rssFeed, false);
+					await syncArticles(rssFeed);
 				})
 			);
 		}
