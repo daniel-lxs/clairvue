@@ -49,12 +49,12 @@
 </script>
 
 <div>
-	<Card.Root class="flex p-2 transition-colors hover:bg-muted">
+	<Card.Root class="flex  shadow-lg transition-colors hover:bg-muted ">
 		<div class="flex w-full flex-col">
-			<div class="flex w-full justify-between">
+			<div class="flex w-full justify-between p-4">
 				<div class="flex flex-col justify-between">
 					<div class="space-y-2">
-						<Card.Header class="space-y-2 p-2">
+						<Card.Header class="space-y-2 p-0">
 							<div class="flex items-center">
 								<a
 									href="/dashboard"
@@ -72,7 +72,7 @@
 								</Card.Description>
 							</div>
 						</Card.Header>
-						<Card.Content class="p-2">
+						<Card.Content class="p-0">
 							{#if article.description}
 								<p class="text-md">
 									{truncateDescription(article.description, descriptionLength)}
@@ -93,7 +93,7 @@
 				{/if}
 			</div>
 			{#if article.image && !imageError && imageObjectType === 'cover'}
-				<div class="w-full p-2">
+				<div class="w-full">
 					<ArticleCardImage
 						{article}
 						bind:imageLoaded

@@ -16,7 +16,7 @@
 	}, 10000);
 </script>
 
-<div class="relative w-full overflow-hidden rounded-lg">
+<div class="relative w-full overflow-hidden rounded-b-lg">
 	<a href="/article/{article.id}">
 		{#if !imageLoaded}
 			<Skeleton class="h-48 object-cover" />
