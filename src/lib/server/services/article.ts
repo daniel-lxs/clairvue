@@ -42,15 +42,15 @@ export async function fetchRssFeedArticles(link: string) {
 	}
 }
 
-export async function syncArticles(rssFeed: RssFeed, parallel: boolean) {
+export async function syncArticles(rssFeed: RssFeed) {
 	try {
 		const orderedArticles = await fetchRssFeedArticles(rssFeed.link);
 
 		if (!orderedArticles) return;
 
-		console.log(`[Sync] Syncing ${orderedArticles.length} articles...`);
+		console.log(`[Sync] Syncing ${orderedArticles.length} articles from ${rssFeed.name} ...`);
 
-		const newArticles = await processArticles(rssFeed, orderedArticles, parallel);
+		const newArticles = await processArticles(rssFeed, orderedArticles);
 
 		if (!newArticles || newArticles.length === 0) {
 			console.log('[Sync] No new articles found.');
@@ -113,15 +113,13 @@ async function createNewArticle(
 
 	const articleMetadata = metadata || (await fetchArticleMetadata(link));
 
-	if (!articleMetadata) return;
-
 	const newArticle: NewArticle = {
 		rssFeedId: rssFeed.id,
-		title: title || articleMetadata.title || 'Untitled',
+		title: title || articleMetadata?.title || 'Untitled',
 		link,
-		description: articleMetadata.description || null,
+		description: articleMetadata?.description || null,
 		siteName: new URL(link).hostname,
-		image: articleMetadata.image || null,
+		image: articleMetadata?.image || null,
 		publishedAt: new Date(pubDate as string)
 	};
 
@@ -131,13 +129,12 @@ async function createNewArticle(
 async function processArticles(
 	rssFeed: RssFeed,
 	articles: Parser.Item[],
-	parallel: boolean,
 	options: ProcessArticlesOptions = {}
 ): Promise<NewArticle[]> {
 	const { chunkSize = 10, parallelDelay = 1000 } = options;
 	const newArticles: NewArticle[] = [];
 
-	if (parallel) {
+	
 		const chunks = Array.from({ length: Math.ceil(articles.length / chunkSize) }, (_, i) =>
 			articles.slice(i * chunkSize, i * chunkSize + chunkSize)
 		);
@@ -149,14 +146,8 @@ async function processArticles(
 			newArticles.push(...chunkResults.filter((article): article is NewArticle => !!article));
 			await new Promise((resolve) => setTimeout(resolve, parallelDelay));
 		}
-	} else {
-		for (const article of articles) {
-			const newArticle = await createNewArticle(rssFeed, article);
-			if (newArticle) {
-				newArticles.push(newArticle);
-			}
-		}
-	}
+	
+	
 
 	return newArticles;
 }
