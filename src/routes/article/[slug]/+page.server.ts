@@ -18,8 +18,6 @@ export async function load({ request, params }) {
 		};
 	}
 
-	const domainMatch = article.link.match(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:/\n?]+)\//i);
-
 	const readableArticle = await parseReadableArticle(article.link, userAgent);
 
 	if (!readableArticle) {
@@ -29,10 +27,7 @@ export async function load({ request, params }) {
 	return {
 		status: 200,
 		parsedArticle: readableArticle,
-		article: {
-			...article,
-			domain: domainMatch?.[1]
-		},
+		article,
 		error: undefined
 	};
 }

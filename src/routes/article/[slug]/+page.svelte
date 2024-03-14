@@ -34,12 +34,14 @@
 			<a
 				class="font-bold text-primary hover:text-foreground hover:underline"
 				href={data.article?.link}
-				target="_blank">{data.article?.domain}</a
+				target="_blank">{data.article?.siteName}</a
 			>
 			<h1 class="text-3xl font-bold">{data.article?.title}</h1>
 
-			{#if data.parsedArticle?.byline}
-				<p class="text-md text-muted-foreground">{data.parsedArticle?.byline}</p>
+			{#if data.article?.author || data.parsedArticle?.byline}
+				<p class="text-md text-muted-foreground">
+					{data.article.author || data.parsedArticle.byline}
+				</p>
 			{/if}
 
 			{#if fomattedDate}
