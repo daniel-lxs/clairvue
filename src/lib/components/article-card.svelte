@@ -8,7 +8,7 @@
 
 	$: imageLoaded = false;
 	$: imageError = false;
-	$: imageObjectType = 'contain';
+	$: imageObjectType = 'cover';
 	$: age = calculateAge(new Date(article.publishedAt));
 	$: domain = new URL(article.link).hostname.replace(/^www\./, '');
 
@@ -30,8 +30,8 @@
 			imageHeight = img.naturalHeight;
 			aspectRatio = imageWidth / imageHeight;
 
-			if (aspectRatio > 1.3) {
-				imageObjectType = 'cover';
+			if (aspectRatio <= 1.3) {
+				imageObjectType = 'contain';
 				descriptionLength = 200;
 			}
 
@@ -51,7 +51,7 @@
 <div>
 	<Card.Root class="flex p-2 transition-colors hover:bg-muted">
 		<div class="flex w-full flex-col">
-			<div class="flex w-full">
+			<div class="flex w-full justify-between">
 				<div class="flex flex-col justify-between">
 					<div class="space-y-2">
 						<Card.Header class="space-y-2 p-2">
