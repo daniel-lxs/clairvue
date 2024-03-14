@@ -3,6 +3,7 @@
 	import type { Article } from '@/server/data/schema';
 	import { calculateAge, truncateDescription } from '@/utils';
 	import ArticleCardImage from './article-card-image.svelte';
+	import { Skeleton } from './ui/skeleton';
 
 	export let article: Article;
 
@@ -46,6 +47,12 @@
 	}
 
 	loadImage();
+
+	setTimeout(() => {
+		if (!imageLoaded) {
+			imageError = true;
+		}
+	}, 10000);
 </script>
 
 <div>
@@ -82,7 +89,23 @@
 					</div>
 				</div>
 				{#if article.image && !imageError && imageObjectType === 'contain'}
-					<div class="ml-4 w-1/3 p-2">
+					{#if imageLoaded}
+						<div class="ml-4 w-1/3 p-2">
+							<ArticleCardImage
+								{article}
+								bind:imageLoaded
+								bind:imageError
+								objectType={imageObjectType}
+							/>
+						</div>
+					{:else}
+						<Skeleton class="h-48 object-cover" />
+					{/if}
+				{/if}
+			</div>
+			{#if article.image && !imageError && imageObjectType === 'cover'}
+				{#if imageLoaded}
+					<div class="w-full">
 						<ArticleCardImage
 							{article}
 							bind:imageLoaded
@@ -90,17 +113,9 @@
 							objectType={imageObjectType}
 						/>
 					</div>
+				{:else}
+					<Skeleton class="h-48 object-cover" />
 				{/if}
-			</div>
-			{#if article.image && !imageError && imageObjectType === 'cover'}
-				<div class="w-full">
-					<ArticleCardImage
-						{article}
-						bind:imageLoaded
-						bind:imageError
-						objectType={imageObjectType}
-					/>
-				</div>
 			{/if}
 		</div>
 	</Card.Root>
