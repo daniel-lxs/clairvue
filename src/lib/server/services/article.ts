@@ -95,8 +95,7 @@ async function fetchArticleMetadata(link: string): Promise<ArticleMetadata | und
 
 async function createNewArticle(
 	rssFeed: RssFeed,
-	article: Parser.Item,
-	metadata?: { title: string; description: string; image: string }
+	article: Parser.Item
 ): Promise<NewArticle | undefined> {
 	const { link, pubDate, title } = article;
 
@@ -111,15 +110,16 @@ async function createNewArticle(
 
 	console.log(`[Sync] Processing article: ${link}`);
 
-	const articleMetadata = metadata || (await fetchArticleMetadata(link));
+	const articleMetadata = await fetchArticleMetadata(link);
 
 	const newArticle: NewArticle = {
 		rssFeedId: rssFeed.id,
 		title: title || articleMetadata?.title || 'Untitled',
 		link,
 		description: articleMetadata?.description || null,
-		siteName: new URL(link).hostname,
+		siteName: new URL(link).hostname.replace('www.', ''),
 		image: articleMetadata?.image || null,
+		author: articleMetadata?.author || null,
 		publishedAt: new Date(pubDate as string)
 	};
 
@@ -134,20 +134,17 @@ async function processArticles(
 	const { chunkSize = 10, parallelDelay = 1000 } = options;
 	const newArticles: NewArticle[] = [];
 
-	
-		const chunks = Array.from({ length: Math.ceil(articles.length / chunkSize) }, (_, i) =>
-			articles.slice(i * chunkSize, i * chunkSize + chunkSize)
-		);
+	const chunks = Array.from({ length: Math.ceil(articles.length / chunkSize) }, (_, i) =>
+		articles.slice(i * chunkSize, i * chunkSize + chunkSize)
+	);
 
-		for (const chunk of chunks) {
-			const chunkResults = await Promise.all(
-				chunk.map((article) => createNewArticle(rssFeed, article))
-			);
-			newArticles.push(...chunkResults.filter((article): article is NewArticle => !!article));
-			await new Promise((resolve) => setTimeout(resolve, parallelDelay));
-		}
-	
-	
+	for (const chunk of chunks) {
+		const chunkResults = await Promise.all(
+			chunk.map((article) => createNewArticle(rssFeed, article))
+		);
+		newArticles.push(...chunkResults.filter((article): article is NewArticle => !!article));
+		await new Promise((resolve) => setTimeout(resolve, parallelDelay));
+	}
 
 	return newArticles;
 }
@@ -233,9 +230,20 @@ function extractArticleMetadata(
 				? metadata.jsonld[0].headline
 				: metadata.jsonld.find(isNewsArticle)?.headline));
 
+	// Extract author
+
+	const author =
+		metadata.author ||
+		metadata['og:author'] ||
+		metadata['twitter:creator'] ||
+		(metadata.jsonld && typeof metadata.jsonld.author === 'string' && metadata.jsonld.author) ||
+		(metadata.jsonld && Array.isArray(metadata.jsonld) && metadata.jsonld[1]?.author?.[0]?.name) ||
+		(metadata.jsonld && metadata.jsonld.author?.name) ||
+		(metadata.jsonld && metadata.jsonld.publisher?.name);
+
 	// Extract description
 	const description =
-		metadata.description || metadata['og:description'] || metadata['twitter:description'];
+		metadata.description || metadata['og:description'] || metadata['twitter:description'] || null;
 
 	// Extract image
 	const image: string =
@@ -246,7 +254,7 @@ function extractArticleMetadata(
 		metadata['og:image:secure_url'] ||
 		metadata['twitter:image:src'] ||
 		(metadata.jsonld && metadata.jsonld[1]?.image?.[0]?.url) ||
-		'';
+		null;
 
 	// Validate image URL
 	let validImageUrl: string | undefined;
@@ -272,7 +280,7 @@ function extractArticleMetadata(
 		validImageUrl = imageArray[0];
 	}
 
-	return { title, description, image: validImageUrl };
+	return { title, description, image: validImageUrl, author };
 }
 
 // Helper function to check if the given data is a NewsArticle JSON-LD object

@@ -10,6 +10,7 @@ export const articleSchema = pgTable('articles', {
 	description: text('description'),
 	siteName: text('siteName'),
 	image: text('image'),
+  author: text('author'),
 	publishedAt: timestamp('publishedAt').notNull().defaultNow(),
 	createdAt: timestamp('createdAt').defaultNow(),
 	updatedAt: timestamp('updatedAt').defaultNow()
