@@ -24,7 +24,7 @@
 			id: '',
 			slug: '',
 			name: '',
-      userId: '', //TODO: Get user id
+			userId: '', //TODO: Get user id
 			rssFeeds: [],
 			createdAt: new Date(),
 			updatedAt: new Date()
@@ -35,7 +35,18 @@
 		isLoading = true;
 		try {
 			if ($board.id !== '') {
-				await updateBoard($board.id, $board.name);
+
+        const rssFeeds = $board.rssFeeds?.map((rssFeed) => {
+          return {
+            ...(rssFeed.id ? { id: rssFeed.id } : {}),
+            name: rssFeed.name,
+            description: rssFeed.description,
+            link: rssFeed.link,
+            boardId: $board.id
+          }
+        })
+
+				await updateBoard($board.id, $board.name, rssFeeds);
 			} else if ($board.rssFeeds) {
 				const newBoard = await createBoard($board.name);
 
@@ -70,7 +81,7 @@
 				board.set(newBoard);
 			}
 
-      //TODO: Handle empty board
+			//TODO: Handle empty board
 		} catch (error) {
 			//TODO: Handle error
 			console.error('An error occurred while saving the board:', error);
