@@ -28,8 +28,12 @@
 	//TODO: add a speed reading option in the future
 </script>
 
+<svelte:head>
+	<title>{data.article?.title}</title>
+</svelte:head>
+
 <PageContainer>
-	<div class="mx-auto space-y-8 px-4">
+	<div class="space-y-8">
 		<div class="space-y-6">
 			<a
 				class="font-bold text-primary hover:text-foreground hover:underline"
@@ -39,7 +43,7 @@
 			<h1 class="text-3xl font-bold">{data.article?.title}</h1>
 
 			{#if data.article?.author || data.parsedArticle?.byline}
-				<p class="text-md text-muted-foreground">
+				<p class="text-md text-muted-foreground" id="author">
 					{data.article.author || data.parsedArticle.byline}
 				</p>
 			{/if}
@@ -59,6 +63,10 @@
 </PageContainer>
 
 <style lang="postcss">
+	.parsed-content :global(div) {
+		@apply w-full;
+	}
+
 	.parsed-content :global(h2) {
 		@apply mb-4 text-2xl font-bold;
 	}
@@ -138,7 +146,7 @@
 	}
 
 	.parsed-content :global(img) {
-		@apply mb-4 bg-muted;
+		@apply mb-4 bg-muted object-contain;
 	}
 
 	.parsed-content :global(pre) {
@@ -147,5 +155,9 @@
 
 	.parsed-content :global(center) {
 		@apply mb-6;
+	}
+
+	.parsed-content :global(svg) {
+		@apply max-h-20 max-w-20;
 	}
 </style>
