@@ -4,20 +4,29 @@
 	import Button from '@/components/ui/button/button.svelte';
 	import { Input } from '@/components/ui/input';
 	import Label from '@/components/ui/label/label.svelte';
+	import AlertDialog from '@/components/shared/alert.dialog.svelte';
 	import type { Board, RssFeed } from '@/server/data/schema';
 	import { writable } from 'svelte/store';
 	import { createBoard, createRssFeeds } from '@/api';
 	import type { CreateRssFeedDto } from '@/server/dto/rssFeedDto';
 	import { Loader2 } from 'lucide-svelte';
+	import { type PageData } from './$types';
+
+	export let data: PageData;
 
 	let isLoading = false;
 	let board = writable<Board>();
+
+	//Alert dialog
+	let open = false;
+	let title = '';
+	let message = '';
 
 	board.set({
 		id: '',
 		slug: '',
 		name: '',
-		userId: '', //TODO: Get user id
+		userId: data.userId,
 		rssFeeds: [],
 		createdAt: new Date(),
 		updatedAt: new Date()
@@ -62,14 +71,21 @@
 
 			//TODO: Handle empty board
 		} catch (error) {
-			//TODO: Handle error
 			console.error('An error occurred while saving the board:', error);
-			// Perform error handling - e.g. display error message to user
+			showErrorDialog('Error', 'An error occurred while saving the board, please try again later');
 		} finally {
 			isLoading = false;
 		}
 	}
+
+	function showErrorDialog(title: string, message: string) {
+		title = title;
+		message = message;
+		open = true;
+	}
 </script>
+
+<AlertDialog {open} {title} {message} />
 
 <Page.Container>
 	<Page.Header title="New feed" />

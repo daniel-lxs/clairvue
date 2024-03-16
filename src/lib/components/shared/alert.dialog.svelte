@@ -5,7 +5,7 @@
 
 	export let open: boolean;
 	export let title: string;
-	export let description: string;
+	export let message: string;
 
 	function onClick() {
 		open = false;
@@ -19,7 +19,7 @@
 		</Dialog.Header>
 		<div class="grid gap-4 py-4">
 			<div class="grid grid-cols-4 items-center gap-4">
-				<Label class="text-right">{description}</Label>
+				<Label class="text-right">{message}</Label>
 			</div>
 		</div>
 		<Dialog.Footer>
