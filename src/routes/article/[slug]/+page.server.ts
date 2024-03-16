@@ -18,6 +18,10 @@ export async function load({ request, params }) {
 		};
 	}
 
+	if (!article.readable) {
+		redirect(302, article.link);
+	}
+
 	const readableArticle = await parseReadableArticle(article.link, userAgent);
 
 	if (!readableArticle) {
