@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { getArticlesByBoardId } from '@/api/article';
 	import ArticleCard from '@/components/article/article-card.svelte';
-	import PageContainer from '@/components/page/page-container.svelte';
 	import * as Page from '@/components/page';
 	import Button from '@/components/ui/button/button.svelte';
 	import { onMount } from 'svelte';
@@ -11,34 +10,40 @@
 	import ArticleCardSkeleton from '@/components/article/article-card-skeleton.svelte';
 
 	export let data: PageData;
+
 	let isLoading = true;
 	let hasNewArticles = false;
 	const newestArticleId = writable<string>();
 	const perPage = 10;
 	let isLoadingMore = false;
-	let currentPage = 2; //Since I load 20 articles at first, we are starting at page 2
+	let currentPage = 2; // Since we load 20 articles at first, we are starting at page 2
 	let articles: Article[] = [];
 
-	async function loadMoreArticles() {
-		if (isLoadingMore || !data.board) return;
+	const fetchArticles = async (page: number, limit: number) => {
+		const { items: fetchedArticles } = await getArticlesByBoardId(
+			data.board.id,
+			page * limit,
+			limit
+		);
+
+		return fetchedArticles || [];
+	};
+
+	// Separate function for loading more articles
+	const loadMoreArticles = async () => {
+		if (isLoadingMore) return;
 
 		isLoadingMore = true;
 
-		const paginatedArticles = await getArticlesByBoardId(
-			data.board.id,
-			currentPage * perPage,
-			perPage
-		);
-		if (!paginatedArticles) return;
-
-		console.log(currentPage, isLoadingMore);
-
-		articles = [...articles, ...paginatedArticles.items];
+		const newArticles = await fetchArticles(currentPage, perPage);
+		articles = [...articles, ...newArticles];
 		currentPage += 1;
-		isLoadingMore = false;
-	}
 
-	function handleScroll() {
+		isLoadingMore = false;
+	};
+
+	// Scroll event handler
+	const handleScroll = () => {
 		const scrollHeight = document.documentElement.scrollHeight;
 		const scrollTop = document.documentElement.scrollTop;
 		const clientHeight = document.documentElement.clientHeight;
@@ -46,45 +51,46 @@
 		if (scrollTop + clientHeight >= scrollHeight * 0.8 && !isLoadingMore) {
 			loadMoreArticles();
 		}
-	}
+	};
 
-	function showNewArticles() {
+	const showNewArticles = async () => {
 		isLoading = true;
-		const fetchNewArticles = async () => {
-			if (!data.board) return;
-			const newArticles = await getArticlesByBoardId(data.board.id, 0, 20);
-			if (newArticles) {
-				articles = newArticles.items;
-				newestArticleId.set(newArticles.items[0].id);
-			}
-			isLoading = false;
-			hasNewArticles = false;
-		};
-		fetchNewArticles();
-	}
 
-	async function checkNewArticles() {
-		if (!data.board) return;
-		const newArticles = await getArticlesByBoardId(data.board.id, 0, 5);
-		if (newArticles?.items[0].id !== $newestArticleId) {
+		const newArticles = await fetchArticles(0, 20);
+		if (newArticles.length) {
+			articles = newArticles;
+			newestArticleId.set(newArticles[0].id);
+		}
+
+		isLoading = false;
+		hasNewArticles = false;
+	};
+
+	const checkNewArticles = async () => {
+		const newArticles = await fetchArticles(0, 5);
+		const newestId = newArticles?.[0]?.id;
+		if (newestId && newestId !== $newestArticleId) {
 			hasNewArticles = true;
 		}
-	}
+	};
 
 	onMount(() => {
 		articles = data.articles?.items || [];
 		isLoading = false;
-		if (currentPage === 2) {
-			newestArticleId.set(articles?.[0].id || '');
+
+		if (currentPage === 2 && articles.length) {
+			newestArticleId.set(articles[0].id);
 		}
 
-		// Loop to check for new articles every minute
-		setInterval(() => {
-			checkNewArticles();
-		}, 60 * 1000);
+		// Check for new articles every minute
+		const intervalId = setInterval(checkNewArticles, 60 * 1000);
 
+		// Set up scroll event listener
 		window.addEventListener('scroll', handleScroll);
+
+		// Clean up event listeners on component unmount
 		return () => {
+			clearInterval(intervalId);
 			window.removeEventListener('scroll', handleScroll);
 		};
 	});
