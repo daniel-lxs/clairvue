@@ -1,53 +1,32 @@
 <script lang="ts">
-	import PageContainer from '@/components/page-container.svelte';
-	import PageHeader from '@/components/page-header.svelte';
-	import RssfeedsTable from '@/components/rssfeeds-table.svelte';
+	import * as Page from '@/components/page';
+	import RssfeedsTable from '@/components/feed/rssfeeds-table.svelte';
 	import Button from '@/components/ui/button/button.svelte';
 	import { Input } from '@/components/ui/input';
 	import Label from '@/components/ui/label/label.svelte';
 	import type { Board, RssFeed } from '@/server/data/schema';
 	import { writable } from 'svelte/store';
-	import type { PageData } from './$types';
-	import { createBoard, createRssFeeds, updateBoard } from '@/api';
+	import { createBoard, createRssFeeds } from '@/api';
 	import type { CreateRssFeedDto } from '@/server/dto/rssFeedDto';
 	import { Loader2 } from 'lucide-svelte';
-
-	export let data: PageData;
 
 	let isLoading = false;
 	let board = writable<Board>();
 
-	$: if (data.board) {
-		board.set(data.board);
-	} else {
-		board.set({
-			id: '',
-			slug: '',
-			name: '',
-			userId: '', //TODO: Get user id
-			rssFeeds: [],
-			createdAt: new Date(),
-			updatedAt: new Date()
-		});
-	}
+	board.set({
+		id: '',
+		slug: '',
+		name: '',
+		userId: '', //TODO: Get user id
+		rssFeeds: [],
+		createdAt: new Date(),
+		updatedAt: new Date()
+	});
 
 	async function saveBoard() {
 		isLoading = true;
 		try {
-			if ($board.id !== '') {
-
-        const rssFeeds = $board.rssFeeds?.map((rssFeed) => {
-          return {
-            ...(rssFeed.id ? { id: rssFeed.id } : {}),
-            name: rssFeed.name,
-            description: rssFeed.description,
-            link: rssFeed.link,
-            boardId: $board.id
-          }
-        })
-
-				await updateBoard($board.id, $board.name, rssFeeds);
-			} else if ($board.rssFeeds) {
+			if ($board.rssFeeds) {
 				const newBoard = await createBoard($board.name);
 
 				if (!newBoard) {
@@ -92,8 +71,8 @@
 	}
 </script>
 
-<PageContainer>
-	<PageHeader title="New feed" />
+<Page.Container>
+	<Page.Header title="New feed" />
 
 	<div class="space-y-8">
 		<div class="space-y-2">
@@ -112,4 +91,4 @@
 			{/if}
 		</Button>
 	</svelte:fragment>
-</PageContainer>
+</Page.Container>
