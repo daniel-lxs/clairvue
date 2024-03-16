@@ -3,10 +3,11 @@ import type { PaginatedList } from '@/types/PaginatedList';
 
 export async function getArticlesByBoardId(
 	boardId: string,
-	page: number = 1
+	skip = 0,
+	take = 5
 ): Promise<PaginatedList<Article> | undefined> {
 	try {
-		const response = await fetch(`/api/article?boardId=${boardId}&page=${page}`);
+		const response = await fetch(`/api/article?boardId=${boardId}&skip=${skip}&take=${take}`);
 		if (!response.ok) {
 			throw new Error(`Failed to get articles: ${response.statusText}`);
 		}

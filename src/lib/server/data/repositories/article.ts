@@ -1,9 +1,14 @@
 import ShortUniqueId from 'short-unique-id';
 import { getClient } from '../db';
-import { articleSchema, type Article } from '../schema';
-import { count, eq, or, sql } from 'drizzle-orm';
+import {
+	articleSchema,
+	type Article,
+	rssFeedSchema,
+	boardSchema,
+	boardsToRssFeeds
+} from '../schema';
+import { count, desc, eq, sql } from 'drizzle-orm';
 import type { NewArticle } from '@/types/NewArticle';
-import boardRepository from './board';
 import type { PaginatedList } from '@/types/PaginatedList';
 
 async function create(newArticles: NewArticle | NewArticle[]): Promise<string[] | undefined> {
@@ -77,49 +82,68 @@ async function findByRssFeedId(rssFeedId: string): Promise<Article[] | undefined
 
 async function findByBoardId(
 	boardId: string,
-	page: number = 1
+	skip = 0,
+	take = 5
 ): Promise<PaginatedList<Article> | undefined> {
 	try {
-		const board = await boardRepository.findById(boardId, true);
-		if (!board) {
-			return undefined;
-		}
-
-		const rssFeedIds = board.rssFeeds?.map((rssFeed) => rssFeed.id);
-
-		if (!rssFeedIds || rssFeedIds?.length === 0 || !board.rssFeeds || board.rssFeeds.length === 0) {
-			return undefined;
-		}
-
-		const andStatement = rssFeedIds.map((rssFeedId) => eq(articleSchema.rssFeedId, rssFeedId));
-
 		const db = getClient();
 
-		const articleCount = db
-			.select({ articlesCount: sql<number>`cast(${count(articleSchema.id)} as int)` })
-			.from(articleSchema)
-			.where(or(...andStatement))
+		// Check if the boardId exists
+		const boardExists = await db
+			.select()
+			.from(boardSchema)
+			.where(eq(boardSchema.id, boardId))
 			.execute();
 
-		const queryResult = db.query.articleSchema.findMany({
-			where: or(...andStatement),
-			orderBy: (articleSchema, { desc }) => desc(articleSchema.publishedAt),
-			limit: 20, //TODO: implement pagination
-			offset: (page - 1) * 20
-		});
-
-		const result = await Promise.all([queryResult, articleCount]);
-
-		for (const article of result[0]) {
-			const rssFeed = board.rssFeeds.find((rssFeed) => rssFeed.id === article.rssFeedId);
-			if (rssFeed) {
-				(article as Article).rssFeed = rssFeed;
-			}
+		if (!boardExists || boardExists.length === 0) {
+			return undefined;
 		}
 
+		// Join the articles with their corresponding rssFeeds
+		const queryResult = await db
+			.select({
+				id: articleSchema.id,
+				title: articleSchema.title,
+				description: articleSchema.description,
+				link: articleSchema.link,
+				image: articleSchema.image,
+				siteName: articleSchema.siteName,
+				author: articleSchema.author,
+				publishedAt: articleSchema.publishedAt,
+				readable: articleSchema.readable,
+				rssFeedId: articleSchema.rssFeedId,
+				rssFeed: {
+					id: rssFeedSchema.id,
+					name: rssFeedSchema.name,
+					description: rssFeedSchema.description,
+					link: rssFeedSchema.link,
+					createdAt: rssFeedSchema.createdAt,
+					updatedAt: rssFeedSchema.updatedAt,
+					syncedAt: rssFeedSchema.syncedAt
+				},
+				createdAt: articleSchema.createdAt,
+				updatedAt: articleSchema.updatedAt
+			})
+			.from(articleSchema)
+			.leftJoin(rssFeedSchema, eq(articleSchema.rssFeedId, rssFeedSchema.id))
+			.leftJoin(boardsToRssFeeds, eq(rssFeedSchema.id, boardsToRssFeeds.rssFeedId))
+			.where(eq(boardsToRssFeeds.boardId, boardId))
+			.orderBy(desc(articleSchema.publishedAt))
+			.limit(take)
+			.offset(skip)
+			.execute();
+
+		const articleCount = await db
+			.select({ articlesCount: sql<number>`cast(${count(articleSchema.id)} as int)` })
+			.from(articleSchema)
+			.leftJoin(rssFeedSchema, eq(articleSchema.rssFeedId, rssFeedSchema.id))
+			.leftJoin(boardsToRssFeeds, eq(rssFeedSchema.id, boardsToRssFeeds.rssFeedId))
+			.where(eq(boardsToRssFeeds.boardId, boardId))
+			.execute();
+
 		return {
-			items: result[0],
-			totalCount: result[1][0].articlesCount
+			items: queryResult,
+			totalCount: articleCount[0].articlesCount
 		};
 	} catch (error) {
 		console.log('Error occurred while finding Articles by boardId:', error);

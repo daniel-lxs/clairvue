@@ -1,76 +1,81 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
 	import { getArticlesByBoardId } from '@/api/article';
 	import ArticleCard from '@/components/article-card.svelte';
 	import PageContainer from '@/components/page-container.svelte';
 	import PageHeader from '@/components/page-header.svelte';
 	import Button from '@/components/ui/button/button.svelte';
-	import * as Pagination from '@/components/ui/pagination';
 	import { Skeleton } from '@/components/ui/skeleton';
-	import ChevronLeft from 'lucide-svelte/icons/chevron-left';
-	import ChevronRight from 'lucide-svelte/icons/chevron-right';
 	import { onMount } from 'svelte';
 	import type { PageData } from './$types';
 	import { writable } from 'svelte/store';
+	import type { Article } from '@/server/data/schema';
+	import ArticleCardSkeleton from '@/components/article-card-skeleton.svelte';
 
 	export let data: PageData;
-	let count = data.articles?.totalCount;
 	let isLoading = true;
 	let hasNewArticles = false;
-
 	const newestArticleId = writable<string>();
+	const perPage = 10;
+	let isLoadingMore = false;
+	let currentPage = 2; //Since I load 20 articles at first, we are starting at page 2
+	let articles: Article[] = [];
 
-	const perPage = 20;
-	const siblingCount = 1;
+	async function loadMoreArticles() {
+		if (isLoadingMore || !data.board) return;
 
-	$: currentPage = data.page;
-	$: articles = data.articles?.items;
+		isLoadingMore = true;
 
-	async function onPageChange(page = 1) {
-		if (!data.board) return;
-
-		isLoading = true;
-
-		// Set page on search params
-		const searchParams = new URLSearchParams();
-		searchParams.set('p', page.toString());
-		const newUrl = `${window.location.pathname}?${searchParams.toString()}`;
-
-		const paginatedArticles = await getArticlesByBoardId(data.board.id, page);
+		const paginatedArticles = await getArticlesByBoardId(
+			data.board.id,
+			currentPage * perPage,
+			perPage
+		);
 		if (!paginatedArticles) return;
 
-		// Dont show the search param if the page is 1
-		if (page !== 1) {
-			goto(newUrl, { replaceState: true });
-		} else {
-			goto(window.location.pathname, { replaceState: true });
-			newestArticleId.set(paginatedArticles.items[0].id);
-		}
+		console.log(currentPage, isLoadingMore);
 
-		articles = paginatedArticles.items;
-		currentPage = page;
-		isLoading = false;
+		articles = [...articles, ...paginatedArticles.items];
+		currentPage += 1;
+		isLoadingMore = false;
+	}
+
+	function handleScroll() {
+		const scrollHeight = document.documentElement.scrollHeight;
+		const scrollTop = document.documentElement.scrollTop;
+		const clientHeight = document.documentElement.clientHeight;
+
+		if (scrollTop + clientHeight >= scrollHeight * 0.8 && !isLoadingMore) {
+			loadMoreArticles();
+		}
 	}
 
 	function showNewArticles() {
-		onPageChange(1);
-		currentPage = 1;
-		hasNewArticles = false;
+		isLoading = true;
+		const fetchNewArticles = async () => {
+			if (!data.board) return;
+			const newArticles = await getArticlesByBoardId(data.board.id, 0, 20);
+			if (newArticles) {
+				articles = newArticles.items;
+				newestArticleId.set(newArticles.items[0].id);
+			}
+			isLoading = false;
+			hasNewArticles = false;
+		};
+		fetchNewArticles();
 	}
 
 	async function checkNewArticles() {
 		if (!data.board) return;
-		const newArticles = await getArticlesByBoardId(data.board.id, 1);
-
+		const newArticles = await getArticlesByBoardId(data.board.id, 0, 5);
 		if (newArticles?.items[0].id !== $newestArticleId) {
 			hasNewArticles = true;
 		}
 	}
 
 	onMount(() => {
+		articles = data.articles?.items || [];
 		isLoading = false;
-
-		if (currentPage === 1) {
+		if (currentPage === 2) {
 			newestArticleId.set(articles?.[0].id || '');
 		}
 
@@ -78,12 +83,20 @@
 		setInterval(() => {
 			checkNewArticles();
 		}, 60 * 1000);
+
+		window.addEventListener('scroll', handleScroll);
+		return () => {
+			window.removeEventListener('scroll', handleScroll);
+		};
 	});
-	//TODO: create skeleton card components
 </script>
 
+<svelte:head>
+	<title>Clairvue {data.board?.name ? `- ${data.board?.name}` : ''}</title>
+</svelte:head>
+
 <PageContainer>
-	<PageHeader title={data.board?.name || 'Test'} />
+	<PageHeader title={data.board?.name || 'Unnamed'} />
 	<div class="space-y-4">
 		{#if hasNewArticles}
 			<div class="relative w-full" id="new-articles">
@@ -100,57 +113,16 @@
 
 		{#if isLoading}
 			{#each { length: perPage } as _}
-				<Skeleton class="h-96 w-full" />
+				<ArticleCardSkeleton />
 			{/each}
-		{:else if articles && count && articles.length > 0}
+		{:else if articles && articles.length > 0}
 			{#each articles as article}
 				<ArticleCard {article} />
 			{/each}
 
-			<Pagination.Root
-				{count}
-				{perPage}
-				{siblingCount}
-				let:pages
-				page={currentPage}
-				let:currentPage
-			>
-				<Pagination.Content>
-					<Pagination.Item>
-						<Pagination.PrevButton
-							on:click={() => onPageChange(currentPage ? currentPage - 1 : undefined)}
-						>
-							<ChevronLeft class="h-4 w-4" />
-							<span class="hidden sm:block">Previous</span>
-						</Pagination.PrevButton>
-					</Pagination.Item>
-					{#each pages as page (page.key)}
-						{#if page.type === 'ellipsis'}
-							<Pagination.Item>
-								<Pagination.Ellipsis />
-							</Pagination.Item>
-						{:else}
-							<Pagination.Item>
-								<Pagination.Link
-									{page}
-									isActive={currentPage == page.value}
-									on:click={() => onPageChange(page.value)}
-								>
-									{page.value}
-								</Pagination.Link>
-							</Pagination.Item>
-						{/if}
-					{/each}
-					<Pagination.Item>
-						<Pagination.NextButton
-							on:click={() => onPageChange(currentPage ? currentPage + 1 : undefined)}
-						>
-							<span class="hidden sm:block">Next</span>
-							<ChevronRight class="h-4 w-4" />
-						</Pagination.NextButton>
-					</Pagination.Item>
-				</Pagination.Content>
-			</Pagination.Root>
+			{#if isLoadingMore}
+				<ArticleCardSkeleton />
+			{/if}
 		{:else}
 			<p>No articles found</p>
 		{/if}
