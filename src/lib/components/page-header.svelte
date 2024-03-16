@@ -6,7 +6,7 @@
 </script>
 
 <div class="space-y-2">
-	<h1 class="text-3xl font-bold">{title}</h1>
+	<h1 class="text-xl font-bold sm:text-3xl">{title}</h1>
 	{#if description}
 		<p class="text-md text-muted-foreground">{description}</p>
 	{/if}

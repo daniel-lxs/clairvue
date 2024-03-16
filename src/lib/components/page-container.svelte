@@ -1,5 +1,5 @@
 <div
-	class="container relative mx-auto flex min-h-[calc(100vh-4rem)] max-w-screen-lg flex-col pb-10 pt-16"
+	class="container relative mx-auto flex min-h-[calc(100vh-4rem)] flex-col px-2 pb-10 pt-8 sm:max-w-screen-lg sm:pt-16"
 >
 	<slot />
 
