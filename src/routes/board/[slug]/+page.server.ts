@@ -1,10 +1,7 @@
 import boardRepository from '@/server/data/repositories/board';
 import articlesRepository from '@/server/data/repositories/article';
 
-export async function load({ params: { slug }, url: { searchParams } }) {
-	const page = searchParams.get('p') ?? '1';
-	const parsedPage = parseInt(page) ?? 1;
-
+export async function load({ params: { slug } }) {
 	const board = await boardRepository.findBySlug(slug, true);
 
 	if (!board) {
@@ -15,11 +12,10 @@ export async function load({ params: { slug }, url: { searchParams } }) {
 		};
 	}
 
-	const articles = await articlesRepository.findByBoardId(board.id, parsedPage);
+	const articles = await articlesRepository.findByBoardId(board.id, 0, 20);
 
 	return {
 		board,
-		articles,
-		page: parsedPage
+		articles
 	};
 }
