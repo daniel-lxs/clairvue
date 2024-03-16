@@ -1,15 +1,25 @@
 import boardRepository from '@/server/data/repositories/board';
 import articlesRepository from '@/server/data/repositories/article';
+import { redirect } from '@sveltejs/kit';
+import { validateAuthSession } from '@/server/services/auth';
 
-export async function load({ params: { slug } }) {
-	const board = await boardRepository.findBySlug(slug, true);
+export async function load({ params: { slug }, cookies }) {
+	const cookieHeader = cookies.get('auth_session');
+
+	if (!cookieHeader) {
+		redirect(302, '/auth/login');
+	}
+
+	const authSession = await validateAuthSession(cookieHeader);
+
+	if (!authSession) {
+		redirect(302, '/auth/login');
+	}
+
+	const board = await boardRepository.findBySlug(authSession.user.id, slug, true);
 
 	if (!board) {
-		return {
-			board: undefined,
-			articles: undefined,
-			page: undefined
-		};
+		redirect(302, '/board/new');
 	}
 
 	const articles = await articlesRepository.findByBoardId(board.id, 0, 20);

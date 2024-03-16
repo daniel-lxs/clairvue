@@ -1,4 +1,3 @@
-import boardRepository from '@/server/data/repositories/board';
 import { validateAuthSession } from '@/server/services/auth';
 import type { PageServerLoad } from './$types';
 import { redirect } from '@sveltejs/kit';
@@ -17,6 +16,6 @@ export const load = (async ({ cookies }) => {
 	}
 
 	return {
-		boards: await boardRepository.findBoardsByUserId(authSession.user.id)
+		userId: authSession.user.id
 	};
 }) satisfies PageServerLoad;

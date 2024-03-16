@@ -119,7 +119,11 @@ async function findById(id: string, withRelated: boolean = false): Promise<Board
 	}
 }
 
-async function findBySlug(slug: string, withRelated: boolean = false): Promise<Board | undefined> {
+async function findBySlug(
+	userId: string,
+	slug: string,
+	withRelated: boolean = false
+): Promise<Board | undefined> {
 	try {
 		const db = getClient();
 
@@ -129,7 +133,7 @@ async function findBySlug(slug: string, withRelated: boolean = false): Promise<B
 				.from(boardSchema)
 				.leftJoin(boardsToRssFeeds, eq(boardsToRssFeeds.boardId, boardSchema.id))
 				.leftJoin(rssFeedSchema, eq(boardsToRssFeeds.rssFeedId, rssFeedSchema.id))
-				.where(eq(boardSchema.slug, slug))
+				.where(and(eq(boardSchema.userId, userId), eq(boardSchema.slug, slug)))
 				.execute();
 
 			if (!result || result.length === 0) return undefined;
@@ -144,7 +148,7 @@ async function findBySlug(slug: string, withRelated: boolean = false): Promise<B
 
 		const result = await db.query.boardSchema
 			.findFirst({
-				where: eq(boardSchema.slug, slug)
+				where: and(eq(boardSchema.userId, userId), eq(boardSchema.slug, slug))
 			})
 			.execute();
 
