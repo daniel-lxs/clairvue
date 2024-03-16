@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Separator } from '@/components/ui/separator';
 	import type { PageData } from './$types';
-	import PageContainer from '@/components/page-container.svelte';
+	import * as Page from '@/components/page';
 
 	export let data: PageData;
 
@@ -32,7 +32,7 @@
 	<title>{data.article?.title}</title>
 </svelte:head>
 
-<PageContainer>
+<Page.Container>
 	<div class="space-y-8">
 		<div class="space-y-6">
 			<a
@@ -60,7 +60,7 @@
 			</article>
 		</div>
 	</div>
-</PageContainer>
+</Page.Container>
 
 <style lang="postcss">
 	.parsed-content :global(div) {

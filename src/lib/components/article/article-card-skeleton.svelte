@@ -1,6 +1,6 @@
 <script>
-	import { Skeleton } from './ui/skeleton';
-	import * as Card from './ui/card';
+	import { Skeleton } from '../ui/skeleton';
+	import * as Card from '../ui/card';
 </script>
 
 <Card.Root class="flex shadow-lg">

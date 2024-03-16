@@ -3,7 +3,7 @@
 	import type { Article } from '@/server/data/schema';
 	import { calculateAge, truncateDescription } from '@/utils';
 	import ArticleCardImage from './article-card-image.svelte';
-	import { Skeleton } from './ui/skeleton';
+	import { Skeleton } from '../ui/skeleton';
 	import { BookOpen } from 'lucide-svelte';
 
 	export let article: Article;

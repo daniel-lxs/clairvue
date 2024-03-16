@@ -1,17 +1,17 @@
 <script lang="ts">
-	import { Button } from './ui/button';
-	import * as Dialog from './ui/dialog';
-	import { Label } from './ui/label';
+	import { Button } from '../ui/button';
+	import * as Dialog from '../ui/dialog';
+	import { Label } from '../ui/label';
 
-  export let open: boolean;
-  export let title: string;
-  export let description: string;
+	export let open: boolean;
+	export let title: string;
+	export let description: string;
 
-  function onClick() {
-    open = false;
-  }
-
+	function onClick() {
+		open = false;
+	}
 </script>
+
 <Dialog.Root bind:open>
 	<Dialog.Content class="sm:max-w-[425px]">
 		<Dialog.Header>

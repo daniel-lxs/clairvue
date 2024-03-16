@@ -6,9 +6,8 @@
 	import * as Card from '@/components/ui/card';
 	import { AlertOctagon } from 'lucide-svelte';
 
-	import type { PageData, ActionData } from './$types';
+	import type { ActionData } from './$types';
 
-	export let data: PageData;
 	export let form: ActionData;
 </script>
 

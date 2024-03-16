@@ -1,6 +1,6 @@
 <script>
 	import { BookOpenText } from 'lucide-svelte';
-	import LightSwitch from '@/components/light-switch.svelte';
+	import LightSwitch from '@/components/header/light-switch.svelte';
 </script>
 
 <header

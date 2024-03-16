@@ -2,7 +2,7 @@
 	import type { Board, RssFeed } from '@/server/data/schema';
 	import { Label } from '@/components/ui/label';
 	import * as Card from '@/components/ui/card';
-	import EditFeedDialog from '@/components/edit-feed-dialog.svelte';
+	import EditFeedDialog from '@/components/feed/edit-feed-dialog.svelte';
 	import { Button } from '@/components/ui/button';
 	import { type Writable } from 'svelte/store';
 	import CreateFeedDialog from './create-feed-dialog.svelte';

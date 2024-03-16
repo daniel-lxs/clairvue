@@ -1,15 +1,14 @@
 <script lang="ts">
 	import { getArticlesByBoardId } from '@/api/article';
-	import ArticleCard from '@/components/article-card.svelte';
-	import PageContainer from '@/components/page-container.svelte';
-	import PageHeader from '@/components/page-header.svelte';
+	import ArticleCard from '@/components/article/article-card.svelte';
+	import PageContainer from '@/components/page/page-container.svelte';
+	import * as Page from '@/components/page';
 	import Button from '@/components/ui/button/button.svelte';
-	import { Skeleton } from '@/components/ui/skeleton';
 	import { onMount } from 'svelte';
 	import type { PageData } from './$types';
 	import { writable } from 'svelte/store';
 	import type { Article } from '@/server/data/schema';
-	import ArticleCardSkeleton from '@/components/article-card-skeleton.svelte';
+	import ArticleCardSkeleton from '@/components/article/article-card-skeleton.svelte';
 
 	export let data: PageData;
 	let isLoading = true;
@@ -95,8 +94,8 @@
 	<title>Clairvue {data.board?.name ? `- ${data.board?.name}` : ''}</title>
 </svelte:head>
 
-<PageContainer>
-	<PageHeader title={data.board?.name || 'Unnamed'} />
+<Page.Container>
+	<Page.Header title={data.board?.name || 'Unnamed'} />
 	<div class="space-y-4">
 		{#if hasNewArticles}
 			<div class="relative w-full" id="new-articles">
@@ -127,4 +126,4 @@
 			<p>No articles found</p>
 		{/if}
 	</div>
-</PageContainer>
+</Page.Container>
