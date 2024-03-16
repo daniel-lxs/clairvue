@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { boolean, pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { rssFeedSchema, type RssFeed } from './rssFeed';
 import { relations, type InferSelectModel } from 'drizzle-orm';
 
@@ -10,7 +10,8 @@ export const articleSchema = pgTable('articles', {
 	description: text('description'),
 	siteName: text('siteName'),
 	image: text('image'),
-  author: text('author'),
+	author: text('author'),
+	readable: boolean('readable').notNull().default(false),
 	publishedAt: timestamp('publishedAt').notNull().defaultNow(),
 	createdAt: timestamp('createdAt').defaultNow(),
 	updatedAt: timestamp('updatedAt').defaultNow()
@@ -21,5 +22,5 @@ export const articleRelations = relations(articleSchema, ({ one }) => ({
 }));
 
 export type Article = InferSelectModel<typeof articleSchema> & {
-	rssFeed?: RssFeed;
+	rssFeed?: RssFeed | null;
 };

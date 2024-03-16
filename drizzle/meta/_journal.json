@@ -36,6 +36,13 @@
       "when": 1710390752950,
       "tag": "0004_huge_fenris",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1710515675535,
+      "tag": "0005_living_human_fly",
+      "breakpoints": true
     }
   ]
 }

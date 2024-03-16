@@ -1,0 +1,1 @@
+ALTER TABLE "articles" ADD COLUMN "readable" boolean DEFAULT false NOT NULL;
