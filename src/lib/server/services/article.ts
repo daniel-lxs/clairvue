@@ -1,7 +1,5 @@
 import { isProbablyReaderable, Readability } from '@mozilla/readability';
-import axios from 'axios';
 import DOMPurify from 'isomorphic-dompurify';
-import he from 'he';
 import { JSDOM } from 'jsdom';
 import urlMetadata from 'url-metadata';
 import Parser from 'rss-parser';
@@ -75,15 +73,20 @@ export async function syncArticles(rssFeed: RssFeed) {
 
 async function fetchArticleMetadata(link: string): Promise<ArticleMetadata | undefined> {
 	try {
+		const ua =
+			'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36';
+		const isReadable = isArticleReadable(link, ua);
 		const metadata = await urlMetadata(link, {
 			timeout: 10000,
 			requestHeaders: {
-				'User-Agent':
-					'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'
+				'User-Agent': ua
 			}
 		});
-
-		return extractArticleMetadata(metadata, new URL(link).hostname);
+		const articleMetadata = extractArticleMetadata(metadata, new URL(link).hostname);
+		return {
+			...articleMetadata,
+			readable: await isReadable
+		};
 	} catch (error) {
 		if (error instanceof Error) {
 			console.error('Error occurred while fetching metadata:', error.message);
@@ -118,6 +121,7 @@ async function createNewArticle(
 		link,
 		description: articleMetadata?.description || null,
 		siteName: new URL(link).hostname.replace('www.', ''),
+		readable: articleMetadata?.readable || false,
 		image: articleMetadata?.image || null,
 		author: articleMetadata?.author || null,
 		publishedAt: new Date(pubDate as string)
@@ -154,39 +158,50 @@ async function saveArticles(newArticles: NewArticle[]): Promise<string[] | undef
 	return createdIds;
 }
 
-export async function parseReadableArticle(
+async function fetchAndCleanDocument(
 	link: string,
 	ua?: string | null
-): Promise<ParsedArticle | undefined> {
+): Promise<Document | undefined> {
 	const userAgent =
 		ua ||
 		'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36';
 
-	let document: Document;
 	try {
-		const pageResponse = await axios.get<string>(link, {
+		const pageResponse = await fetch(link, {
 			headers: {
 				'User-Agent': userAgent
-			},
-			responseType: 'text'
-		}); // Fetching from the test URL
+			}
+		});
 
-		const html = he.decode(pageResponse.data);
+		if (!pageResponse.ok) {
+			console.error(`Error occurred while fetching article: ${pageResponse.statusText}`);
+			return undefined;
+		}
 
+		const html = await pageResponse.text();
 		const cleanHtml = DOMPurify.sanitize(html, {
 			FORBID_TAGS: ['script', 'style', 'title', 'noscript', 'iframe'],
 			FORBID_ATTR: ['style', 'class']
 		});
 
 		const dom = new JSDOM(cleanHtml, { url: link });
-
-		document = dom.window.document;
+		return dom.window.document;
 	} catch (error) {
 		console.error(`Error occurred while fetching article: ${error}`);
 		return undefined;
 	}
+}
 
-	//TODO: play with the options of Readability
+export async function parseReadableArticle(
+	link: string,
+	ua?: string | null
+): Promise<ParsedArticle | undefined> {
+	const document = await fetchAndCleanDocument(link, ua);
+
+	if (!document) {
+		return undefined;
+	}
+
 	if (isProbablyReaderable(document)) {
 		// Modify image paths to absolute URLs
 		const images = document.querySelectorAll('img');
@@ -201,7 +216,6 @@ export async function parseReadableArticle(
 
 		// Parse the modified HTML using Readability
 		const readableArticle = new Readability(document).parse();
-
 		if (!readableArticle) {
 			console.error('Error occurred while parsing article');
 			return undefined;
@@ -209,7 +223,18 @@ export async function parseReadableArticle(
 
 		return readableArticle;
 	}
+
 	return undefined;
+}
+
+export async function isArticleReadable(link: string, ua?: string | null): Promise<boolean> {
+	const document = await fetchAndCleanDocument(link, ua);
+
+	if (!document) {
+		return false;
+	}
+
+	return isProbablyReaderable(document);
 }
 
 function extractArticleMetadata(
@@ -220,41 +245,67 @@ function extractArticleMetadata(
 		return {};
 	}
 
-	const title =
-		metadata.title ||
-		metadata['og:title'] ||
-		metadata['twitter:title'] ||
-		(Array.isArray(metadata.jsonld) &&
-			metadata.jsonld.length > 0 &&
-			(isNewsArticle(metadata.jsonld[0])
-				? metadata.jsonld[0].headline
-				: metadata.jsonld.find(isNewsArticle)?.headline));
+	const title = ((metadata: urlMetadata.Result): string | undefined => {
+		const title =
+			metadata.title ||
+			metadata['og:title'] ||
+			metadata['twitter:title'] ||
+			(Array.isArray(metadata.jsonld) &&
+				metadata.jsonld.length > 0 &&
+				(isNewsArticle(metadata.jsonld[0])
+					? metadata.jsonld[0].headline
+					: metadata.jsonld.find(isNewsArticle)?.headline)) ||
+			(metadata.headings &&
+				metadata.headings.find((h: { level: string }) => h.level === 'h1')?.text) ||
+			undefined;
 
-	// Extract author
+		return typeof title === 'string' ? title : undefined;
+	})(metadata);
 
-	const author =
-		metadata.author ||
-		metadata['og:author'] ||
-		metadata['twitter:creator'] ||
-		(metadata.jsonld && typeof metadata.jsonld.author === 'string' && metadata.jsonld.author) ||
-		(metadata.jsonld && Array.isArray(metadata.jsonld) && metadata.jsonld[1]?.author?.[0]?.name) ||
-		(metadata.jsonld && metadata.jsonld.author?.name) ||
-		(metadata.jsonld && metadata.jsonld.publisher?.name);
+	const author = ((metadata: urlMetadata.Result): string | undefined => {
+		const author =
+			metadata.author ||
+			metadata['og:author'] ||
+			(metadata.jsonld &&
+				typeof metadata.jsonld === 'object' &&
+				'author' in metadata.jsonld &&
+				metadata.jsonld.author) ||
+			(metadata.jsonld &&
+				Array.isArray(metadata.jsonld) &&
+				metadata.jsonld[1]?.author?.[0]?.name) ||
+			(metadata.jsonld &&
+				typeof metadata.jsonld.author === 'object' &&
+				metadata.jsonld.author.name) ||
+			(metadata.jsonld &&
+				typeof metadata.jsonld.publisher === 'object' &&
+				metadata.jsonld.publisher.name) ||
+			metadata['twitter:creator'] ||
+			undefined;
+		return typeof author === 'string' ? author : undefined;
+	})(metadata);
 
-	// Extract description
-	const description =
-		metadata.description || metadata['og:description'] || metadata['twitter:description'] || null;
+	const description = ((metadata: urlMetadata.Result): string | undefined => {
+		const description =
+			metadata.description ||
+			metadata['og:description'] ||
+			metadata['twitter:description'] ||
+			undefined;
 
-	// Extract image
-	const image: string =
-		metadata.image ||
-		metadata['og:image'] ||
-		metadata['twitter:image'] ||
-		metadata['twitter:image:src'] ||
-		metadata['og:image:secure_url'] ||
-		metadata['twitter:image:src'] ||
-		(metadata.jsonld && metadata.jsonld[1]?.image?.[0]?.url) ||
-		null;
+		return typeof description === 'string' ? description : undefined;
+	})(metadata);
+
+	const image = ((metadata: urlMetadata.Result): string | undefined => {
+		const image =
+			metadata.image ||
+			metadata['og:image'] ||
+			metadata['twitter:image'] ||
+			metadata['twitter:image:src'] ||
+			metadata['og:image:secure_url'] ||
+			(metadata.jsonld && Array.isArray(metadata.jsonld) && metadata.jsonld[1]?.image?.[0]?.url) ||
+			undefined;
+
+		return typeof image === 'string' ? image : undefined;
+	})(metadata);
 
 	// Validate image URL
 	let validImageUrl: string | undefined;
@@ -276,7 +327,7 @@ function extractArticleMetadata(
 
 	//Check if the string can be separated by comma
 	if (validImageUrl && validImageUrl.includes(',')) {
-		const imageArray = image.split(',');
+		const imageArray = validImageUrl.split(',');
 		validImageUrl = imageArray[0];
 	}
 
