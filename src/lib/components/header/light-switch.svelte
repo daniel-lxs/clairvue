@@ -5,7 +5,12 @@
 	import { toggleMode } from 'mode-watcher';
 </script>
 
-<Button on:click={toggleMode} variant="outline" size="icon">
+<Button
+	class="h-8 w-8 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sm:h-10 sm:w-10"
+	on:click={toggleMode}
+	variant="outline"
+	size="icon"
+>
 	<Sun
 		class="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0"
 	/>

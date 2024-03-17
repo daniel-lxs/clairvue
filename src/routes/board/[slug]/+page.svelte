@@ -78,7 +78,7 @@
 		articles = data.articles?.items || [];
 		isLoading = false;
 
-		if (currentPage === 2 && articles.length) {
+		if (articles.length) {
 			newestArticleId.set(articles[0].id);
 		}
 
@@ -97,12 +97,17 @@
 </script>
 
 <svelte:head>
-	<title>Clairvue {data.board?.name ? `- ${data.board?.name}` : ''}</title>
+	<title>{data.board.name} - clairvue</title>
 </svelte:head>
 
 <Page.Container>
-	<Page.Header title={data.board?.name || 'Unnamed'} />
-	<div class="space-y-4">
+	<Page.Header
+		title={data.board?.name || 'Unnamed'}
+		subtitle={data.board.rssFeeds
+			? `Showing articles from ${data.board.rssFeeds.length} feeds`
+			: undefined}
+	/>
+	<div class="space-y-2 sm:space-y-4">
 		{#if hasNewArticles}
 			<div class="relative w-full" id="new-articles">
 				<div class="flex justify-center">

@@ -1,14 +1,11 @@
 <script lang="ts">
-	import { Separator } from '@/components/ui/separator';
-
 	export let title: string;
-	export let description: string | undefined = undefined;
+	export let subtitle: string | undefined = undefined;
 </script>
 
-<div class="space-y-2">
+<div class="pb-6 sm:space-y-2 sm:py-8">
 	<h1 class="text-xl font-bold sm:text-3xl">{title}</h1>
-	{#if description}
-		<p class="text-md text-muted-foreground">{description}</p>
+	{#if subtitle}
+		<p class="sm:text-md text-md text-muted-foreground">{subtitle}</p>
 	{/if}
 </div>
-<Separator class="my-6" />
