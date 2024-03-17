@@ -30,7 +30,7 @@
 			imageHeight = img.naturalHeight;
 			aspectRatio = imageWidth / imageHeight;
 
-			if (aspectRatio <= 1.3) {
+			if (aspectRatio <= 1.3 || imageHeight < 250 || imageWidth < 300) {
 				imageObjectType = 'contain';
 				descriptionLength = 200;
 			}
@@ -57,6 +57,20 @@
 <div>
 	<Card.Root class="flex shadow-lg">
 		<div class="flex w-full flex-col">
+			{#if article.image && !imageError && imageObjectType === 'cover'}
+				{#if imageLoaded}
+					<div class="w-full">
+						<ArticleCardImage
+							{article}
+							bind:imageLoaded
+							bind:imageError
+							objectType={imageObjectType}
+						/>
+					</div>
+				{:else}
+					<Skeleton class="h-48 object-cover" />
+				{/if}
+			{/if}
 			<div class="flex w-full justify-between p-4">
 				<div class="flex w-full flex-col justify-between">
 					<div class="space-y-2">
@@ -78,7 +92,7 @@
 										<a href={article.link} class="hover:text-primary">({article.siteName})</a>
 										<span class="text-md ml-1 text-muted-foreground">• {age} ago </span>
 										{#if article.readable}
-											<div class="ml-2">
+											<div class="ml-2" title="readable">
 												<BookOpen class="h-4 w-4" />
 											</div>
 										{/if}
@@ -86,6 +100,7 @@
 								</Card.Description>
 							</div>
 						</Card.Header>
+
 						<Card.Content class="p-0">
 							{#if article.description}
 								<p class="text-md">
@@ -110,20 +125,6 @@
 					{/if}
 				{/if}
 			</div>
-			{#if article.image && !imageError && imageObjectType === 'cover'}
-				{#if imageLoaded}
-					<div class="w-full">
-						<ArticleCardImage
-							{article}
-							bind:imageLoaded
-							bind:imageError
-							objectType={imageObjectType}
-						/>
-					</div>
-				{:else}
-					<Skeleton class="h-48 object-cover" />
-				{/if}
-			{/if}
 		</div>
 	</Card.Root>
 </div>

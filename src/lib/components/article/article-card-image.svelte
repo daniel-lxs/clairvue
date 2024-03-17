@@ -8,7 +8,9 @@
 	export let objectType = 'cover';
 </script>
 
-<div class="relative w-full overflow-hidden rounded-b-lg">
+<div
+	class="relative w-full overflow-hidden {objectType === 'contain' ? 'rounded-lg' : 'rounded-t-lg'}"
+>
 	<a href="/article/{article.id}">
 		<img
 			src={article.image}
