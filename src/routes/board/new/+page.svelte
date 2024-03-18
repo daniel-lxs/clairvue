@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { PageServerData } from './$types';
 	import * as Page from '@/components/page';
 	import RssfeedsTable from '@/components/feed/rssfeeds-table.svelte';
 	import Button from '@/components/ui/button/button.svelte';
@@ -10,9 +11,8 @@
 	import { createBoard, createRssFeeds } from '@/api';
 	import type { CreateRssFeedDto } from '@/server/dto/rssFeedDto';
 	import { Loader2 } from 'lucide-svelte';
-	import { type PageData } from './$types';
 
-	export let data: PageData;
+	export let data: PageServerData;
 
 	let isLoading = false;
 	let board = writable<Board>();

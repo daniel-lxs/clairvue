@@ -6,7 +6,7 @@
 	import Label from '@/components/ui/label/label.svelte';
 	import type { Board } from '@/server/data/schema';
 	import { writable } from 'svelte/store';
-	import type { PageData } from '../$types';
+	import type { PageData } from './$types';
 	import { updateBoard } from '@/api';
 	import { Loader2 } from 'lucide-svelte';
 	import { goto } from '$app/navigation';
