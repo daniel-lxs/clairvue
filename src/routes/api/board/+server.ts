@@ -2,18 +2,33 @@ import type { RequestHandler } from '@sveltejs/kit';
 import boardRepository from '@/server/data/repositories/board';
 import rssFeedRepository from '@/server/data/repositories/rssFeed';
 import { createBoardDto, updateBoardDto } from '@/server/dto/boardDto';
-import { lucia } from '@/server/services/auth';
+import { lucia, validateAuthSession } from '@/server/services/auth';
 import type { Board } from '@/server/data/schema';
 import type { UpdateRssFeedDto } from '@/server/dto/rssFeedDto';
 
-export const GET: RequestHandler = async ({ url }) => {
+export const GET: RequestHandler = async ({ url, cookies }) => {
 	const boardSlug = url.searchParams.get('slug');
 
 	if (!boardSlug || boardSlug.length !== 8) {
 		return new Response('Invalid board slug', { status: 400 });
 	}
 
-	const board = await boardRepository.findBySlug(boardSlug);
+	const cookieHeader = cookies.get('auth_session');
+	if (!cookieHeader) {
+		return new Response('Unauthorized', { status: 401 });
+	}
+
+	const authSession = await validateAuthSession(cookieHeader);
+	if (
+		!authSession ||
+		!authSession.session ||
+		!authSession.user ||
+		authSession.session.expiresAt < new Date()
+	) {
+		return new Response('Unauthorized', { status: 401 });
+	}
+
+	const board = await boardRepository.findBySlug(authSession.user.id, boardSlug);
 
 	if (!board) {
 		return new Response('Board not found', { status: 404 });
