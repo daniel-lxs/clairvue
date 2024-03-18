@@ -30,7 +30,7 @@
 			imageHeight = img.naturalHeight;
 			aspectRatio = imageWidth / imageHeight;
 
-			if (aspectRatio <= 1.3 || imageHeight < 250 || imageWidth < 300) {
+			if (aspectRatio <= 1.3 || imageWidth < 300) {
 				imageObjectType = 'contain';
 				descriptionLength = 200;
 			}
