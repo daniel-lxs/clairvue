@@ -17,6 +17,6 @@ export const load = (async ({ cookies }) => {
 	}
 
 	return {
-		boards: await boardRepository.findBoardsByUserId(authSession.user.id)
+		boards: await boardRepository.findBoardsByUserId(authSession.user.id, true)
 	};
 }) satisfies PageServerLoad;
