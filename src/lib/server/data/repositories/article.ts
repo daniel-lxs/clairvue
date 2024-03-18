@@ -29,6 +29,8 @@ async function create(newArticles: NewArticle | NewArticle[]): Promise<string[] 
 			})
 			.execute();
 
+		if (!result || result.length === 0) return undefined;
+
 		return result.map((r) => r.id);
 	} catch (error) {
 		console.error('Error occurred while creating new Article:', error);
