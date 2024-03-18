@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm';
+import { and, count, eq } from 'drizzle-orm';
 import ShortUniqueId from 'short-unique-id';
 import { getClient } from '../db';
 import { boardsToRssFeeds, rssFeedSchema, type RssFeed } from '../schema';
@@ -102,6 +102,21 @@ async function findAll(take = 20, skip = 0): Promise<RssFeed[]> {
 	}
 }
 
+async function getArticleCount(id: string): Promise<number | undefined> {
+	try {
+		const db = getClient();
+		const [result] = await db
+			.select({ count: count() })
+			.from(boardsToRssFeeds)
+			.where(eq(boardsToRssFeeds.rssFeedId, id))
+			.execute();
+		return result.count;
+	} catch (error) {
+		console.error('Error occurred while getting article count:', error);
+		return undefined;
+	}
+}
+
 async function update(id: string, updatedRssFeed: Pick<RssFeed, 'name' | 'description' | 'link'>) {
 	try {
 		const db = getClient();
@@ -153,6 +168,7 @@ export default {
 	findById,
 	findByLink,
 	findAll,
+	getArticleCount,
 	update,
 	updateLastSync,
 	remove
