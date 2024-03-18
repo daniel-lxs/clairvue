@@ -13,7 +13,6 @@
 
 	let isLoading = true;
 	let hasNewArticles = false;
-	const newestArticleId = writable<string>();
 	const perPage = 10;
 	let isLoadingMore = false;
 	let currentPage = 2; // Since we load 20 articles at first, we are starting at page 2
@@ -59,7 +58,6 @@
 		const newArticles = await fetchArticles(0, 20);
 		if (newArticles.length) {
 			articles = newArticles;
-			newestArticleId.set(newArticles[0].id);
 		}
 
 		isLoading = false;
@@ -68,8 +66,7 @@
 
 	const checkNewArticles = async () => {
 		const newArticles = await fetchArticles(0, 5);
-		const newestId = newArticles?.[0]?.id;
-		if (newestId && newestId !== $newestArticleId) {
+		if (articles.some((article, index) => article.id !== newArticles[index].id)) {
 			hasNewArticles = true;
 		}
 	};
@@ -77,10 +74,6 @@
 	onMount(() => {
 		articles = data.articles?.items || [];
 		isLoading = false;
-
-		if (articles.length) {
-			newestArticleId.set(articles[0].id);
-		}
 
 		// Check for new articles every minute
 		const intervalId = setInterval(checkNewArticles, 60 * 1000);
@@ -97,7 +90,7 @@
 </script>
 
 <svelte:head>
-	<title>{data.board.name} - clairvue</title>
+	<title>{data.board.name} - Clairvue</title>
 </svelte:head>
 
 <Page.Container>
@@ -112,7 +105,7 @@
 			<div class="relative w-full" id="new-articles">
 				<div class="flex justify-center">
 					<Button
-						class="text-md absolute inset-x-0 mx-auto rounded-full px-4 py-2 shadow-xl"
+						class="text-md absolute inset-x-0 z-10 mx-auto rounded-full px-4 py-2 shadow-xl"
 						on:click={showNewArticles}
 					>
 						Show new articles
