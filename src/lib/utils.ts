@@ -55,25 +55,28 @@ export const flyAndScale = (
 	};
 };
 
-export function calculateAge(date: Date): string {
-	// Get the current date and time
-	const currentDate: Date = new Date();
+export function calculateAge(date: Date, format: 'short' | 'long' = 'short'): string {
+	const currentDate = new Date();
+	const timeDifference = currentDate.getTime() - date.getTime();
+	const minutes = Math.floor(timeDifference / (1000 * 60));
+	const hours = Math.floor(minutes / 60);
+	const days = Math.floor(hours / 24);
+	const months = Math.floor(days / 30.4375);
+	const years = Math.floor(months / 12);
 
-	// Calculate the time difference between the current date and the article publication date
-	const timeDifference: number = currentDate.getTime() - date.getTime();
-
-	// Convert the time difference to minutes, hours, and days
-	const minutes: number = Math.floor(timeDifference / (1000 * 60));
-	const hours: number = Math.floor(timeDifference / (1000 * 60 * 60));
-	const days: number = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
-
-	if (minutes < 60) {
-		return `${minutes}m`;
-	} else if (hours < 24) {
-		return `${hours}h`;
-	} else {
-		return `${days}d`;
+	if (format === 'long') {
+		if (years > 0) return `${years} year${years !== 1 ? 's' : ''}`;
+		if (months > 0) return `${months} month${months !== 1 ? 's' : ''}`;
+		if (days > 0) return `${days} day${days !== 1 ? 's' : ''}`;
+		if (hours > 0) return `${hours} hour${hours !== 1 ? 's' : ''}`;
+		return `${minutes} minute${minutes !== 1 ? 's' : ''}`;
 	}
+
+	if (years > 0) return `${years}y`;
+	if (months > 0) return `${months}M`;
+	if (days > 0) return `${days}d`;
+	if (hours > 0) return `${hours}h`;
+	return `${minutes}m`;
 }
 
 export function truncateDescription(description: string, maxLength: number = 160) {
