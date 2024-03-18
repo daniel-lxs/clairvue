@@ -161,17 +161,56 @@ async function findBySlug(
 	}
 }
 
-async function findBoardsByUserId(userId: string): Promise<Board[]> {
+async function findBoardsByUserId(
+	userId: string,
+	withRelated: boolean = false
+): Promise<Board[] | undefined> {
 	try {
 		const db = getClient();
+
+		if (withRelated) {
+			const result = await db.query.boardSchema.findMany({
+				where: eq(boardSchema.userId, userId),
+				with: {
+					boardsToRssfeeds: {
+						columns: {},
+						with: {
+							rssFeed: true
+						}
+					}
+				}
+			});
+
+			if (!result || result.length === 0) return undefined;
+
+			const processedBoards = await Promise.all(
+				result.map(async (board) => {
+					const rssFeeds = await Promise.all(
+						board.boardsToRssfeeds?.map(async (b) => b.rssFeed) || []
+					);
+					return {
+						id: board.id,
+						slug: board.slug,
+						name: board.name,
+						createdAt: board.createdAt,
+						updatedAt: board.updatedAt,
+						userId: board.userId,
+						rssFeeds
+					};
+				})
+			);
+
+			return processedBoards;
+		}
 		const result = await db
 			.select()
 			.from(boardSchema)
 			.where(eq(boardSchema.userId, userId))
 			.execute();
-		return result;
+
+		if (!result || result.length === 0) return undefined;
 	} catch (error) {
-		console.error('Error occurred while finding Board by id:', error);
+		console.error('Error occurred while finding Board by user id:', error);
 		return [];
 	}
 }
