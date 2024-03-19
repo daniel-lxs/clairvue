@@ -16,7 +16,7 @@
 				<Label for="feedUrls" class="font-semibold">Boards</Label>
 				<p class="text-sm text-muted-foreground">Add, edit or remove boards</p>
 			</div>
-			<Button href="/board/new" variant="outline">Add new board</Button>
+			<Button href="/settings/boards/add" variant="outline">Add new board</Button>
 		</div>
 
 		<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
