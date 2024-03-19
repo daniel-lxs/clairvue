@@ -43,7 +43,7 @@
 </script>
 
 <Dialog.Root bind:open>
-	<Dialog.Trigger class={buttonVariants({ variant: 'secondary' })}>Add RSS feed</Dialog.Trigger>
+	<Dialog.Trigger class={buttonVariants({ variant: 'outline' })}>Add RSS feed</Dialog.Trigger>
 
 	<Dialog.Content class="sm:max-w-[425px]">
 		<Dialog.Header>

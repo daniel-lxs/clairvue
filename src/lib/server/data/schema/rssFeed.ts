@@ -20,4 +20,5 @@ export const rssFeedRelations = relations(rssFeedSchema, ({ many }) => ({
 
 export type RssFeed = InferSelectModel<typeof rssFeedSchema> & {
 	articles?: Article[];
+	articleCount?: number;
 };
