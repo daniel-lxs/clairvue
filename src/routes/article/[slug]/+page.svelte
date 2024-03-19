@@ -33,7 +33,8 @@
 </svelte:head>
 
 <Page.Container>
-	<div class="space-y-8 pt-10">
+	<div class="space-y-8 sm:pt-10">
+		//TODO: fix
 		<div class="space-y-6">
 			<a
 				class="font-bold text-primary hover:text-foreground hover:underline"
@@ -143,6 +144,10 @@
 
 	.parsed-content :global(figure) {
 		@apply mb-6;
+	}
+
+	.parsed-content :global(figcaption) {
+		@apply text-lg;
 	}
 
 	.parsed-content :global(img) {
