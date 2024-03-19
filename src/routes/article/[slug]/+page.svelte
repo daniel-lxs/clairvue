@@ -34,7 +34,6 @@
 
 <Page.Container>
 	<div class="space-y-8 sm:pt-10">
-		//TODO: fix
 		<div class="space-y-6">
 			<a
 				class="font-bold text-primary hover:text-foreground hover:underline"

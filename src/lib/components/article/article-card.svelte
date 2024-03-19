@@ -93,7 +93,7 @@
 									<Card.Description class="sm:text-md text-sm">
 										<div class="flex items-center">
 											<a href={article.link} class="hover:text-primary">({article.siteName})</a>
-											<span class="text-md ml-1 text-muted-foreground">• {age} ago </span>
+											<span class="text-md ml-1 text-muted-foreground">• {age} </span>
 											{#if article.readable}
 												<div class="ml-2" title="readable">
 													<BookOpen class="h-4 w-4" />

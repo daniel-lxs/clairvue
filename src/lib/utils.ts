@@ -56,8 +56,8 @@ export const flyAndScale = (
 };
 
 export function calculateAge(date: Date, format: 'short' | 'long' = 'short'): string {
-	const currentDate = new Date();
-	const timeDifference = currentDate.getTime() - date.getTime();
+	const now = new Date();
+	const timeDifference = now.getTime() - date.getTime();
 	const minutes = Math.floor(timeDifference / (1000 * 60));
 	const hours = Math.floor(minutes / 60);
 	const days = Math.floor(hours / 24);
@@ -65,18 +65,19 @@ export function calculateAge(date: Date, format: 'short' | 'long' = 'short'): st
 	const years = Math.floor(months / 12);
 
 	if (format === 'long') {
-		if (years > 0) return `${years} year${years !== 1 ? 's' : ''}`;
-		if (months > 0) return `${months} month${months !== 1 ? 's' : ''}`;
-		if (days > 0) return `${days} day${days !== 1 ? 's' : ''}`;
-		if (hours > 0) return `${hours} hour${hours !== 1 ? 's' : ''}`;
-		return `${minutes} minute${minutes !== 1 ? 's' : ''}`;
+		if (years > 0) return `${years} year${years !== 1 ? 's' : ''} ago`;
+		if (months > 0) return `${months} month${months !== 1 ? 's' : ''} ago`;
+		if (days > 0) return `${days} day${days !== 1 ? 's' : ''} ago`;
+		if (hours > 0) return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+		return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
 	}
 
-	if (years > 0) return `${years}y`;
-	if (months > 0) return `${months}M`;
-	if (days > 0) return `${days}d`;
-	if (hours > 0) return `${hours}h`;
-	return `${minutes}m`;
+	if (years > 0) return `${years}y ago`;
+	if (months > 0) return `${months}M ago`;
+	if (days > 0) return `${days}d ago`;
+	if (hours > 0) return `${hours}h ago`;
+	if (minutes === 0) return 'now';
+	return `${minutes}m ago`;
 }
 
 export function truncateDescription(description: string, maxLength: number = 160) {

@@ -28,7 +28,7 @@
 		<div class="item-body mr-4 flex flex-col">
 			<div class="text-sm font-semibold">{rssFeed.name}</div>
 			<div class="item-description text-sm text-muted-foreground">
-				Created {calculateAge(rssFeed.createdAt, 'long')} ago • {rssFeed.articleCount} articles
+				Created {calculateAge(rssFeed.createdAt, 'long')} • {rssFeed.articleCount || 0} articles
 			</div>
 		</div>
 		<div class="item-actions">

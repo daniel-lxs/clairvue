@@ -100,7 +100,7 @@
 			? `Showing articles from ${data.board.rssFeeds.length} feeds`
 			: undefined}
 	/>
-	<div class="space-y-2 sm:space-y-4">
+	<div class="space-y-2 px-2 sm:space-y-6 sm:px-0">
 		{#if hasNewArticles}
 			<div class="relative w-full" id="new-articles">
 				<div class="flex justify-center">

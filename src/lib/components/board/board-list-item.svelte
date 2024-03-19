@@ -21,12 +21,12 @@
 		<div class="item-body flex flex-col">
 			<div class="item-title text-base-content font-semibold">{board.name}</div>
 			<div class="item-description text-sm text-muted-foreground">
-				Created {calculateAge(board.createdAt, 'long')} ago • {rssFeedsCount} RSS feeds
+				Created {calculateAge(board.createdAt, 'long')} • {rssFeedsCount} RSS feeds
 			</div>
 		</div>
 		<div class="item-actions">
 			{#if isHovered}
-				<Button href="/board/edit/{board.slug}" size="sm" variant="outline">Edit</Button>
+				<Button href="/settings/boards/edit/{board.slug}" size="sm" variant="outline">Edit</Button>
 			{/if}
 		</div>
 	</div>
