@@ -33,7 +33,7 @@
 </svelte:head>
 
 <Page.Container>
-	<div class="space-y-8 px-2 sm:px-0 sm:pt-10">
+	<div class="space-y-8 sm:px-0 sm:pt-10">
 		<div class="space-y-6">
 			<a
 				class="font-bold text-primary hover:text-foreground hover:underline"
