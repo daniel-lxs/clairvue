@@ -33,7 +33,7 @@
 </svelte:head>
 
 <Page.Container>
-	<div class="space-y-8 sm:pt-10">
+	<div class="space-y-8 px-2 sm:px-0 sm:pt-10">
 		<div class="space-y-6">
 			<a
 				class="font-bold text-primary hover:text-foreground hover:underline"
@@ -63,28 +63,35 @@
 </Page.Container>
 
 <style lang="postcss">
+	/* Global Styles */
 	.parsed-content :global(div) {
-		@apply w-full;
+		@apply w-full text-base md:text-lg;
 	}
 
-	.parsed-content :global(h2) {
-		@apply mb-4 text-2xl font-bold;
-	}
-
+	.parsed-content :global(h2),
 	.parsed-content :global(h3) {
-		@apply mb-4 text-2xl font-bold;
+		@apply mb-4 text-xl md:text-2xl;
 	}
 
 	.parsed-content :global(h4) {
-		@apply mb-4 text-xl font-bold;
+		@apply mb-4 text-lg md:text-xl;
 	}
 
 	.parsed-content :global(h5) {
-		@apply mb-4 font-bold;
+		@apply mb-4;
 	}
 
+	.parsed-content :global(a) {
+		@apply text-base text-primary hover:text-foreground hover:underline md:text-lg;
+	}
+
+	.parsed-content :global(p) {
+		@apply mb-6 text-base md:text-lg;
+	}
+
+	/* List Styles */
 	.parsed-content :global(ul) {
-		@apply mb-4 list-disc pl-4;
+		@apply mb-4 list-disc pl-4 text-base md:text-lg;
 	}
 
 	.parsed-content :global(ul) :global(ul) {
@@ -92,39 +99,28 @@
 	}
 
 	.parsed-content :global(ol) {
-		@apply mb-2 list-decimal pl-4;
+		@apply mb-2 list-decimal pl-4 text-base md:text-lg;
 	}
 
 	.parsed-content :global(li) {
-		@apply mb-2;
+		@apply mb-2 text-base md:text-lg;
 	}
 
-	.parsed-content :global(p) {
-		@apply mb-6;
-	}
-
-	@media screen and (max-width: 640px) {
-		.parsed-content :global(p) {
-			@apply text-base;
-		}
-	}
-
-	.parsed-content :global(a) {
-		@apply text-primary hover:text-foreground hover:underline;
-	}
-
+	/* Blockquote Styles */
 	.parsed-content :global(blockquote) {
-		@apply mb-4 rounded-md border-l-4 border-muted-foreground p-2;
+		@apply mb-4 rounded-md border-l-4 border-muted-foreground p-2 text-base md:text-lg;
 	}
 
 	.parsed-content :global(blockquote) :global(p) {
-		@apply mb-0 p-2;
+		@apply mb-0 p-2 text-base md:text-lg;
 	}
 
+	/* Horizontal Rule */
 	.parsed-content :global(hr) {
 		@apply my-4 border-t border-muted;
 	}
 
+	/* Table Styles */
 	.parsed-content :global(table) {
 		@apply mb-4 w-full table-auto;
 	}
@@ -141,27 +137,101 @@
 		@apply p-2;
 	}
 
+	/* Figure and Image Styles */
 	.parsed-content :global(figure) {
 		@apply mb-6;
 	}
 
 	.parsed-content :global(figcaption) {
-		@apply text-lg;
+		@apply text-base md:text-lg;
 	}
 
 	.parsed-content :global(img) {
 		@apply mb-4 bg-muted object-contain;
 	}
 
+	/* Code Styles */
 	.parsed-content :global(pre) {
-		@apply mb-4 overflow-x-auto rounded-lg bg-muted px-4 py-2;
+		@apply mb-4 overflow-x-auto rounded-lg bg-muted px-4 py-2 text-base md:text-lg;
 	}
 
+	/* Center Alignment */
 	.parsed-content :global(center) {
 		@apply mb-6;
 	}
 
+	/* SVG Styles */
 	.parsed-content :global(svg) {
 		@apply max-h-20 max-w-20;
+	}
+
+	/* Strong and Emphasis Styles */
+	.parsed-content :global(strong) {
+		@apply font-bold;
+	}
+
+	.parsed-content :global(em) {
+		@apply italic;
+	}
+
+	/* Code Inline Styles */
+	.parsed-content :global(code) {
+		@apply rounded bg-muted px-1 py-0.5 font-mono;
+	}
+
+	/* Keyboard Styles */
+	.parsed-content :global(kbd) {
+		@apply rounded bg-muted px-1 py-0.5 font-mono;
+	}
+
+	/* Superscript and Subscript Styles */
+	.parsed-content :global(sup) {
+		@apply text-sm;
+	}
+
+	.parsed-content :global(sub) {
+		@apply text-sm;
+	}
+
+	/* Definition List Styles */
+	.parsed-content :global(dl) {
+		@apply mb-4;
+	}
+
+	.parsed-content :global(dt) {
+		@apply font-bold;
+	}
+
+	.parsed-content :global(dd) {
+		@apply mb-2 ml-4;
+	}
+
+	/* Address Styles */
+	.parsed-content :global(address) {
+		@apply italic;
+	}
+
+	/* Mark Styles */
+	.parsed-content :global(mark) {
+		@apply bg-yellow-200 px-1;
+	}
+
+	/* Small Styles */
+	.parsed-content :global(small) {
+		@apply text-sm;
+	}
+
+	/* Outline Styles */
+	.parsed-content :global(ins) {
+		@apply underline;
+	}
+
+	.parsed-content :global(del) {
+		@apply line-through;
+	}
+
+	/* Responsive Image Styles */
+	.parsed-content :global(img) {
+		@apply h-auto max-w-full;
 	}
 </style>
