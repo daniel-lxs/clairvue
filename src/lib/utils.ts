@@ -55,7 +55,9 @@ export const flyAndScale = (
 	};
 };
 
-export function calculateAge(date: Date, format: 'short' | 'long' = 'short'): string {
+export function calculateAge(date: Date | string, format: 'short' | 'long' = 'short'): string {
+  if (typeof date === 'string') date = new Date(date);
+
 	const now = new Date();
 	const timeDifference = now.getTime() - date.getTime();
 	const minutes = Math.floor(timeDifference / (1000 * 60));
