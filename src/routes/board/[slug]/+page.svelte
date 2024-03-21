@@ -53,6 +53,7 @@
 	};
 
 	const showNewArticles = async () => {
+		hasNewArticles = false;
 		isLoading = true;
 
 		const newArticles = await fetchArticles(0, 20);
@@ -61,7 +62,6 @@
 		}
 
 		isLoading = false;
-		hasNewArticles = false;
 	};
 
 	const checkNewArticles = async () => {
