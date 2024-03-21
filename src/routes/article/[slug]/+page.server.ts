@@ -13,7 +13,7 @@ export async function load({ request, params }) {
 		return {
 			status: 404,
 			article: undefined,
-			parsedArticle: undefined,
+			streamed: { parsedArticle: undefined },
 			error: 'Article not found'
 		};
 	}
@@ -22,15 +22,9 @@ export async function load({ request, params }) {
 		redirect(302, article.link);
 	}
 
-	const readableArticle = await parseReadableArticle(article.link, userAgent);
-
-	if (!readableArticle) {
-		redirect(302, article.link);
-	}
-
 	return {
 		status: 200,
-		parsedArticle: readableArticle,
+		streamed: { parsedArticle: parseReadableArticle(article.link, userAgent) },
 		article,
 		error: undefined
 	};

@@ -2,28 +2,37 @@
 	import { Separator } from '@/components/ui/separator';
 	import type { PageData } from './$types';
 	import * as Page from '@/components/page';
+	import { Skeleton } from '@/components/ui/skeleton';
+	import { onMount } from 'svelte';
 
 	export let data: PageData;
 
 	let fomattedDate: string;
 
-	if (data.parsedArticle?.publishedTime) {
-		fomattedDate = new Date(data.parsedArticle?.publishedTime).toLocaleDateString('en-US', {
-			year: 'numeric',
-			month: 'long',
-			day: 'numeric',
-			hour: 'numeric',
-			minute: 'numeric'
-		});
-	} else if (data.article?.publishedAt) {
-		fomattedDate = new Date(data.article?.publishedAt).toLocaleDateString('en-US', {
-			year: 'numeric',
-			month: 'long',
-			day: 'numeric',
-			hour: 'numeric',
-			minute: 'numeric'
-		});
-	}
+	const formatArticleDate = async () => {
+		const parsedArticle = await data.streamed.parsedArticle;
+		if (parsedArticle?.publishedTime) {
+			fomattedDate = new Date(parsedArticle?.publishedTime).toLocaleDateString('en-US', {
+				year: 'numeric',
+				month: 'long',
+				day: 'numeric',
+				hour: 'numeric',
+				minute: 'numeric'
+			});
+		} else if (data.article?.publishedAt) {
+			fomattedDate = new Date(data.article?.publishedAt).toLocaleDateString('en-US', {
+				year: 'numeric',
+				month: 'long',
+				day: 'numeric',
+				hour: 'numeric',
+				minute: 'numeric'
+			});
+		}
+	};
+
+	onMount(() => {
+		formatArticleDate();
+	});
 
 	//TODO: add a speed reading option in the future
 </script>
@@ -34,31 +43,50 @@
 
 <Page.Container>
 	<div class="space-y-8 sm:px-0 sm:pt-10">
-		<div class="space-y-6">
-			<a
-				class="font-bold text-primary hover:text-foreground hover:underline"
-				href={data.article?.link}
-				target="_blank">{data.article?.siteName}</a
-			>
-			<h1 class="text-3xl font-bold">{data.article?.title}</h1>
+		{#await data.streamed.parsedArticle}
+			<div class="space-y-6">
+				<Skeleton class="h-6 w-48 rounded-md" />
+				<Skeleton class="h-12 w-full rounded-md" />
+				<Skeleton class="h-4 w-48 rounded-md" />
+				<Skeleton class="h-4 w-32 rounded-md" />
+			</div>
 
-			{#if data.article?.author || data.parsedArticle?.byline}
-				<p class="text-md text-muted-foreground" id="author">
-					{data.article.author || data.parsedArticle.byline}
-				</p>
-			{/if}
+			<Separator class="my-6" />
 
-			{#if fomattedDate}
-				<p class="text-sm text-muted-foreground">{fomattedDate}</p>
-			{/if}
-			<!--TODO: add read time based on length-->
-		</div>
-		<Separator class="my-6" />
-		<div class="parsed-content">
-			<article class="text-lg">
-				{@html data.parsedArticle?.content}
-			</article>
-		</div>
+			<div class="parsed-content">
+				<div class="space-y-4">
+					<Skeleton class="h-4 w-full rounded-md" />
+					<Skeleton class="h-4 w-full rounded-md" />
+					<Skeleton class="h-4 w-3/4 rounded-md" />
+				</div>
+			</div>
+		{:then parsedArticle}
+			<div class="space-y-6">
+				<a
+					class="font-bold text-primary hover:text-foreground hover:underline"
+					href={data.article?.link}
+					target="_blank">{data.article?.siteName}</a
+				>
+				<h1 class="text-3xl font-bold">{data.article?.title}</h1>
+				{#if data.article?.author || parsedArticle?.byline}
+					<p class="text-md text-muted-foreground" id="author">
+						{data.article?.author || parsedArticle?.byline}
+					</p>
+				{/if}
+				{#if fomattedDate}
+					<p class="text-sm text-muted-foreground">{fomattedDate}</p>
+				{/if}
+				<!-- TODO: add read time based on length -->
+			</div>
+
+			<Separator class="my-6" />
+
+			<div class="parsed-content">
+				<article class="text-lg">
+					{@html parsedArticle?.content}
+				</article>
+			</div>
+		{/await}
 	</div>
 </Page.Container>
 
