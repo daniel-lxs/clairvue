@@ -2,8 +2,9 @@ import boardRepository from '@/server/data/repositories/board';
 import articlesRepository from '@/server/data/repositories/article';
 import { redirect } from '@sveltejs/kit';
 import { validateAuthSession } from '@/server/services/auth';
+import type { PageServerLoad } from './$types';
 
-export async function load({ params: { slug }, cookies }) {
+export const load: PageServerLoad = async ({ params: { slug }, cookies }) => {
 	const cookieHeader = cookies.get('auth_session');
 
 	if (!cookieHeader) {
@@ -24,6 +25,8 @@ export async function load({ params: { slug }, cookies }) {
 
 	return {
 		board,
-		articles: articlesRepository.findByBoardId(board.id, 0, 20)
+		streamed: {
+			articles: articlesRepository.findByBoardId(board.id, 0, 20)
+		}
 	};
-}
+};

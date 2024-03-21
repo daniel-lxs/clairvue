@@ -19,7 +19,7 @@
 
 	const getArticles = async () => {
 		try {
-			articles = (await data.articles)?.items || [];
+			articles = (await data.streamed.articles)?.items || [];
 		} catch (error) {
 			console.error('Error fetching articles:', error);
 		} finally {
