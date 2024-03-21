@@ -3,17 +3,18 @@
 	import * as Dialog from '@/components/ui/dialog';
 	import { Input } from '@/components/ui/input';
 	import { Label } from '@/components/ui/label';
-	import type { RssFeed } from '@/server/data/schema';
-	import { getRssInfo } from '../../api';
+	import { getRssInfo } from '@/api';
 	import { createEventDispatcher } from 'svelte';
 	import { Loader2 } from 'lucide-svelte';
+	import type { NewRssFeed } from '@/types/NewRssFeed';
 
 	const dispatch = createEventDispatcher<{
-		create: Pick<RssFeed, 'name' | 'description' | 'link'>;
+		create: NewRssFeed;
 	}>();
 
 	let isLoading = false;
-	let newRssFeed: Pick<RssFeed, 'name' | 'description' | 'link'> = {
+	let newRssFeed: NewRssFeed = {
+		id: '',
 		name: '',
 		description: '',
 		link: ''

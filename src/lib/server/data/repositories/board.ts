@@ -46,35 +46,35 @@ async function update(id: string, newBoard: Pick<Board, 'name'>) {
 	}
 }
 
-async function assignRssFeed(boardId: string, rssFeedId: string) {
+async function addFeedsToBoard(assignments: { id: string; rssFeedId: string }[]) {
 	try {
 		const db = getClient();
 
-		const rssFeedExists = await db.query.rssFeedSchema
-			.findFirst({ where: eq(rssFeedSchema.id, rssFeedId) })
-			.execute();
+		for (const { id, rssFeedId } of assignments) {
+			const rssFeedExists = await db.query.rssFeedSchema
+				.findFirst({ where: eq(rssFeedSchema.id, rssFeedId) })
+				.execute();
 
-		if (!rssFeedExists) {
-			throw new Error('RSS feed does not exist');
+			if (!rssFeedExists) {
+				throw new Error('RSS feed does not exist');
+			}
+
+			const isAlreadyRelated = await db.query.boardsToRssFeeds
+				.findFirst({
+					where: and(eq(boardsToRssFeeds.boardId, id), eq(boardsToRssFeeds.rssFeedId, rssFeedId))
+				})
+				.execute();
+
+			if (!isAlreadyRelated) {
+				await db
+					.insert(boardsToRssFeeds)
+					.values({
+						boardId: id,
+						rssFeedId
+					})
+					.execute();
+			}
 		}
-
-		const isAlreadyRelated = await db.query.boardsToRssFeeds
-			.findFirst({
-				where: and(eq(boardsToRssFeeds.boardId, boardId), eq(boardsToRssFeeds.rssFeedId, rssFeedId))
-			})
-			.execute();
-
-		if (isAlreadyRelated) {
-			return;
-		}
-
-		await db
-			.insert(boardsToRssFeeds)
-			.values({
-				boardId,
-				rssFeedId
-			})
-			.execute();
 	} catch (error) {
 		console.error('Error occurred while assigning RSS feed to Board:', error);
 		throw error;
@@ -152,7 +152,7 @@ async function findBySlug(
 			})
 			.execute();
 
-		if (result) return undefined;
+		if (!result) return undefined;
 
 		return result;
 	} catch (error) {
@@ -215,11 +215,25 @@ async function findBoardsByUserId(
 	}
 }
 
+async function deleteFeedFromBoard(boardId: string, rssFeedId: string) {
+	try {
+		const db = getClient();
+		await db
+			.delete(boardsToRssFeeds)
+			.where(and(eq(boardsToRssFeeds.boardId, boardId), eq(boardsToRssFeeds.rssFeedId, rssFeedId)))
+			.execute();
+	} catch (error) {
+		console.error('Error occurred while deleting RSS feed from Board:', error);
+		throw error;
+	}
+}
+
 export default {
 	create,
 	update,
 	findById,
 	findBySlug,
 	findBoardsByUserId,
-	assignRssFeed
+	addFeedsToBoard,
+	deleteFeedFromBoard
 };

@@ -1,5 +1,4 @@
 import type { Board } from '../server/data/schema';
-import type { CreateRssFeedDto } from '../server/dto/rssFeedDto';
 
 export async function createBoard(name: string): Promise<Board | undefined> {
 	try {
@@ -40,11 +39,7 @@ export async function getBoardBySlug(slug: string): Promise<Board | undefined> {
 	}
 }
 
-export async function updateBoard(
-	id: string,
-	name: string,
-	rssFeeds?: CreateRssFeedDto[]
-): Promise<Board | undefined> {
+export async function updateBoard(id: string, name: string): Promise<Board | undefined> {
 	try {
 		const response = await fetch('/api/board', {
 			method: 'PATCH',
@@ -53,8 +48,7 @@ export async function updateBoard(
 			},
 			body: JSON.stringify({
 				id: id,
-				name: name,
-				rssFeeds: rssFeeds || []
+				name: name
 			})
 		});
 		if (response.status === 400) {
@@ -71,5 +65,27 @@ export async function updateBoard(
 	} catch (error) {
 		console.error('Error occurred while updating board:', error);
 		return undefined;
+	}
+}
+
+export async function deleteFeedFromBoard(id: string, rssFeedId: string) {
+	try {
+		const response = await fetch('/api/board', {
+			method: 'DELETE',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({
+				id,
+				rssFeedId
+			})
+		});
+		if (!response.ok) {
+			console.error(`Failed to delete RSS feed: ${response.statusText}`);
+			throw new Error('Failed to delete RSS feed');
+		}
+	} catch (error) {
+		console.error('Error occurred while deleting RSS feed:', error);
+		throw error;
 	}
 }

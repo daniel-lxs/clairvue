@@ -1,10 +1,15 @@
 import type { RequestHandler } from '@sveltejs/kit';
 import boardRepository from '@/server/data/repositories/board';
-import rssFeedRepository from '@/server/data/repositories/rssFeed';
-import { createBoardDto, updateBoardDto } from '@/server/dto/boardDto';
+import {
+	addFeedToBoardDto,
+	createBoardDto,
+	deleteFeedFromBoardDto,
+	updateBoardDto,
+	type AddFeedToBoardDto
+} from '@/server/dto/boardDto';
 import { lucia, validateAuthSession } from '@/server/services/auth';
 import type { Board } from '@/server/data/schema';
-import type { UpdateRssFeedDto } from '@/server/dto/rssFeedDto';
+import { z } from 'zod';
 
 export const GET: RequestHandler = async ({ url, cookies }) => {
 	const boardSlug = url.searchParams.get('slug');
@@ -75,6 +80,8 @@ export const POST: RequestHandler = async ({ request }) => {
 export const PATCH: RequestHandler = async ({ request }) => {
 	const requestBody = await request.json();
 
+	console.log(JSON.stringify(requestBody));
+
 	if (!requestBody) {
 		return new Response('Missing body', { status: 400 });
 	}
@@ -110,25 +117,106 @@ export const PATCH: RequestHandler = async ({ request }) => {
 	};
 
 	try {
-		await Promise.all([
-			boardRepository.update(data.id, boardToUpdate),
-			data.rssFeeds
-				? Promise.all(
-						data.rssFeeds.map((rssFeed) => {
-							const hasId = (feed: typeof rssFeed): feed is UpdateRssFeedDto => 'id' in feed;
-
-							if (hasId(rssFeed)) {
-								return rssFeedRepository.update(rssFeed.id, rssFeed);
-							} else {
-								return rssFeedRepository.create(rssFeed, data.id);
-							}
-						})
-					)
-				: []
-		]);
-
+		await boardRepository.update(data.id, boardToUpdate);
 		return new Response(JSON.stringify({ message: 'Board updated successfully' }), { status: 200 });
+	} catch (error) {
+		console.error('Error updating board:', error);
+		return new Response(JSON.stringify({ error: 'An error occurred while updating the board' }), {
+			status: 500
+		});
+	}
+};
+
+export const PUT: RequestHandler = async ({ request }) => {
+	const requestBody = await request.json();
+
+	console.log(requestBody);
+
+	if (!requestBody) {
+		return new Response('Missing body', { status: 400 });
+	}
+
+	const cookieHeader = request.headers.get('Cookie');
+
+	if (!cookieHeader) {
+		return new Response('Unauthorized', { status: 401 });
+	}
+
+	const sessionId = lucia.readSessionCookie(cookieHeader);
+
+	if (!sessionId) {
+		return new Response('Unauthorized', { status: 401 });
+	}
+
+	const { session, user } = await lucia.validateSession(sessionId);
+
+	if (!session || !user || session.expiresAt < new Date()) {
+		return new Response('Unauthorized', { status: 401 });
+	}
+
+	const validationResult = z.array(addFeedToBoardDto).safeParse(requestBody);
+
+	if (!validationResult.success) {
+		return new Response(JSON.stringify(validationResult.error), { status: 400 });
+	}
+
+	try {
+		await boardRepository.addFeedsToBoard(requestBody as AddFeedToBoardDto[]);
+		return new Response(JSON.stringify({ message: 'Feeds added successfully' }), { status: 200 });
+	} catch (error) {
+		console.error('Error adding feeds to board:', error);
+		return new Response(
+			JSON.stringify({ error: 'An error occurred while adding feeds to the board' }),
+			{
+				status: 500
+			}
+		);
+	}
+};
+
+export const DELETE: RequestHandler = async ({ request }) => {
+	const requestBody = await request.json();
+
+	if (!requestBody) {
+		return new Response('Missing body', { status: 400 });
+	}
+
+	if (!requestBody) {
+		return new Response('Missing body', { status: 400 });
+	}
+
+	const cookieHeader = request.headers.get('Cookie');
+
+	if (!cookieHeader) {
+		return new Response('Unauthorized', { status: 401 });
+	}
+
+	const sessionId = lucia.readSessionCookie(cookieHeader);
+
+	if (!sessionId) {
+		return new Response('Unauthorized', { status: 401 });
+	}
+
+	const { session, user } = await lucia.validateSession(sessionId);
+
+	if (!session || !user || session.expiresAt < new Date()) {
+		return new Response('Unauthorized', { status: 401 });
+	}
+
+	const validationResult = deleteFeedFromBoardDto.safeParse(requestBody);
+
+	if (!validationResult.success) {
+		return new Response(JSON.stringify(validationResult.error), { status: 400 });
+	}
+
+	try {
+		await boardRepository.deleteFeedFromBoard(
+			validationResult.data.id,
+			validationResult.data.rssFeedId
+		);
 	} catch (error) {
 		return new Response(JSON.stringify('Something went wrong'), { status: 500 });
 	}
+
+	return new Response(JSON.stringify('RSS Feed deleted successfully'), { status: 200 });
 };

@@ -6,11 +6,12 @@
 	import type { Board, RssFeed } from '@/server/data/schema';
 	import { writable } from 'svelte/store';
 	import type { PageData } from './$types';
-	import { updateBoard } from '@/api';
-	import { Loader2 } from 'lucide-svelte';
+	import { createRssFeeds, deleteFeedFromBoard, updateBoard } from '@/api';
 	import { goto } from '$app/navigation';
 	import RssFeedListItem from '@/components/feed/rss-feed-list-item.svelte';
 	import CreateFeedDialog from '@/components/feed/create-feed-dialog.svelte';
+	import { toast } from 'svelte-sonner';
+	import type { NewRssFeed } from '@/types/NewRssFeed';
 
 	export let data: PageData;
 
@@ -28,15 +29,14 @@
 		try {
 			const rssFeeds = $board.rssFeeds?.map((rssFeed) => {
 				return {
-					...(rssFeed.id ? { id: rssFeed.id } : {}),
+					id: rssFeed.id,
 					name: rssFeed.name,
 					description: rssFeed.description,
 					link: rssFeed.link,
 					boardId: $board.id
 				};
 			});
-
-			await updateBoard($board.id, $board.name, rssFeeds);
+			await updateBoard($board.id, $board.name);
 		} catch (error) {
 			//TODO: Handle error
 			console.error('An error occurred while saving the board:', error);
@@ -46,33 +46,65 @@
 		}
 	}
 
-	function saveNewRssFeed(e: CustomEvent<Pick<RssFeed, 'name' | 'description' | 'link'>>) {
+	function removeRssFeed(rssFeed: RssFeed) {
+		if ($board && $board.rssFeeds) {
+			$board.rssFeeds = $board.rssFeeds.filter((f) => f.id !== rssFeed.id);
+		}
+		deleteFeedFromBoard($board.id, rssFeed.id);
+
+		showToast('RSS feed deleted', `RSS feed "${rssFeed.name}" has been deleted.`);
+	}
+
+	async function saveRssFeed(e: CustomEvent<NewRssFeed>) {
 		const newRssFeed = {
 			...e.detail,
 			id: '',
 			createdAt: new Date(),
 			updatedAt: new Date(),
-			syncedAt: new Date()
+			syncedAt: new Date(),
+			boardId: $board.id
 		};
 
-		if ($board && $board.rssFeeds && newRssFeed) {
-			$board.rssFeeds = [...$board.rssFeeds, newRssFeed];
+		const createRssFeedResults = await createRssFeeds([newRssFeed], $board.id);
+
+		if (
+			!createRssFeedResults ||
+			createRssFeedResults.length === 0 ||
+			createRssFeedResults.some((r) => r.result === 'error') ||
+			createRssFeedResults.some((r) => !r.data)
+		) {
+			//TODO: Handle error
+			throw new Error('Failed to create new RSS feed');
 		}
+
+		const createdRssFeed = createRssFeedResults[0].data;
+
+		if ($board.rssFeeds && createdRssFeed) {
+			$board.rssFeeds = [...$board.rssFeeds, createdRssFeed];
+		}
+
+		showToast('New RSS feed added', `RSS feed "${newRssFeed.name}" has been added to the board.`);
+
+		console.log($board);
+	}
+
+	function showToast(
+		title: string,
+		description: string,
+		action?: {
+			label: string;
+			onClick: () => void;
+		}
+	) {
+		toast.success(title, {
+			description,
+			action
+		});
 	}
 </script>
 
 <Page.Container>
-	<div class="flex items-center justify-between">
-		<Page.Header title="Edit board" subtitle="Edit board name and RSS feeds" />
-		<Button disabled={isLoading} type="submit" on:click={saveBoard} variant="default">
-			{#if isLoading}
-				<Loader2 class="mr-2 h-4 w-4 animate-spin" />
-				Saving...
-			{:else}
-				Save feed
-			{/if}
-		</Button>
-	</div>
+	<Page.Header title="Edit board" subtitle="Edit board name and RSS feeds" />
 
 	<div class="space-y-12">
 		<div class="space-y-2">
@@ -93,13 +125,13 @@
 					<p class="text-sm text-muted-foreground">Add, edit or remove RSS feeds</p>
 				</div>
 				{#if $board?.rssFeeds && $board?.rssFeeds.length > 0}
-					<CreateFeedDialog on:create={saveNewRssFeed} />
+					<CreateFeedDialog on:create={saveRssFeed} />
 				{/if}
 			</div>
 
 			<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
 				{#each $board.rssFeeds || [] as rssFeed}
-					<RssFeedListItem {rssFeed} {board} />
+					<RssFeedListItem {rssFeed} on:delete={() => removeRssFeed(rssFeed)} />
 				{/each}
 			</div>
 		</div>

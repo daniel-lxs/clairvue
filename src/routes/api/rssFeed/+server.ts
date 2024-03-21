@@ -27,33 +27,41 @@ export const POST: RequestHandler = async ({ request }) => {
 	if (!requestBody) {
 		return new Response('Missing body', { status: 400 });
 	}
-	const validationResults = requestBody.map((rssFeed) => createRssFeedDto.safeParse(rssFeed));
 
-	if (!validationResults.every((result) => result.success)) {
-		return new Response(JSON.stringify(validationResults), { status: 400 });
+	const validateRequestBody = (requestBody: CreateRssFeedDto[]): boolean => {
+		const validationResults = requestBody.map((rssFeed) => createRssFeedDto.safeParse(rssFeed));
+		return validationResults.every((result) => result.success);
+	};
+
+	if (!validateRequestBody(requestBody)) {
+		return new Response('Invalid request body', { status: 400 });
 	}
 
-	const newRssFeeds: CreateRssFeedResult[] = [];
+	const newRssFeeds: CreateRssFeedResult[] = await Promise.all(
+		requestBody.map(async (rssFeed) => {
+			const result = createRssFeedDto.safeParse(rssFeed);
 
-	//TODO: improve response
-	for (const result of validationResults) {
-		try {
 			if (!result.success) {
-				newRssFeeds.push({ result: 'error', data: null, reason: result.error.message });
-				continue;
+				return { result: 'error', data: null, reason: result.error.message };
 			}
-			const { boardId, ...newRssFeedData } = result.data;
-			const createdRssFeed = await rssFeedRepository.create(newRssFeedData, boardId);
-			if (!createdRssFeed) {
-				newRssFeeds.push({ result: 'error', data: null, reason: 'Unable to create' });
-				continue;
+
+			const newRssFeedData = result.data;
+
+			try {
+				const createdRssFeed = await rssFeedRepository.create(newRssFeedData);
+
+				if (!createdRssFeed) {
+					return { result: 'error', data: null, reason: 'Unable to create' };
+				}
+
+				syncArticles(createdRssFeed);
+
+				return { result: 'success', data: createdRssFeed, reason: null };
+			} catch (error) {
+				return { result: 'error', data: null, reason: 'Internal error' };
 			}
-			syncArticles(createdRssFeed);
-			newRssFeeds.push({ result: 'success', data: createdRssFeed, reason: null });
-		} catch (error) {
-			newRssFeeds.push({ result: 'error', data: null, reason: 'Internal error' });
-		}
-	}
+		})
+	);
 
 	return new Response(JSON.stringify(newRssFeeds), { status: 200 });
 };

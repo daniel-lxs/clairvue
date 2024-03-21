@@ -13,7 +13,8 @@ export const updateRssFeedDto = z.object({
 	id: z.string().length(8, { message: 'Invalid RSS Feed ID' }),
 	name: z.string().min(4).max(255),
 	description: z.string().min(4).max(1000),
-	link: z.string().url()
+	link: z.string().url(),
+	boardId: z.string().length(8, { message: 'Invalid board ID' })
 });
 
 export type UpdateRssFeedDto = z.infer<typeof updateRssFeedDto>;

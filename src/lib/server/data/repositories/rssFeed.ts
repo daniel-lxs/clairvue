@@ -4,8 +4,7 @@ import { getClient } from '../db';
 import { boardsToRssFeeds, rssFeedSchema, type RssFeed, articleSchema } from '../schema';
 
 async function create(
-	newRssFeed: Pick<RssFeed, 'name' | 'description' | 'link'>,
-	boardId: string
+	newRssFeed: Pick<RssFeed, 'name' | 'description' | 'link'>
 ): Promise<RssFeed | undefined> {
 	try {
 		const db = getClient();
@@ -13,7 +12,8 @@ async function create(
 		const existingRssFeed = await findByLink(newRssFeed.link);
 
 		if (existingRssFeed) {
-			return existingRssFeed;
+			const articleCount = await countArticles(existingRssFeed.id);
+			return { ...existingRssFeed, articleCount };
 		}
 
 		const { randomUUID } = new ShortUniqueId({ length: 8 });
@@ -38,15 +38,6 @@ async function create(
 			})
 			.execute();
 
-		//insert relation
-		await db
-			.insert(boardsToRssFeeds)
-			.values({
-				rssFeedId: id,
-				boardId
-			})
-			.execute();
-
 		return result[0];
 	} catch (error) {
 		console.error('Error occurred while creating new RSS feed:', error);
@@ -57,12 +48,18 @@ async function create(
 async function findById(id: string): Promise<RssFeed | undefined> {
 	try {
 		const db = getClient();
-		const result = await db.select().from(rssFeedSchema).where(eq(rssFeedSchema.id, id)).execute();
+		const result = await db.query.rssFeedSchema
+			.findFirst({ where: eq(rssFeedSchema.id, id) })
+			.execute();
 
-		const rssFeed = result[0];
-		if (!rssFeed) return undefined;
+		if (!result) return undefined;
 
-		return rssFeed;
+		const articleCount = await countArticles(id);
+
+		return {
+			...result,
+			articleCount
+		};
 	} catch (error) {
 		console.error('Error occurred while finding RSS feed by link:', error);
 		return undefined;

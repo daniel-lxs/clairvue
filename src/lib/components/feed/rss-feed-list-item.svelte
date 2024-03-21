@@ -4,16 +4,18 @@
 	import { writable } from 'svelte/store';
 	import { Button } from '../ui/button';
 	import { Trash } from 'lucide-svelte';
+	import { createEventDispatcher } from 'svelte';
 
-	export let board = writable<Board>();
 	export let rssFeed: RssFeed;
+
+	const dispatch = createEventDispatcher();
 
 	let isHovered = false;
 
 	function deleteRssFeed() {
-		if ($board && $board.rssFeeds) {
-			$board.rssFeeds = $board.rssFeeds.filter((rssFeed) => rssFeed.id !== rssFeed.id);
-		}
+		dispatch('delete', {
+			rssFeed
+		});
 	}
 </script>
 
