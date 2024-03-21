@@ -5,7 +5,6 @@
 	import Button from '@/components/ui/button/button.svelte';
 	import { onMount } from 'svelte';
 	import type { PageData } from './$types';
-	import { writable } from 'svelte/store';
 	import type { Article } from '@/server/data/schema';
 	import ArticleCardSkeleton from '@/components/article/article-card-skeleton.svelte';
 
@@ -17,6 +16,16 @@
 	let isLoadingMore = false;
 	let currentPage = 2; // Since we load 20 articles at first, we are starting at page 2
 	let articles: Article[] = [];
+
+	const getArticles = async () => {
+		try {
+			articles = (await data.articles)?.items || [];
+		} catch (error) {
+			console.error('Error fetching articles:', error);
+		} finally {
+			isLoading = false;
+		}
+	};
 
 	const fetchArticles = async (page: number, limit: number) => {
 		const { items: fetchedArticles } = await getArticlesByBoardId(
@@ -72,8 +81,7 @@
 	};
 
 	onMount(() => {
-		articles = data.articles?.items || [];
-		isLoading = false;
+		getArticles();
 
 		// Check for new articles every minute
 		const intervalId = setInterval(checkNewArticles, 60 * 1000);

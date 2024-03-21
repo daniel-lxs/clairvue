@@ -22,10 +22,8 @@ export async function load({ params: { slug }, cookies }) {
 		redirect(302, '/board/new');
 	}
 
-	const articles = await articlesRepository.findByBoardId(board.id, 0, 20);
-
 	return {
 		board,
-		articles
+		articles: articlesRepository.findByBoardId(board.id, 0, 20)
 	};
 }
