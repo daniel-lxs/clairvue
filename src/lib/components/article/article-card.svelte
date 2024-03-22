@@ -61,7 +61,7 @@
 	});
 </script>
 
-<div>
+<div id={article.slug}>
 	<Card.Root class="flex shadow-lg">
 		<div class="flex w-full flex-col">
 			{#if article.image && !imageError && imageType === 'wide'}
@@ -88,7 +88,7 @@
 										tag="h1"
 										class="text-lg font-bold transition-colors hover:text-primary sm:text-xl"
 									>
-										<a href="/article/{article.id}">{article.title}</a>
+										<a href="/article/{article.slug}" target="_blank">{article.title}</a>
 									</Card.Title>
 									<Card.Description class="sm:text-md text-sm">
 										<div class="flex items-center">
