@@ -2,8 +2,8 @@
 	import { Separator } from '@/components/ui/separator';
 	import type { PageData } from './$types';
 	import * as Page from '@/components/page';
-	import { Skeleton } from '@/components/ui/skeleton';
 	import { onMount } from 'svelte';
+	import ArticlePageSkeleton from '@/components/article/article-page-skeleton.svelte';
 
 	export let data: PageData;
 
@@ -44,22 +44,7 @@
 <Page.Container>
 	<div class="space-y-8 sm:px-0 sm:pt-10">
 		{#await data.streamed.parsedArticle}
-			<div class="space-y-6">
-				<Skeleton class="h-6 w-48 rounded-md" />
-				<Skeleton class="h-12 w-full rounded-md" />
-				<Skeleton class="h-4 w-48 rounded-md" />
-				<Skeleton class="h-4 w-32 rounded-md" />
-			</div>
-
-			<Separator class="my-6" />
-
-			<div class="parsed-content">
-				<div class="space-y-4">
-					<Skeleton class="h-4 w-full rounded-md" />
-					<Skeleton class="h-4 w-full rounded-md" />
-					<Skeleton class="h-4 w-3/4 rounded-md" />
-				</div>
-			</div>
+			<ArticlePageSkeleton />
 		{:then parsedArticle}
 			<div class="space-y-6">
 				<a
