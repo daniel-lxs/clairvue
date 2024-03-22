@@ -2,12 +2,11 @@
 	import { getArticlesByBoardId } from '@/api/article';
 	import ArticleCard from '@/components/article/article-card.svelte';
 	import * as Page from '@/components/page';
-	import Button from '@/components/ui/button/button.svelte';
 	import { onMount } from 'svelte';
 	import type { PageData } from './$types';
 	import type { Article } from '@/server/data/schema';
 	import ArticleCardSkeleton from '@/components/article/article-card-skeleton.svelte';
-	import { ArrowUp } from 'lucide-svelte';
+	import NewArticlesButton from '@/components/board/new-articles-button.svelte';
 
 	export let data: PageData;
 
@@ -108,15 +107,7 @@
 <Page.Container>
 	<div class="sticky top-0 z-10">
 		{#if hasNewArticles}
-			<div class="absolute left-1/2 -translate-x-1/2 pt-16">
-				<Button
-					class="rounded-full bg-muted/90 px-3 py-1 text-sm text-muted-foreground shadow-md backdrop-blur-sm transition-all hover:bg-muted-foreground hover:text-muted hover:shadow-lg"
-					on:click={showNewArticles}
-				>
-					New articles
-					<ArrowUp class="ml-2 h-4 w-4" />
-				</Button>
-			</div>
+			<NewArticlesButton on:click={showNewArticles} />
 		{/if}
 	</div>
 
