@@ -7,6 +7,7 @@
 	import type { PageData } from './$types';
 	import type { Article } from '@/server/data/schema';
 	import ArticleCardSkeleton from '@/components/article/article-card-skeleton.svelte';
+	import { ArrowUp } from 'lucide-svelte';
 
 	export let data: PageData;
 
@@ -27,10 +28,10 @@
 		}
 	};
 
-	const fetchArticles = async (page: number, limit: number) => {
+	const fetchArticles = async (limit: number, afterPublishedAt: Date | string = new Date()) => {
 		const { items: fetchedArticles } = await getArticlesByBoardId(
 			data.board.id,
-			page * limit,
+			afterPublishedAt,
 			limit
 		);
 
@@ -43,7 +44,7 @@
 
 		isLoadingMore = true;
 
-		const newArticles = await fetchArticles(currentPage, perPage);
+		const newArticles = await fetchArticles(perPage, articles[articles.length - 1].publishedAt);
 		articles = [...articles, ...newArticles];
 		currentPage += 1;
 
@@ -65,17 +66,20 @@
 		hasNewArticles = false;
 		isLoading = true;
 
-		const newArticles = await fetchArticles(0, 20);
+		const initialArticleLimit = 20;
+		const newArticles = await fetchArticles(initialArticleLimit);
 		if (newArticles.length) {
 			articles = newArticles;
 		}
 
+		scrollTo(0, 0);
 		isLoading = false;
 	};
 
 	const checkNewArticles = async () => {
-		const newArticles = await fetchArticles(0, 5);
-		if (articles.some((article, index) => article.id !== newArticles[index].id)) {
+		const newArticlesLimit = 5;
+		const newArticles = await fetchArticles(newArticlesLimit);
+		if (newArticles.some((newArticle, index) => newArticle.id !== articles[index].id)) {
 			hasNewArticles = true;
 		}
 	};
@@ -102,26 +106,28 @@
 </svelte:head>
 
 <Page.Container>
+	<div class="sticky top-0 z-10">
+		{#if hasNewArticles}
+			<div class="absolute left-1/2 -translate-x-1/2 pt-16">
+				<Button
+					class="rounded-full bg-muted/90 px-3 py-1 text-sm text-muted-foreground shadow-md backdrop-blur-sm transition-all hover:bg-muted-foreground hover:text-muted hover:shadow-lg"
+					on:click={showNewArticles}
+				>
+					New articles
+					<ArrowUp class="ml-2 h-4 w-4" />
+				</Button>
+			</div>
+		{/if}
+	</div>
+
 	<Page.Header
 		title={data.board?.name || 'Unnamed'}
 		subtitle={data.board.rssFeeds
 			? `Showing articles from ${data.board.rssFeeds.length} feeds`
 			: undefined}
 	/>
-	<div class="space-y-4 sm:space-y-6 sm:px-0">
-		{#if hasNewArticles}
-			<div class="relative w-full" id="new-articles">
-				<div class="flex justify-center">
-					<Button
-						class="text-md absolute inset-x-0 z-10 mx-auto rounded-full px-4 py-2 shadow-xl"
-						on:click={showNewArticles}
-					>
-						Show new articles
-					</Button>
-				</div>
-			</div>
-		{/if}
 
+	<div class="space-y-4 sm:space-y-6 sm:px-0">
 		{#if isLoading}
 			{#each { length: perPage } as _}
 				<ArticleCardSkeleton />

@@ -7,7 +7,7 @@ export async function load({ request, params }) {
 	const requestHeaders = request.headers;
 	const userAgent = requestHeaders.get('user-agent');
 
-	const article = await articleRepository.findById(slug);
+	const article = await articleRepository.findBySlug(slug);
 
 	if (!article) {
 		return {

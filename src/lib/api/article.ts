@@ -3,11 +3,18 @@ import type { PaginatedList } from '@/types/PaginatedList';
 
 export async function getArticlesByBoardId(
 	boardId: string,
-	skip = 0,
+	afterPublishedAt?: Date | string,
 	take = 5
 ): Promise<PaginatedList<Article>> {
 	try {
-		const response = await fetch(`/api/article?boardId=${boardId}&skip=${skip}&take=${take}`);
+		afterPublishedAt = afterPublishedAt
+			? typeof afterPublishedAt === 'string'
+				? new Date(afterPublishedAt)
+				: afterPublishedAt
+			: undefined;
+		const response = await fetch(
+			`/api/article?boardId=${boardId}&${afterPublishedAt ? `afterPublishedAt=${afterPublishedAt.toISOString()}` : ''}&take=${take}`
+		);
 		if (!response.ok) {
 			throw new Error(`Failed to get articles: ${response.statusText}`);
 		}

@@ -23,10 +23,11 @@ export const load: PageServerLoad = async ({ params: { slug }, cookies }) => {
 		redirect(302, '/board/new');
 	}
 
+	const limitPerPage = 20;
 	return {
 		board,
 		streamed: {
-			articles: articlesRepository.findByBoardId(board.id, 0, 20)
+			articles: articlesRepository.findByBoardId(board.id, undefined, limitPerPage)
 		}
 	};
 };

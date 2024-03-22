@@ -5,43 +5,8 @@
     {
       "idx": 0,
       "version": "5",
-      "when": 1709063823117,
-      "tag": "0000_skinny_jamie_braddock",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "5",
-      "when": 1709064288796,
-      "tag": "0001_omniscient_kitty_pryde",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "5",
-      "when": 1709314203239,
-      "tag": "0002_silent_bloodaxe",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "5",
-      "when": 1710009481393,
-      "tag": "0003_striped_psynapse",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "5",
-      "when": 1710390752950,
-      "tag": "0004_huge_fenris",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "5",
-      "when": 1710515675535,
-      "tag": "0005_living_human_fly",
+      "when": 1711061741921,
+      "tag": "0000_jittery_revanche",
       "breakpoints": true
     }
   ]

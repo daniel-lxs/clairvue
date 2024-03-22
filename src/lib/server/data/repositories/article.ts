@@ -7,7 +7,7 @@ import {
 	boardSchema,
 	boardsToRssFeeds
 } from '../schema';
-import { count, desc, eq, sql } from 'drizzle-orm';
+import { count, desc, eq, lt, sql, and } from 'drizzle-orm';
 import type { NewArticle } from '@/types/NewArticle';
 import type { PaginatedList } from '@/types/PaginatedList';
 
@@ -16,8 +16,8 @@ async function create(newArticles: NewArticle | NewArticle[]): Promise<string[] 
 	const { randomUUID } = new ShortUniqueId({ length: 8 });
 
 	const toCreate = Array.isArray(newArticles)
-		? newArticles.map((article) => ({ id: randomUUID(), ...article }))
-		: [{ id: randomUUID(), ...newArticles }];
+		? newArticles.map((article) => ({ slug: randomUUID(), ...article }))
+		: [{ slug: randomUUID(), ...newArticles }];
 
 	try {
 		const result = await db
@@ -25,23 +25,27 @@ async function create(newArticles: NewArticle | NewArticle[]): Promise<string[] 
 			.values(toCreate)
 			.onConflictDoNothing()
 			.returning({
-				id: articleSchema.id
+				slug: articleSchema.slug
 			})
 			.execute();
 
 		if (!result || result.length === 0) return undefined;
 
-		return result.map((r) => r.id);
+		return result.map((r) => r.slug);
 	} catch (error) {
 		console.error('Error occurred while creating new Article:', error);
 		return undefined;
 	}
 }
 
-async function findById(id: string): Promise<Article | undefined> {
+async function findBySlug(slug: string): Promise<Article | undefined> {
 	try {
 		const db = getClient();
-		const result = await db.select().from(articleSchema).where(eq(articleSchema.id, id)).execute();
+		const result = await db
+			.select()
+			.from(articleSchema)
+			.where(eq(articleSchema.slug, slug))
+			.execute();
 		return result[0];
 	} catch (error) {
 		console.error('Error occurred while finding Article by id:', error);
@@ -84,7 +88,7 @@ async function findByRssFeedId(rssFeedId: string): Promise<Article[] | undefined
 
 async function findByBoardId(
 	boardId: string,
-	skip = 0,
+	afterPublishedAt: string = new Date().toISOString(),
 	take = 5
 ): Promise<PaginatedList<Article> | undefined> {
 	try {
@@ -101,10 +105,11 @@ async function findByBoardId(
 			return undefined;
 		}
 
-		// Join the articles with their corresponding rssFeeds
+		// Get articles after the provided publishedAt, ordered by publishedAt
 		const queryResult = await db
 			.select({
 				id: articleSchema.id,
+				slug: articleSchema.slug,
 				title: articleSchema.title,
 				description: articleSchema.description,
 				link: articleSchema.link,
@@ -129,10 +134,14 @@ async function findByBoardId(
 			.from(articleSchema)
 			.leftJoin(rssFeedSchema, eq(articleSchema.rssFeedId, rssFeedSchema.id))
 			.leftJoin(boardsToRssFeeds, eq(rssFeedSchema.id, boardsToRssFeeds.rssFeedId))
-			.where(eq(boardsToRssFeeds.boardId, boardId))
+			.where(
+				and(
+					eq(boardsToRssFeeds.boardId, boardId),
+					lt(articleSchema.publishedAt, new Date(afterPublishedAt))
+				)
+			)
 			.orderBy(desc(articleSchema.publishedAt))
 			.limit(take)
-			.offset(skip)
 			.execute();
 
 		const articleCount = await db
@@ -154,7 +163,7 @@ async function findByBoardId(
 
 export default {
 	create,
-	findById,
+	findBySlug,
 	existsWithLink,
 	findByRssFeedId,
 	findByBoardId
