@@ -12,8 +12,6 @@ export const GET: RequestHandler = async ({ url }) => {
 			take = 5;
 		}
 
-		console.log(JSON.stringify({ boardId, afterPublishedAt, take }));
-
 		const articles = await articleRepository.findByBoardId(boardId, afterPublishedAt, take);
 		return new Response(JSON.stringify(articles), { status: 200 });
 	}

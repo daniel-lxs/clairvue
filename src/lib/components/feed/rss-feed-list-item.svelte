@@ -1,7 +1,6 @@
 <script lang="ts">
-	import type { Board, RssFeed } from '@/server/data/schema';
+	import type { RssFeed } from '@/server/data/schema';
 	import { calculateAge } from '@/utils';
-	import { writable } from 'svelte/store';
 	import { Button } from '../ui/button';
 	import { Trash } from 'lucide-svelte';
 	import { createEventDispatcher } from 'svelte';
