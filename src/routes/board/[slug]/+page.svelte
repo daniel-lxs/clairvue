@@ -64,6 +64,7 @@
 	const showNewArticles = async () => {
 		hasNewArticles = false;
 		isLoading = true;
+		scrollTo(0, 0);
 
 		const initialArticleLimit = 20;
 		const newArticles = await fetchArticles(initialArticleLimit);
@@ -71,7 +72,6 @@
 			articles = newArticles;
 		}
 
-		scrollTo(0, 0);
 		isLoading = false;
 	};
 
