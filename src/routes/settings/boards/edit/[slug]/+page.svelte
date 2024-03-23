@@ -1,48 +1,40 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
+	import { createRssFeeds, deleteFeedFromBoard, updateBoard } from '@/api';
+	import CreateFeedDialog from '@/components/feed/create-feed-dialog.svelte';
+	import RssFeedListItem from '@/components/feed/rss-feed-list-item.svelte';
 	import * as Page from '@/components/page';
 	import Button from '@/components/ui/button/button.svelte';
 	import { Input } from '@/components/ui/input';
 	import Label from '@/components/ui/label/label.svelte';
 	import type { Board, RssFeed } from '@/server/data/schema';
+	import type { NewRssFeed } from '@/types/NewRssFeed';
+	import { toast } from 'svelte-sonner';
 	import { writable } from 'svelte/store';
 	import type { PageData } from './$types';
-	import { createRssFeeds, deleteFeedFromBoard, updateBoard } from '@/api';
-	import { goto } from '$app/navigation';
-	import RssFeedListItem from '@/components/feed/rss-feed-list-item.svelte';
-	import CreateFeedDialog from '@/components/feed/create-feed-dialog.svelte';
-	import { toast } from 'svelte-sonner';
-	import type { NewRssFeed } from '@/types/NewRssFeed';
+	import { debounce } from 'throttle-debounce';
+	import BoardSettingsSkeleton from '@/components/board/board-settings-skeleton.svelte';
 
 	export let data: PageData;
-
-	let isLoading = false;
 	let board = writable<Board>();
 
-	$: if (data.board) {
-		board.set(data.board);
-	} else {
-		goto('/board/new');
+	$: loadBoard();
+
+	async function loadBoard() {
+		board.set(await data.streamed.board);
 	}
 
+	const debounceSaveBoard = debounce(1000, saveBoard);
+
 	async function saveBoard() {
-		isLoading = true;
 		try {
-			const rssFeeds = $board.rssFeeds?.map((rssFeed) => {
-				return {
-					id: rssFeed.id,
-					name: rssFeed.name,
-					description: rssFeed.description,
-					link: rssFeed.link,
-					boardId: $board.id
-				};
-			});
-			await updateBoard($board.id, $board.name);
+			if ($board.name && $board.name.length > 0) {
+				await updateBoard($board.id, $board.name);
+			}
 		} catch (error) {
 			//TODO: Handle error
 			console.error('An error occurred while saving the board:', error);
 			// Perform error handling - e.g. display error message to user
-		} finally {
-			isLoading = false;
 		}
 	}
 
@@ -104,50 +96,55 @@
 </script>
 
 <Page.Container>
-	<Page.Header title="Edit board" subtitle="Edit board name and RSS feeds" />
+	{#await data.streamed.board}
+		<BoardSettingsSkeleton />
+	{:then}
+		<Page.Header title="Edit board" subtitle="Edit board name and RSS feeds" />
 
-	<div class="space-y-12">
-		<div class="space-y-2">
-			<Label for="boardName" class="font-semibold">Board name</Label>
-			<Input
-				id="boardName"
-				type="text"
-				placeholder="Board name"
-				class="w-full"
-				bind:value={$board.name}
-			/>
-		</div>
+		<div class="space-y-12">
+			<div class="space-y-2">
+				<Label for="boardName" class="font-semibold">Board name</Label>
+				<Input
+					id="boardName"
+					type="text"
+					placeholder="Board name"
+					class="w-full"
+					bind:value={$board.name}
+					on:input={debounceSaveBoard}
+				/>
+			</div>
 
-		<div>
-			<div class="mb-4 flex items-center justify-between">
-				<div class="space-y-2">
-					<Label for="feedUrls" class="font-semibold">RSS feeds</Label>
-					<p class="text-sm text-muted-foreground">Add, edit or remove RSS feeds</p>
+			<div>
+				<div class="mb-4 flex items-center justify-between">
+					<div class="space-y-2">
+						<Label for="feedUrls" class="font-semibold">RSS feeds</Label>
+						<p class="text-sm text-muted-foreground">Add, edit or remove RSS feeds</p>
+					</div>
+
+					<CreateFeedDialog on:create={saveRssFeed} />
 				</div>
 
-				<CreateFeedDialog on:create={saveRssFeed} />
-			</div>
-
-			<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
-				{#each $board.rssFeeds || [] as rssFeed}
-					<RssFeedListItem {rssFeed} on:delete={() => removeRssFeed(rssFeed)} />
-				{/each}
-			</div>
-		</div>
-
-		<div class="space-y-2">
-			<Label for="boardDelete" class="font-semibold">Danger zone</Label>
-
-			<div
-				class="flex w-full items-center justify-between rounded-lg border border-destructive p-4"
-			>
-				<div>
-					<p class="text-sm font-semibold">Delete this board</p>
-					<p class="text-sm text-muted-foreground">This action cannot be undone</p>
+				<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+					{#each $board.rssFeeds || [] as rssFeed}
+						<RssFeedListItem {rssFeed} on:delete={() => removeRssFeed(rssFeed)} />
+					{/each}
 				</div>
+			</div>
 
-				<Button variant="destructive" disabled={isLoading} on:click={() => {}}>Delete board</Button>
+			<div class="space-y-2">
+				<Label for="boardDelete" class="font-semibold">Danger zone</Label>
+
+				<div
+					class="flex w-full items-center justify-between rounded-lg border border-destructive p-4"
+				>
+					<div>
+						<p class="text-sm font-semibold">Delete this board</p>
+						<p class="text-sm text-muted-foreground">This action cannot be undone</p>
+					</div>
+
+					<Button variant="destructive" on:click={() => {}}>Delete board</Button>
+				</div>
 			</div>
 		</div>
-	</div>
+	{/await}
 </Page.Container>

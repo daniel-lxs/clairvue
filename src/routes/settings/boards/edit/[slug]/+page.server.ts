@@ -17,25 +17,31 @@ export const load = (async ({ params: { slug }, cookies }) => {
 		redirect(302, '/auth/login');
 	}
 
-	const board = await boardRepository.findBySlug(authSession.user.id, slug, true);
+	const getBoard = async () => {
+		const board = await boardRepository.findBySlug(authSession.user.id, slug, true);
 
-	if (!board) {
-		redirect(302, '/board/new');
-	}
+		if (!board) {
+			redirect(302, '/board/new');
+		}
 
-	if (board.rssFeeds && board.rssFeeds.length > 0) {
-		board.rssFeeds = await Promise.all(
-			board?.rssFeeds.map(async (rssFeed) => {
-				const articleCount = await rssFeedRepository.countArticles(rssFeed.id);
-				return {
-					...rssFeed,
-					articleCount
-				};
-			})
-		);
-	}
+		if (board.rssFeeds && board.rssFeeds.length > 0) {
+			board.rssFeeds = await Promise.all(
+				board?.rssFeeds.map(async (rssFeed) => {
+					const articleCount = await rssFeedRepository.countArticles(rssFeed.id);
+					return {
+						...rssFeed,
+						articleCount
+					};
+				})
+			);
+		}
+
+		return board;
+	};
 
 	return {
-		board
+		streamed: {
+			board: getBoard()
+		}
 	};
 }) satisfies PageServerLoad;
