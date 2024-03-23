@@ -108,11 +108,11 @@
 
 	<div class="space-y-12">
 		<div class="space-y-2">
-			<Label for="feedName" class="font-semibold">Feed name</Label>
+			<Label for="boardName" class="font-semibold">Board name</Label>
 			<Input
-				id="feedName"
+				id="boardName"
 				type="text"
-				placeholder="Feed name"
+				placeholder="Board name"
 				class="w-full"
 				bind:value={$board.name}
 			/>
@@ -124,9 +124,8 @@
 					<Label for="feedUrls" class="font-semibold">RSS feeds</Label>
 					<p class="text-sm text-muted-foreground">Add, edit or remove RSS feeds</p>
 				</div>
-				{#if $board?.rssFeeds && $board?.rssFeeds.length > 0}
-					<CreateFeedDialog on:create={saveRssFeed} />
-				{/if}
+
+				<CreateFeedDialog on:create={saveRssFeed} />
 			</div>
 
 			<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
