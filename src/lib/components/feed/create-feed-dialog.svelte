@@ -13,6 +13,7 @@
 	}>();
 
 	let isLoading = false;
+	let hasError = false;
 	let newRssFeed: NewRssFeed = {
 		id: '',
 		name: '',
@@ -38,7 +39,7 @@
 			return;
 		}
 
-		//TODO: handle error
+		hasError = true;
 		isLoading = false;
 	}
 </script>
@@ -51,15 +52,22 @@
 			<Dialog.Title>Create RSS feed</Dialog.Title>
 			<Dialog.Description>Create a new RSS feed. Click save when you're done</Dialog.Description>
 		</Dialog.Header>
+
 		<div class="grid gap-4 py-4">
 			<div class="grid grid-cols-4 items-center gap-4">
 				<Label class="text-right">Link</Label>
 				<Input id="name" bind:value={link} class="col-span-3" />
 			</div>
-			<p class="text-center text-xs text-muted-foreground">
-				The name and description will be fetched automatically
+
+			<p class="text-center text-xs text-muted-foreground {hasError ? 'text-red-500' : ''}">
+				{#if hasError}
+					Invalid RSS link
+				{:else}
+					The name and description will be fetched automatically
+				{/if}
 			</p>
 		</div>
+
 		<Dialog.Footer>
 			<Button disabled={isLoading} type="submit" on:click={save}>
 				{#if isLoading}
