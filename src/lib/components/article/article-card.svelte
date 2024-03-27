@@ -83,10 +83,10 @@
 									class="text-xs font-bold transition-colors hover:text-primary sm:text-sm"
 									>{article.rssFeed?.name}</a
 								>
-								<div class="flex flex-col gap-1">
+								<div class="flex flex-col gap-2">
 									<Card.Title
 										tag="h1"
-										class="text-lg font-bold transition-colors hover:text-primary sm:text-xl"
+										class="text-xl font-bold transition-colors hover:text-primary sm:text-2xl"
 									>
 										<a href="/article/{article.slug}" target="_blank">{article.title}</a>
 									</Card.Title>
