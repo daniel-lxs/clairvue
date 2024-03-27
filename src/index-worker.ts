@@ -1,6 +1,9 @@
 import { Worker, type ConnectionOptions } from 'bullmq';
 import rssFeedRepository from '@/server/data/repositories/rssFeed';
 import { syncArticles } from '@/server/services/article';
+import { Logger } from '@control.systems/logger';
+
+const logger = new Logger('Worker');
 
 const connection: ConnectionOptions = {
 	host: process.env.PRIVATE_REDIS_HOST,
@@ -12,11 +15,11 @@ const worker = new Worker(
 	'articles',
 	async (job) => {
 		if (job.name === 'sync') {
-			console.log(`Worker ${job.id} started at [${new Date().toLocaleString()}]`);
+			logger.info(`Job ${job.id} started...`);
 			const { rssFeedId } = job.data;
 			const rssFeed = await rssFeedRepository.findById(rssFeedId);
 			if (!rssFeed) {
-				console.error('RSS feed not found');
+				logger.error('RSS feed not found');
 				return;
 			}
 			const createdArticlesIds = await syncArticles(rssFeed);
@@ -30,14 +33,14 @@ const worker = new Worker(
 );
 
 worker.on('completed', async (job) => {
-	console.log(`Worker ${job.id} finished at [${new Date().toLocaleString()}]`);
+	logger.info(`Job ${job.id} finished...`);
 });
 
 worker.on('failed', async (job) => {
 	if (job) {
-		console.log(`Worker ${job.id} failed: ${job.failedReason}`);
+		logger.info(`Job ${job.id} failed: ${job.failedReason}`);
 	}
-	console.log(`Worker failed`);
+	logger.info(`A unknown error occurred on worker.`);
 });
 
-console.log('Worker started🚀');
+logger.info('Worker started🚀');

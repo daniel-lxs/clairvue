@@ -10,6 +10,9 @@ import type { ParsedArticle } from '@/types/ParsedArticle';
 import { z } from 'zod';
 import type { ArticleMetadata } from '@/types/ArticleMetadata';
 import type { NewArticle } from '@/types/NewArticle';
+import { Logger } from '@control.systems/logger';
+
+const logger = new Logger('ArticleService');
 
 interface ProcessArticlesOptions {
 	chunkSize?: number;
@@ -35,7 +38,7 @@ export async function fetchRssFeedArticles(link: string) {
 
 		return feed.items;
 	} catch (error) {
-		console.error('Error fetching or parsing RSS feed:', error);
+		logger.error('Error fetching or parsing RSS feed:', error);
 		return undefined;
 	}
 }
@@ -46,28 +49,28 @@ export async function syncArticles(rssFeed: RssFeed) {
 
 		if (!orderedArticles) return;
 
-		console.log(`[Sync] Syncing ${orderedArticles.length} articles from ${rssFeed.name} ...`);
+		logger.info(`Syncing ${orderedArticles.length} articles from ${rssFeed.name}...`);
 
 		const newArticles = await processArticles(rssFeed, orderedArticles);
 
 		if (!newArticles || newArticles.length === 0) {
-			console.log('[Sync] No new articles found.');
+			logger.info('No new articles found.');
 			return;
 		}
 
 		const createdArticles = await saveArticles(newArticles);
 
 		if (!createdArticles) {
-			console.log('[Sync] No new articles created.');
+			logger.info('No new articles created.');
 			return;
 		}
 
 		await rssFeedRepository.updateLastSync(rssFeed.id, new Date());
 
-		console.log(`[Sync] Synced ${createdArticles.length} articles.`);
+		logger.info(`Synced ${createdArticles.length} articles.`);
 		return createdArticles;
 	} catch (error) {
-		console.error('Error occurred during sync:', error);
+		logger.error('Error occurred during sync:', error);
 	}
 }
 
@@ -89,9 +92,9 @@ async function fetchArticleMetadata(link: string): Promise<ArticleMetadata | und
 		};
 	} catch (error) {
 		if (error instanceof Error) {
-			console.error('Error occurred while fetching metadata:', error.message);
+			logger.error('Error occurred while fetching metadata:', error.message);
 		} else {
-			console.error('Error occurred while fetching metadata');
+			logger.error('Error occurred while fetching metadata');
 		}
 	}
 }
@@ -111,7 +114,7 @@ async function createNewArticle(
 	// TODO: Allow duplicate articles if the existing article is too old
 	if (existingArticle) return;
 
-	console.log(`[Sync] Processing article: ${link}`);
+	logger.info(`Processing article: ${link}`);
 
 	const articleMetadata = await fetchArticleMetadata(link);
 
@@ -174,7 +177,7 @@ async function fetchAndCleanDocument(
 		});
 
 		if (!pageResponse.ok) {
-			console.error(`Error occurred while fetching article: ${pageResponse.statusText}`);
+			logger.error(`Error occurred while fetching article: ${pageResponse.statusText}`);
 			return undefined;
 		}
 
@@ -187,7 +190,7 @@ async function fetchAndCleanDocument(
 		const dom = new JSDOM(cleanHtml, { url: link });
 		return dom.window.document;
 	} catch (error) {
-		console.error(`Error occurred while fetching article: ${error}`);
+		logger.error(`Error occurred while fetching article: ${error}`);
 		return undefined;
 	}
 }
@@ -217,7 +220,7 @@ export async function parseReadableArticle(
 		// Parse the modified HTML using Readability
 		const readableArticle = new Readability(document).parse();
 		if (!readableArticle) {
-			console.error('Error occurred while parsing article');
+			logger.error('Error occurred while parsing article');
 			return undefined;
 		}
 
