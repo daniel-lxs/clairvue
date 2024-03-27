@@ -152,7 +152,11 @@
 
 	/* Figure and Image Styles */
 	.parsed-content :global(figure) {
-		@apply mb-6;
+		@apply mb-8 w-full;
+	}
+
+	.parsed-content :global(figure) :global(img) {
+		@apply mb-4 w-full bg-muted object-contain;
 	}
 
 	.parsed-content :global(figcaption) {
