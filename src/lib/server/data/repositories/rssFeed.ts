@@ -1,4 +1,4 @@
-import { and, count, eq } from 'drizzle-orm';
+import { and, count, desc, eq } from 'drizzle-orm';
 import ShortUniqueId from 'short-unique-id';
 import { getClient } from '../db';
 import { boardsToRssFeeds, rssFeedSchema, type RssFeed, articleSchema } from '../schema';
@@ -91,7 +91,11 @@ async function findAll(take = 20, skip = 0): Promise<RssFeed[]> {
 
 		take = take > 100 ? 100 : take;
 
-		const result = await db.select().from(rssFeedSchema).limit(take).offset(skip).execute();
+    const result = await db.query.rssFeedSchema.findMany({
+      offset: skip,
+      limit: take,
+      orderBy: desc(rssFeedSchema.createdAt),
+    });
 		return result;
 	} catch (error) {
 		console.error('Error occurred while finding all RSS feeds:', error);

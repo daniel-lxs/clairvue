@@ -1,3 +1,3 @@
 import type { Article } from '@/server/data/schema';
 
-export type NewArticle = Omit<Article, 'slug' | 'createdAt' | 'updatedAt'>;
+export type NewArticle = Omit<Article, 'id' | 'slug' | 'createdAt' | 'updatedAt'>;
