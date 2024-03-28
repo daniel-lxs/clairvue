@@ -34,12 +34,26 @@
 
 			open = false;
 			isLoading = false;
+			hasError = false;
+			link = '';
 
 			dispatch('create', newRssFeed);
 			return;
 		}
 
 		hasError = true;
+		isLoading = false;
+	}
+
+	$: if (open === false) {
+		newRssFeed = {
+			id: '',
+			name: '',
+			description: '',
+			link: ''
+		};
+		link = '';
+		hasError = false;
 		isLoading = false;
 	}
 </script>
