@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
 	import { createRssFeeds, deleteFeedFromBoard, updateBoard } from '@/api';
 	import CreateFeedDialog from '@/components/feed/create-feed-dialog.svelte';
 	import RssFeedListItem from '@/components/feed/rss-feed-list-item.svelte';
@@ -28,13 +27,12 @@
 
 	async function saveBoard() {
 		try {
-			if ($board.name && $board.name.length > 0) {
+			if ($board.name && $board.name.length > 0 && $board.rssFeeds && $board.rssFeeds.length > 0) {
 				await updateBoard($board.id, $board.name);
 			}
 		} catch (error) {
-			//TODO: Handle error
+			showToast('An error occurred while saving the board', 'Please try again later', 'error');
 			console.error('An error occurred while saving the board:', error);
-			// Perform error handling - e.g. display error message to user
 		}
 	}
 
@@ -65,7 +63,7 @@
 			createRssFeedResults.some((r) => r.result === 'error') ||
 			createRssFeedResults.some((r) => !r.data)
 		) {
-			//TODO: Handle error
+			showToast('Failed to create new RSS feed', 'Please try again later', 'error');
 			throw new Error('Failed to create new RSS feed');
 		}
 
@@ -83,17 +81,22 @@
 	function showToast(
 		title: string,
 		description: string,
+		toastState: 'error' | 'success' | 'info' | 'warning' | 'loading' = 'success',
 		action?: {
 			label: string;
 			onClick: () => void;
 		}
 	) {
-		toast.success(title, {
+		toast[toastState](title, {
 			description,
 			action
 		});
 	}
 </script>
+
+<svelte:head>
+	<title>Edit board - Clairvue</title>
+</svelte:head>
 
 <Page.Container>
 	{#await data.streamed.board}

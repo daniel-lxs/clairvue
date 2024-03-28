@@ -14,6 +14,7 @@
 	import { writable } from 'svelte/store';
 	import type { PageServerData } from './$types';
 	import { goto } from '$app/navigation';
+	import { toast } from 'svelte-sonner';
 
 	export let data: PageServerData;
 
@@ -38,41 +39,47 @@
 	async function saveBoard() {
 		isLoading = true;
 		try {
-			if ($board.rssFeeds) {
-				const newBoard = await createBoard($board.name);
-
-				if (!newBoard) {
-					//TODO: Handle error
-					throw new Error('Failed to create new board');
-				}
-
-				const newRssFeeds: CreateRssFeedDto[] = $board.rssFeeds.map((rssFeed) => ({
-					name: rssFeed.name,
-					description: rssFeed.description,
-					link: rssFeed.link
-				}));
-
-				if (newRssFeeds.length > 0) {
-					const createRssFeedResults = await createRssFeeds(newRssFeeds, newBoard.id);
-
-					if (
-						!createRssFeedResults ||
-						createRssFeedResults.length === 0 ||
-						createRssFeedResults.some((r) => r.result === 'error') ||
-						createRssFeedResults.some((r) => !r.data)
-					) {
-						//TODO: Handle error
-						throw new Error('Failed to create new RSS feeds');
-					}
-
-					newBoard.rssFeeds = createRssFeedResults.map((c) => ({ ...(c.data as RssFeed) }));
-				}
-
-				board.set(newBoard);
-				goto('/settings/boards');
+			if (!$board.name) {
+				showErrorDialog('Board name is required', 'Please enter a board name');
+				return;
 			}
 
-			//TODO: Handle empty board
+			if (!$board.rssFeeds || $board.rssFeeds.length === 0) {
+				showErrorDialog('No RSS Feeds Added Yet', 'Please add at least one RSS feed');
+				return;
+			}
+
+			const newBoard = await createBoard($board.name);
+
+			if (!newBoard) {
+				showToast('Failed to create new board', 'Please try again later', 'error');
+				return;
+			}
+
+			const newRssFeeds: CreateRssFeedDto[] = $board.rssFeeds.map((rssFeed) => ({
+				name: rssFeed.name,
+				description: rssFeed.description,
+				link: rssFeed.link
+			}));
+
+			if (newRssFeeds.length > 0) {
+				const createRssFeedResults = await createRssFeeds(newRssFeeds, newBoard.id);
+
+				if (
+					!createRssFeedResults ||
+					createRssFeedResults.length === 0 ||
+					createRssFeedResults.some((r) => r.result === 'error') ||
+					createRssFeedResults.some((r) => !r.data)
+				) {
+					showToast('Failed to create new RSS feed', 'Please try again later', 'error');
+					return;
+				}
+
+				newBoard.rssFeeds = createRssFeedResults.map((c) => ({ ...(c.data as RssFeed) }));
+			}
+
+			board.set(newBoard);
+			goto('/settings/boards');
 		} catch (error) {
 			console.error('An error occurred while saving the board:', error);
 			showErrorDialog('Error', 'An error occurred while saving the board, please try again later');
@@ -85,6 +92,21 @@
 		title = title;
 		message = message;
 		open = true;
+	}
+
+	function showToast(
+		title: string,
+		description: string,
+		toastState: 'error' | 'success' | 'info' | 'warning' | 'loading' = 'success',
+		action?: {
+			label: string;
+			onClick: () => void;
+		}
+	) {
+		toast[toastState](title, {
+			description,
+			action
+		});
 	}
 
 	function saveRssFeed(e: CustomEvent<NewRssFeed>) {
@@ -107,6 +129,10 @@
 		}
 	}
 </script>
+
+<svelte:head>
+	<title>New board - Clairvue</title>
+</svelte:head>
 
 <AlertDialog {open} {title} {message} />
 
