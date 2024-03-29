@@ -52,6 +52,7 @@
 			createdAt: new Date(),
 			updatedAt: new Date(),
 			syncedAt: new Date(),
+			description: e.detail.description || undefined,
 			boardId: $board.id
 		};
 
@@ -74,8 +75,6 @@
 		}
 
 		showToast('New feed added', `"${newFeed.name}" has been added to the board.`);
-
-		console.log($board);
 	}
 
 	function showToast(
