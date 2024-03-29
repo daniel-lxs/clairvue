@@ -80,8 +80,6 @@ export const POST: RequestHandler = async ({ request }) => {
 export const PATCH: RequestHandler = async ({ request }) => {
 	const requestBody = await request.json();
 
-	console.log(JSON.stringify(requestBody));
-
 	if (!requestBody) {
 		return new Response('Missing body', { status: 400 });
 	}
@@ -129,8 +127,6 @@ export const PATCH: RequestHandler = async ({ request }) => {
 
 export const PUT: RequestHandler = async ({ request }) => {
 	const requestBody = await request.json();
-
-	console.log(requestBody);
 
 	if (!requestBody) {
 		return new Response('Missing body', { status: 400 });
