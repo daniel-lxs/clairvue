@@ -1,5 +1,5 @@
 import { pgTable, primaryKey, text, timestamp, varchar } from 'drizzle-orm/pg-core';
-import { rssFeedSchema, type RssFeed } from './rssFeed';
+import { feedSchema, type Feed } from './feed';
 import { relations, type InferSelectModel } from 'drizzle-orm';
 import { userSchema } from '.';
 
@@ -15,30 +15,30 @@ export const boardSchema = pgTable('boards', {
 });
 
 export const boardRelations = relations(boardSchema, ({ one, many }) => ({
-	boardsToRssfeeds: many(boardsToRssFeeds),
+	boardsToFeeds: many(boardsToFeeds),
 	user: one(userSchema, { fields: [boardSchema.userId], references: [userSchema.id] })
 }));
 
 //TODO: Check if there's a better way to do this
-export const boardsToRssFeeds = pgTable(
-	'boardsToRssFeeds',
+export const boardsToFeeds = pgTable(
+	'boardsToFeeds',
 	{
 		boardId: varchar('boardId', { length: 8 }).notNull(),
-		rssFeedId: varchar('rssFeedId', { length: 8 }).notNull()
+		feedId: varchar('feedId', { length: 8 }).notNull()
 	},
 	(t) => ({
-		pk: primaryKey({ columns: [t.boardId, t.rssFeedId] })
+		pk: primaryKey({ columns: [t.boardId, t.feedId] })
 	})
 );
 
-export const boardsToRssFeedsRelations = relations(boardsToRssFeeds, ({ one }) => ({
-	board: one(boardSchema, { fields: [boardsToRssFeeds.boardId], references: [boardSchema.id] }),
-	rssFeed: one(rssFeedSchema, {
-		fields: [boardsToRssFeeds.rssFeedId],
-		references: [rssFeedSchema.id]
+export const boardsToFeedsRelations = relations(boardsToFeeds, ({ one }) => ({
+	board: one(boardSchema, { fields: [boardsToFeeds.boardId], references: [boardSchema.id] }),
+	feed: one(feedSchema, {
+		fields: [boardsToFeeds.feedId],
+		references: [feedSchema.id]
 	})
 }));
 
 export type Board = InferSelectModel<typeof boardSchema> & {
-	rssFeeds?: RssFeed[];
+	feeds?: Feed[];
 };

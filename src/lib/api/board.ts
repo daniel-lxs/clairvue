@@ -68,7 +68,7 @@ export async function updateBoard(id: string, name: string): Promise<Board | und
 	}
 }
 
-export async function deleteFeedFromBoard(id: string, rssFeedId: string) {
+export async function deleteFeedFromBoard(id: string, feedId: string) {
 	try {
 		const response = await fetch('/api/board', {
 			method: 'DELETE',
@@ -77,15 +77,15 @@ export async function deleteFeedFromBoard(id: string, rssFeedId: string) {
 			},
 			body: JSON.stringify({
 				id,
-				rssFeedId
+				feedId
 			})
 		});
 		if (!response.ok) {
-			console.error(`Failed to delete RSS feed: ${response.statusText}`);
-			throw new Error('Failed to delete RSS feed');
+			console.error(`Failed to delete feed: ${response.statusText}`);
+			throw new Error('Failed to delete feed');
 		}
 	} catch (error) {
-		console.error('Error occurred while deleting RSS feed:', error);
+		console.error('Error occurred while deleting feed:', error);
 		throw error;
 	}
 }

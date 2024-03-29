@@ -1,13 +1,13 @@
 <script lang="ts">
-	import { createRssFeeds, deleteFeedFromBoard, updateBoard } from '@/api';
+	import { createFeeds, deleteFeedFromBoard, updateBoard } from '@/api';
 	import CreateFeedDialog from '@/components/feed/create-feed-dialog.svelte';
-	import RssFeedListItem from '@/components/feed/rss-feed-list-item.svelte';
+	import FeedListItem from '@/components/feed/feed-list-item.svelte';
 	import * as Page from '@/components/page';
 	import Button from '@/components/ui/button/button.svelte';
 	import { Input } from '@/components/ui/input';
 	import Label from '@/components/ui/label/label.svelte';
-	import type { Board, RssFeed } from '@/server/data/schema';
-	import type { NewRssFeed } from '@/types/NewRssFeed';
+	import type { Board, Feed } from '@/server/data/schema';
+	import type { NewFeed } from '@/types/NewFeed';
 	import { toast } from 'svelte-sonner';
 	import { writable } from 'svelte/store';
 	import type { PageData } from './$types';
@@ -27,7 +27,7 @@
 
 	async function saveBoard() {
 		try {
-			if ($board.name && $board.name.length > 0 && $board.rssFeeds && $board.rssFeeds.length > 0) {
+			if ($board.name && $board.name.length > 0 && $board.feeds && $board.feeds.length > 0) {
 				await updateBoard($board.id, $board.name);
 			}
 		} catch (error) {
@@ -36,17 +36,17 @@
 		}
 	}
 
-	function removeRssFeed(rssFeed: RssFeed) {
-		if ($board && $board.rssFeeds) {
-			$board.rssFeeds = $board.rssFeeds.filter((f) => f.id !== rssFeed.id);
+	function removeFeed(feed: Feed) {
+		if ($board && $board.feeds) {
+			$board.feeds = $board.feeds.filter((f) => f.id !== feed.id);
 		}
-		deleteFeedFromBoard($board.id, rssFeed.id);
+		deleteFeedFromBoard($board.id, feed.id);
 
-		showToast('RSS feed deleted', `RSS feed "${rssFeed.name}" has been deleted.`);
+		showToast('Feed deleted', `Feed "${feed.name}" has been deleted.`);
 	}
 
-	async function saveRssFeed(e: CustomEvent<NewRssFeed>) {
-		const newRssFeed = {
+	async function saveFeed(e: CustomEvent<NewFeed>) {
+		const newFeed = {
 			...e.detail,
 			id: '',
 			createdAt: new Date(),
@@ -55,25 +55,25 @@
 			boardId: $board.id
 		};
 
-		const createRssFeedResults = await createRssFeeds([newRssFeed], $board.id);
+		const createFeedResults = await createFeeds([newFeed], $board.id);
 
 		if (
-			!createRssFeedResults ||
-			createRssFeedResults.length === 0 ||
-			createRssFeedResults.some((r) => r.result === 'error') ||
-			createRssFeedResults.some((r) => !r.data)
+			!createFeedResults ||
+			createFeedResults.length === 0 ||
+			createFeedResults.some((r) => r.result === 'error') ||
+			createFeedResults.some((r) => !r.data)
 		) {
-			showToast('Failed to create new RSS feed', 'Please try again later', 'error');
-			throw new Error('Failed to create new RSS feed');
+			showToast('Failed to create new feed', 'Please try again later', 'error');
+			throw new Error('Failed to create new feed');
 		}
 
-		const createdRssFeed = createRssFeedResults[0].data;
+		const createdFeed = createFeedResults[0].data;
 
-		if ($board.rssFeeds && createdRssFeed) {
-			$board.rssFeeds = [...$board.rssFeeds, createdRssFeed];
+		if ($board.feeds && createdFeed) {
+			$board.feeds = [...$board.feeds, createdFeed];
 		}
 
-		showToast('New RSS feed added', `RSS feed "${newRssFeed.name}" has been added to the board.`);
+		showToast('New feed added', `"${newFeed.name}" has been added to the board.`);
 
 		console.log($board);
 	}
@@ -102,7 +102,7 @@
 	{#await data.streamed.board}
 		<BoardSettingsSkeleton />
 	{:then}
-		<Page.Header title="Edit board" subtitle="Edit board name and RSS feeds" />
+		<Page.Header title="Edit board" subtitle="Edit board name and feeds" />
 
 		<div class="space-y-12">
 			<div class="space-y-2">
@@ -120,16 +120,16 @@
 			<div>
 				<div class="mb-4 flex items-center justify-between">
 					<div class="space-y-2">
-						<Label for="feedUrls" class="font-semibold">RSS feeds</Label>
-						<p class="text-sm text-muted-foreground">Add, edit or remove RSS feeds</p>
+						<Label for="feedUrls" class="font-semibold">Feeds</Label>
+						<p class="text-sm text-muted-foreground">Add, edit or remove feeds</p>
 					</div>
 
-					<CreateFeedDialog on:create={saveRssFeed} />
+					<CreateFeedDialog on:create={saveFeed} />
 				</div>
 
 				<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
-					{#each $board.rssFeeds || [] as rssFeed}
-						<RssFeedListItem {rssFeed} on:delete={() => removeRssFeed(rssFeed)} />
+					{#each $board.feeds || [] as feed}
+						<FeedListItem {feed} on:delete={() => removeFeed(feed)} />
 					{/each}
 				</div>
 			</div>

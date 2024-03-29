@@ -5,7 +5,7 @@ export const GET: RequestHandler = async ({ url }) => {
 	const boardId = url.searchParams.get('boardId');
 	let take = Number(url.searchParams.get('take'));
 	const afterPublishedAt = url.searchParams.get('afterPublishedAt') || undefined;
-	const rssFeedId = url.searchParams.get('rssFeedId');
+	const feedId = url.searchParams.get('feedId');
 
 	if (boardId) {
 		if (isNaN(take)) {
@@ -16,8 +16,8 @@ export const GET: RequestHandler = async ({ url }) => {
 		return new Response(JSON.stringify(articles), { status: 200 });
 	}
 
-	if (rssFeedId) {
-		const articles = await articleRepository.findByRssFeedId(rssFeedId);
+	if (feedId) {
+		const articles = await articleRepository.findByFeedId(feedId);
 		return new Response(JSON.stringify(articles), { status: 200 });
 	}
 

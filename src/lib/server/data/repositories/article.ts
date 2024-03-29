@@ -3,9 +3,9 @@ import { getClient } from '../db';
 import {
 	articleSchema,
 	type Article,
-	rssFeedSchema,
+	feedSchema,
 	boardSchema,
-	boardsToRssFeeds
+	boardsToFeeds
 } from '../schema';
 import { count, desc, eq, lt, sql, and } from 'drizzle-orm';
 import type { NewArticle } from '@/types/NewArticle';
@@ -72,16 +72,16 @@ async function existsWithLink(link: string): Promise<boolean | undefined> {
 }
 
 //TODO: implement pagination
-async function findByRssFeedId(rssFeedId: string): Promise<Article[] | undefined> {
+async function findByFeedId(feedId: string): Promise<Article[] | undefined> {
 	try {
 		const db = getClient();
 		const result = await db.query.articleSchema.findMany({
-			where: eq(articleSchema.rssFeedId, rssFeedId),
+			where: eq(articleSchema.feedId, feedId),
 			orderBy: (articleSchema, { desc }) => desc(articleSchema.publishedAt)
 		});
 		return result;
 	} catch (error) {
-		console.error('Error occurred while finding Article by rssFeedId:', error);
+		console.error('Error occurred while finding Article by feedId:', error);
 		return undefined;
 	}
 }
@@ -118,25 +118,26 @@ async function findByBoardId(
 				author: articleSchema.author,
 				publishedAt: articleSchema.publishedAt,
 				readable: articleSchema.readable,
-				rssFeedId: articleSchema.rssFeedId,
-				rssFeed: {
-					id: rssFeedSchema.id,
-					name: rssFeedSchema.name,
-					description: rssFeedSchema.description,
-					link: rssFeedSchema.link,
-					createdAt: rssFeedSchema.createdAt,
-					updatedAt: rssFeedSchema.updatedAt,
-					syncedAt: rssFeedSchema.syncedAt
+				feedId: articleSchema.feedId,
+				feed: {
+					id: feedSchema.id,
+					name: feedSchema.name,
+					description: feedSchema.description,
+					link: feedSchema.link,
+          type: feedSchema.type,
+					createdAt: feedSchema.createdAt,
+					updatedAt: feedSchema.updatedAt,
+					syncedAt: feedSchema.syncedAt
 				},
 				createdAt: articleSchema.createdAt,
 				updatedAt: articleSchema.updatedAt
 			})
 			.from(articleSchema)
-			.leftJoin(rssFeedSchema, eq(articleSchema.rssFeedId, rssFeedSchema.id))
-			.leftJoin(boardsToRssFeeds, eq(rssFeedSchema.id, boardsToRssFeeds.rssFeedId))
+			.leftJoin(feedSchema, eq(articleSchema.feedId, feedSchema.id))
+			.leftJoin(boardsToFeeds, eq(feedSchema.id, boardsToFeeds.feedId))
 			.where(
 				and(
-					eq(boardsToRssFeeds.boardId, boardId),
+					eq(boardsToFeeds.boardId, boardId),
 					lt(articleSchema.publishedAt, new Date(afterPublishedAt))
 				)
 			)
@@ -147,9 +148,9 @@ async function findByBoardId(
 		const articleCount = await db
 			.select({ articlesCount: sql<number>`cast(${count(articleSchema.id)} as int)` })
 			.from(articleSchema)
-			.leftJoin(rssFeedSchema, eq(articleSchema.rssFeedId, rssFeedSchema.id))
-			.leftJoin(boardsToRssFeeds, eq(rssFeedSchema.id, boardsToRssFeeds.rssFeedId))
-			.where(eq(boardsToRssFeeds.boardId, boardId))
+			.leftJoin(feedSchema, eq(articleSchema.feedId, feedSchema.id))
+			.leftJoin(boardsToFeeds, eq(feedSchema.id, boardsToFeeds.feedId))
+			.where(eq(boardsToFeeds.boardId, boardId))
 			.execute();
 
 		return {
@@ -165,6 +166,6 @@ export default {
 	create,
 	findBySlug,
 	existsWithLink,
-	findByRssFeedId,
+	findByFeedId,
 	findByBoardId
 };

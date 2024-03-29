@@ -1,6 +1,6 @@
 import ShortUniqueId from 'short-unique-id';
 import { getClient } from '../db';
-import { boardSchema, rssFeedSchema, boardsToRssFeeds, type Board } from '../schema';
+import { boardSchema, feedSchema, boardsToFeeds, type Board } from '../schema';
 import { and, eq } from 'drizzle-orm';
 
 async function create(newBoard: Pick<Board, 'name' | 'userId'>) {
@@ -46,37 +46,37 @@ async function update(id: string, newBoard: Pick<Board, 'name'>) {
 	}
 }
 
-async function addFeedsToBoard(assignments: { id: string; rssFeedId: string }[]) {
+async function addFeedsToBoard(assignments: { id: string; feedId: string }[]) {
 	try {
 		const db = getClient();
 
-		for (const { id, rssFeedId } of assignments) {
-			const rssFeedExists = await db.query.rssFeedSchema
-				.findFirst({ where: eq(rssFeedSchema.id, rssFeedId) })
+		for (const { id, feedId } of assignments) {
+			const feedExists = await db.query.feedSchema
+				.findFirst({ where: eq(feedSchema.id, feedId) })
 				.execute();
 
-			if (!rssFeedExists) {
-				throw new Error('RSS feed does not exist');
+			if (!feedExists) {
+				throw new Error('Feed does not exist');
 			}
 
-			const isAlreadyRelated = await db.query.boardsToRssFeeds
+			const isAlreadyRelated = await db.query.boardsToFeeds
 				.findFirst({
-					where: and(eq(boardsToRssFeeds.boardId, id), eq(boardsToRssFeeds.rssFeedId, rssFeedId))
+					where: and(eq(boardsToFeeds.boardId, id), eq(boardsToFeeds.feedId, feedId))
 				})
 				.execute();
 
 			if (!isAlreadyRelated) {
 				await db
-					.insert(boardsToRssFeeds)
+					.insert(boardsToFeeds)
 					.values({
 						boardId: id,
-						rssFeedId
+						feedId
 					})
 					.execute();
 			}
 		}
 	} catch (error) {
-		console.error('Error occurred while assigning RSS feed to Board:', error);
+		console.error('Error occurred while adding feeds to board:', error);
 		throw error;
 	}
 }
@@ -89,18 +89,18 @@ async function findById(id: string, withRelated: boolean = false): Promise<Board
 			const result = await db
 				.select()
 				.from(boardSchema)
-				.leftJoin(boardsToRssFeeds, eq(boardsToRssFeeds.boardId, boardSchema.id))
-				.leftJoin(rssFeedSchema, eq(boardsToRssFeeds.rssFeedId, rssFeedSchema.id))
+				.leftJoin(boardsToFeeds, eq(boardsToFeeds.boardId, boardSchema.id))
+				.leftJoin(feedSchema, eq(boardsToFeeds.feedId, feedSchema.id))
 				.where(eq(boardSchema.id, id))
 				.execute();
 
 			if (!result || result.length === 0) return undefined;
 
-			const rssFeeds = result.map((r) => (r.rssFeeds ? [r.rssFeeds] : []));
+			const feeds = result.map((r) => (r.feeds ? [r.feeds] : []));
 
 			return {
 				...result[0].boards,
-				rssFeeds: rssFeeds.flat()
+				feeds: feeds.flat()
 			};
 		}
 
@@ -131,18 +131,18 @@ async function findBySlug(
 			const result = await db
 				.select()
 				.from(boardSchema)
-				.leftJoin(boardsToRssFeeds, eq(boardsToRssFeeds.boardId, boardSchema.id))
-				.leftJoin(rssFeedSchema, eq(boardsToRssFeeds.rssFeedId, rssFeedSchema.id))
+				.leftJoin(boardsToFeeds, eq(boardsToFeeds.boardId, boardSchema.id))
+				.leftJoin(feedSchema, eq(boardsToFeeds.feedId, feedSchema.id))
 				.where(and(eq(boardSchema.userId, userId), eq(boardSchema.slug, slug)))
 				.execute();
 
 			if (!result || result.length === 0) return undefined;
 
-			const rssFeeds = result.map((r) => (r.rssFeeds ? [r.rssFeeds] : []));
+			const feeds = result.map((r) => (r.feeds ? [r.feeds] : []));
 
 			return {
 				...result[0].boards,
-				rssFeeds: rssFeeds.flat()
+				feeds: feeds.flat()
 			};
 		}
 
@@ -172,10 +172,10 @@ async function findBoardsByUserId(
 			const result = await db.query.boardSchema.findMany({
 				where: eq(boardSchema.userId, userId),
 				with: {
-					boardsToRssfeeds: {
+					boardsToFeeds: {
 						columns: {},
 						with: {
-							rssFeed: true
+							feed: true
 						}
 					}
 				}
@@ -185,9 +185,7 @@ async function findBoardsByUserId(
 
 			const processedBoards = await Promise.all(
 				result.map(async (board) => {
-					const rssFeeds = await Promise.all(
-						board.boardsToRssfeeds?.map(async (b) => b.rssFeed) || []
-					);
+					const feeds = await Promise.all(board.boardsToFeeds?.map(async (b) => b.feed) || []);
 					return {
 						id: board.id,
 						slug: board.slug,
@@ -195,7 +193,7 @@ async function findBoardsByUserId(
 						createdAt: board.createdAt,
 						updatedAt: board.updatedAt,
 						userId: board.userId,
-						rssFeeds
+						feeds
 					};
 				})
 			);
@@ -215,15 +213,15 @@ async function findBoardsByUserId(
 	}
 }
 
-async function deleteFeedFromBoard(boardId: string, rssFeedId: string) {
+async function deleteFeedFromBoard(boardId: string, feedId: string) {
 	try {
 		const db = getClient();
 		await db
-			.delete(boardsToRssFeeds)
-			.where(and(eq(boardsToRssFeeds.boardId, boardId), eq(boardsToRssFeeds.rssFeedId, rssFeedId)))
+			.delete(boardsToFeeds)
+			.where(and(eq(boardsToFeeds.boardId, boardId), eq(boardsToFeeds.feedId, feedId)))
 			.execute();
 	} catch (error) {
-		console.error('Error occurred while deleting RSS feed from Board:', error);
+		console.error('Error occurred while deleting feed:', error);
 		throw error;
 	}
 }

@@ -1,6 +1,6 @@
 import { CronJob } from 'cron';
-import rssFeedRepository from '@/server/data/repositories/rssFeed';
-import type { RssFeed } from '@/server/data/schema';
+import feedRepository from '@/server/data/repositories/feed';
+import type { Feed } from '@/server/data/schema';
 import { getArticleQueue } from '../queue/articles';
 
 export function startScheduler() {
@@ -12,24 +12,24 @@ export function startScheduler() {
 		let page = 1;
 		const pageSize = 20;
 
-		let rssFeeds: RssFeed[] | undefined;
+		let feeds: Feed[] | undefined;
 		do {
-			rssFeeds = await rssFeedRepository.findAll(pageSize, (page - 1) * pageSize);
+			feeds = await feedRepository.findAll(pageSize, (page - 1) * pageSize);
 
-			if (rssFeeds.length > 0) {
-				console.log(`[Scheduler] Syncing ${rssFeeds.length} RSS feeds...`);
+			if (feeds.length > 0) {
+				console.log(`[Scheduler] Syncing ${feeds.length} feeds...`);
 
 				const articleQueue = getArticleQueue();
 
 				articleQueue.addBulk(
-					rssFeeds.map((rssFeed) => {
+					feeds.map((feed) => {
 						return {
 							name: 'sync',
 							data: {
-								rssFeedId: rssFeed.id
+								feedId: feed.id
 							},
 							opts: {
-								jobId: rssFeed.id,
+								jobId: feed.id,
 								removeOnComplete: true
 							}
 						};
@@ -37,7 +37,7 @@ export function startScheduler() {
 				);
 			}
 			page++;
-		} while (rssFeeds && rssFeeds.length > 0);
+		} while (feeds && feeds.length > 0);
 	});
 
 	job.start();

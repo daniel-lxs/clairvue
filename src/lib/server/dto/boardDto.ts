@@ -14,15 +14,15 @@ export const updateBoardDto = z.object({
 export type UpdateBoardDto = z.infer<typeof updateBoardDto>;
 
 export const deleteFeedFromBoardDto = z.object({
-	id: z.string().length(8, { message: 'Invalid RSS Feed ID' }),
-	rssFeedId: z.string().length(8, { message: 'Invalid board ID' })
+	id: z.string().length(8, { message: 'Invalid Feed ID' }),
+	feedId: z.string().length(8, { message: 'Invalid board ID' })
 });
 
 export type DeleteFeedFromBoardDto = z.infer<typeof deleteFeedFromBoardDto>;
 
 export const addFeedToBoardDto = z.object({
 	id: z.string().length(8, { message: 'Invalid board ID' }),
-	rssFeedId: z.string().length(8, { message: 'Invalid RSS Feed ID' })
+	feedId: z.string().length(8, { message: 'Invalid Feed ID' })
 });
 
 export type AddFeedToBoardDto = z.infer<typeof addFeedToBoardDto>;

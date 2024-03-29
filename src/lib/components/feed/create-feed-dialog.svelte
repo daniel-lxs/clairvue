@@ -3,41 +3,42 @@
 	import * as Dialog from '@/components/ui/dialog';
 	import { Input } from '@/components/ui/input';
 	import { Label } from '@/components/ui/label';
-	import { getRssInfo } from '@/api';
+	import { getFeedInfo } from '@/api';
 	import { createEventDispatcher } from 'svelte';
 	import { Loader2 } from 'lucide-svelte';
-	import type { NewRssFeed } from '@/types/NewRssFeed';
+	import type { NewFeed } from '@/types/NewFeed';
 
 	const dispatch = createEventDispatcher<{
-		create: NewRssFeed;
+		create: NewFeed;
 	}>();
 
 	let isLoading = false;
 	let hasError = false;
-	let newRssFeed: NewRssFeed = {
+	let newFeed: NewFeed = {
 		id: '',
 		name: '',
 		description: '',
-		link: ''
+		link: '',
+		type: 'rss'
 	};
 	let open: boolean;
 	let link: string = '';
 
 	async function save() {
 		isLoading = true;
-		const rssInfo = await getRssInfo(link);
+		const feedInfo = await getFeedInfo(link);
 
-		if (rssInfo) {
-			newRssFeed.name = rssInfo.title;
-			newRssFeed.description = rssInfo.description;
-			newRssFeed.link = link;
+		if (feedInfo) {
+			newFeed.name = feedInfo.title;
+			newFeed.description = feedInfo.description;
+			newFeed.link = link;
 
 			open = false;
 			isLoading = false;
 			hasError = false;
 			link = '';
 
-			dispatch('create', newRssFeed);
+			dispatch('create', newFeed);
 			return;
 		}
 
@@ -46,11 +47,12 @@
 	}
 
 	$: if (open === false) {
-		newRssFeed = {
+		newFeed = {
 			id: '',
 			name: '',
 			description: '',
-			link: ''
+			link: '',
+			type: 'rss'
 		};
 		link = '';
 		hasError = false;
@@ -59,12 +61,12 @@
 </script>
 
 <Dialog.Root bind:open>
-	<Dialog.Trigger class={buttonVariants({ variant: 'outline' })}>Add RSS feed</Dialog.Trigger>
+	<Dialog.Trigger class={buttonVariants({ variant: 'outline' })}>Add new feed</Dialog.Trigger>
 
 	<Dialog.Content class="sm:max-w-[425px]">
 		<Dialog.Header>
-			<Dialog.Title>Create RSS feed</Dialog.Title>
-			<Dialog.Description>Create a new RSS feed. Click save when you're done</Dialog.Description>
+			<Dialog.Title>Create new feed</Dialog.Title>
+			<Dialog.Description>Create a new feed. Click save when you're done</Dialog.Description>
 		</Dialog.Header>
 
 		<div class="grid gap-4 py-4">
@@ -75,7 +77,7 @@
 
 			<p class="text-center text-xs text-muted-foreground {hasError ? 'text-red-500' : ''}">
 				{#if hasError}
-					Invalid RSS link
+					Invalid feed link
 				{:else}
 					The name and description will be fetched automatically
 				{/if}

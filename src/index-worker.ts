@@ -1,5 +1,5 @@
 import { Worker, type ConnectionOptions } from 'bullmq';
-import rssFeedRepository from '@/server/data/repositories/rssFeed';
+import feedRepository from '@/server/data/repositories/feed';
 import { syncArticles } from '@/server/services/article';
 import { Logger } from '@control.systems/logger';
 
@@ -16,13 +16,13 @@ const worker = new Worker(
 	async (job) => {
 		if (job.name === 'sync') {
 			logger.info(`Job ${job.id} started...`);
-			const { rssFeedId } = job.data;
-			const rssFeed = await rssFeedRepository.findById(rssFeedId);
-			if (!rssFeed) {
-				logger.error('RSS feed not found');
+			const { feedId } = job.data;
+			const feed = await feedRepository.findById(feedId);
+			if (!feed) {
+				logger.error('Feed not found');
 				return;
 			}
-			const createdArticlesIds = await syncArticles(rssFeed);
+			const createdArticlesIds = await syncArticles(feed);
 			return createdArticlesIds;
 		}
 	},

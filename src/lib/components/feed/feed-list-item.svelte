@@ -1,19 +1,19 @@
 <script lang="ts">
-	import type { RssFeed } from '@/server/data/schema';
+	import type { Feed } from '@/server/data/schema';
 	import { calculateAge } from '@/utils';
 	import { Button } from '../ui/button';
 	import { Trash } from 'lucide-svelte';
 	import { createEventDispatcher } from 'svelte';
 
-	export let rssFeed: RssFeed;
+	export let feed: Feed;
 
 	const dispatch = createEventDispatcher();
 
 	let isHovered = false;
 
-	function deleteRssFeed() {
+	function deleteFeed() {
 		dispatch('delete', {
-			rssFeed
+			feed
 		});
 	}
 </script>
@@ -27,14 +27,14 @@
 >
 	<div class="flex items-center justify-between px-4 py-4">
 		<div class="item-body mr-4 flex flex-col">
-			<div class="text-sm font-semibold">{rssFeed.name}</div>
+			<div class="text-sm font-semibold">{feed.name}</div>
 			<div class="item-description text-sm text-muted-foreground">
-				Created {calculateAge(rssFeed.createdAt, 'long')} • {rssFeed.articleCount || 0} articles
+				Created {calculateAge(feed.createdAt, 'long')} • {feed.articleCount || 0} articles
 			</div>
 		</div>
 		<div class="item-actions">
 			{#if isHovered}
-				<Button on:click={deleteRssFeed} variant="destructive" size="icon"
+				<Button on:click={deleteFeed} variant="destructive" size="icon"
 					><Trash class="h-4 w-4" /></Button
 				>
 			{/if}

@@ -81,7 +81,7 @@
 								<a
 									href="/dashboard"
 									class="text-xs font-bold transition-colors hover:text-primary sm:text-sm"
-									>{article.rssFeed?.name}</a
+									>{article.feed?.name}</a
 								>
 								<div class="flex flex-col gap-2">
 									<Card.Title

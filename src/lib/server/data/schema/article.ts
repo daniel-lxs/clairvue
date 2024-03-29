@@ -1,5 +1,5 @@
 import { boolean, pgTable, serial, text, timestamp, varchar } from 'drizzle-orm/pg-core';
-import { rssFeedSchema, type RssFeed } from './rssFeed';
+import { feedSchema, type Feed } from './feed';
 import { relations, type InferSelectModel } from 'drizzle-orm';
 
 export const articleSchema = pgTable('articles', {
@@ -7,7 +7,7 @@ export const articleSchema = pgTable('articles', {
 	slug: varchar('slug', { length: 8 }).notNull(),
 	title: text('title').notNull(),
 	link: text('link').unique().notNull(),
-	rssFeedId: text('rssFeedId').notNull(),
+	feedId: text('feedId').notNull(),
 	description: text('description'),
 	siteName: text('siteName'),
 	image: text('image'),
@@ -19,9 +19,9 @@ export const articleSchema = pgTable('articles', {
 });
 
 export const articleRelations = relations(articleSchema, ({ one }) => ({
-	rssFeed: one(rssFeedSchema, { fields: [articleSchema.rssFeedId], references: [rssFeedSchema.id] })
+	feed: one(feedSchema, { fields: [articleSchema.feedId], references: [feedSchema.id] })
 }));
 
 export type Article = InferSelectModel<typeof articleSchema> & {
-	rssFeed?: RssFeed | null;
+	feed?: Feed | null;
 };

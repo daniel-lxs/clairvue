@@ -5,7 +5,7 @@
 
 	export let board: Board;
 
-	let rssFeedsCount = board.rssFeeds?.length || 0;
+	let feedsCount = board.feeds?.length || 0;
 
 	let isHovered = false;
 </script>
@@ -21,7 +21,7 @@
 		<div class="item-body flex flex-col">
 			<div class="item-title text-base-content font-semibold">{board.name}</div>
 			<div class="item-description text-sm text-muted-foreground">
-				Created {calculateAge(board.createdAt, 'long')} • {rssFeedsCount} RSS feeds
+				Created {calculateAge(board.createdAt, 'long')} • {feedsCount} Feeds
 			</div>
 		</div>
 		<div class="item-actions">

@@ -18,7 +18,7 @@
 >
 	<Card.Header>
 		<Card.Title tag="h1" class="text-4xl font-bold">Welcome to ReadableSS</Card.Title>
-		<Card.Description class="text-md">A minimalistic and light RSS reader</Card.Description>
+		<Card.Description class="text-md">A minimalistic and light feed reader</Card.Description>
 	</Card.Header>
 	<Card.Content class="space-y-4">
 		{#if isInputVisible}
@@ -38,6 +38,6 @@
 		</div>
 	</Card.Content>
 	<Card.Footer>
-		<a href="/rss" class="text-sm text-muted-foreground">What is this?</a>
+		<a href="/#" class="text-sm text-muted-foreground">What is this?</a>
 	</Card.Footer>
 </Card.Root>

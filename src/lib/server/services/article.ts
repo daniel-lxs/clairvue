@@ -4,8 +4,8 @@ import { JSDOM } from 'jsdom';
 import urlMetadata from 'url-metadata';
 import Parser from 'rss-parser';
 import articleRepository from '@/server/data/repositories/article';
-import rssFeedRepository from '@/server/data/repositories/rssFeed';
-import type { RssFeed } from '@/server/data/schema';
+import feedRepository from '@/server/data/repositories/feed';
+import type { Feed } from '@/server/data/schema';
 import type { ParsedArticle } from '@/types/ParsedArticle';
 import { z } from 'zod';
 import type { ArticleMetadata } from '@/types/ArticleMetadata';
@@ -19,7 +19,7 @@ interface ProcessArticlesOptions {
 	parallelDelay?: number;
 }
 
-export async function fetchRssFeedArticles(link: string) {
+export async function fetchFeedArticles(link: string) {
 	try {
 		const parser = new Parser();
 		const feed = await parser.parseURL(link);
@@ -38,20 +38,20 @@ export async function fetchRssFeedArticles(link: string) {
 
 		return feed.items;
 	} catch (error) {
-		logger.error('Error fetching or parsing RSS feed:', error);
+		logger.error('Error fetching or parsing feed:', error);
 		return undefined;
 	}
 }
 
-export async function syncArticles(rssFeed: RssFeed) {
+export async function syncArticles(feed: Feed) {
 	try {
-		const orderedArticles = await fetchRssFeedArticles(rssFeed.link);
+		const orderedArticles = await fetchFeedArticles(feed.link);
 
 		if (!orderedArticles) return;
 
-		logger.info(`Syncing ${orderedArticles.length} articles from ${rssFeed.name}...`);
+		logger.info(`Syncing ${orderedArticles.length} articles from ${feed.name}...`);
 
-		const newArticles = await processArticles(rssFeed, orderedArticles);
+		const newArticles = await processArticles(feed, orderedArticles);
 
 		if (!newArticles || newArticles.length === 0) {
 			logger.info('No new articles found.');
@@ -65,7 +65,7 @@ export async function syncArticles(rssFeed: RssFeed) {
 			return;
 		}
 
-		await rssFeedRepository.updateLastSync(rssFeed.id, new Date());
+		await feedRepository.updateLastSync(feed.id, new Date());
 
 		logger.info(`Synced ${createdArticles.length} articles.`);
 		return createdArticles;
@@ -99,10 +99,7 @@ async function fetchArticleMetadata(link: string): Promise<ArticleMetadata | und
 	}
 }
 
-async function createNewArticle(
-	rssFeed: RssFeed,
-	article: Parser.Item
-): Promise<NewArticle | undefined> {
+async function createNewArticle(feed: Feed, article: Parser.Item): Promise<NewArticle | undefined> {
 	const { link, pubDate, title } = article;
 
 	if (!link) return;
@@ -119,7 +116,7 @@ async function createNewArticle(
 	const articleMetadata = await fetchArticleMetadata(link);
 
 	const newArticle: NewArticle = {
-		rssFeedId: rssFeed.id,
+		feedId: feed.id,
 		title: title || articleMetadata?.title || 'Untitled',
 		link,
 		description: articleMetadata?.description || null,
@@ -134,7 +131,7 @@ async function createNewArticle(
 }
 
 async function processArticles(
-	rssFeed: RssFeed,
+	feed: Feed,
 	articles: Parser.Item[],
 	options: ProcessArticlesOptions = {}
 ): Promise<NewArticle[]> {
@@ -146,9 +143,7 @@ async function processArticles(
 	);
 
 	for (const chunk of chunks) {
-		const chunkResults = await Promise.all(
-			chunk.map((article) => createNewArticle(rssFeed, article))
-		);
+		const chunkResults = await Promise.all(chunk.map((article) => createNewArticle(feed, article)));
 		newArticles.push(...chunkResults.filter((article): article is NewArticle => !!article));
 		await new Promise((resolve) => setTimeout(resolve, parallelDelay));
 	}

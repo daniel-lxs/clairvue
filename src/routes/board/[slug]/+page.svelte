@@ -113,8 +113,8 @@
 
 	<Page.Header
 		title={data.board?.name || 'Unnamed'}
-		subtitle={data.board.rssFeeds
-			? `Showing articles from ${data.board.rssFeeds.length} feeds`
+		subtitle={data.board.feeds
+			? `Showing articles from ${data.board.feeds.length} feeds`
 			: undefined}
 	/>
 
