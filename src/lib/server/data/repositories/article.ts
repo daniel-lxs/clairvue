@@ -1,12 +1,6 @@
 import ShortUniqueId from 'short-unique-id';
 import { getClient } from '../db';
-import {
-	articleSchema,
-	type Article,
-	feedSchema,
-	boardSchema,
-	boardsToFeeds
-} from '../schema';
+import { articleSchema, type Article, feedSchema, boardSchema, boardsToFeeds } from '../schema';
 import { count, desc, eq, lt, sql, and } from 'drizzle-orm';
 import type { NewArticle } from '@/types/NewArticle';
 import type { PaginatedList } from '@/types/PaginatedList';
@@ -124,7 +118,6 @@ async function findByBoardId(
 					name: feedSchema.name,
 					description: feedSchema.description,
 					link: feedSchema.link,
-          type: feedSchema.type,
 					createdAt: feedSchema.createdAt,
 					updatedAt: feedSchema.updatedAt,
 					syncedAt: feedSchema.syncedAt

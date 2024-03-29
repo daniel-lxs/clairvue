@@ -8,9 +8,8 @@ export const feedTypeEnum = pgEnum('type', ['rss', 'atom']);
 export const feedSchema = pgTable('feeds', {
 	id: varchar('id', { length: 8 }).primaryKey().notNull(),
 	name: text('name').notNull(),
-	description: text('description').notNull().default('No description'),
+	description: text('description'),
 	link: text('link').unique().notNull(),
-	type: feedTypeEnum('type').notNull().default('rss'),
 	createdAt: timestamp('createdAt').notNull().defaultNow(),
 	updatedAt: timestamp('updatedAt').notNull().defaultNow(),
 	syncedAt: timestamp('syncedAt').notNull().defaultNow()

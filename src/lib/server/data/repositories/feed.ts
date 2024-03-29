@@ -4,7 +4,7 @@ import { getClient } from '../db';
 import { boardsToFeeds, feedSchema, type Feed, articleSchema } from '../schema';
 
 async function create(
-	newFeed: Pick<Feed, 'name' | 'description' | 'link' | 'type'>
+	newFeed: Pick<Feed, 'name' | 'description' | 'link'>
 ): Promise<Feed | undefined> {
 	try {
 		const db = getClient();
@@ -25,15 +25,13 @@ async function create(
 				id,
 				name: newFeed.name,
 				description: newFeed.description,
-				link: newFeed.link,
-				type: newFeed.type
+				link: newFeed.link
 			})
 			.returning({
 				id: feedSchema.id,
 				name: feedSchema.name,
 				description: feedSchema.description,
 				link: feedSchema.link,
-				type: feedSchema.type,
 				createdAt: feedSchema.createdAt,
 				updatedAt: feedSchema.updatedAt,
 				syncedAt: feedSchema.syncedAt

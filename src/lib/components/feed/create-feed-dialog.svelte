@@ -18,8 +18,7 @@
 		id: '',
 		name: '',
 		description: '',
-		link: '',
-		type: 'rss'
+		link: ''
 	};
 	let open: boolean;
 	let link: string = '';
@@ -38,6 +37,7 @@
 			hasError = false;
 			link = '';
 
+			console.log('dispatching create', newFeed);
 			dispatch('create', newFeed);
 			return;
 		}
@@ -51,8 +51,7 @@
 			id: '',
 			name: '',
 			description: '',
-			link: '',
-			type: 'rss'
+			link: ''
 		};
 		link = '';
 		hasError = false;

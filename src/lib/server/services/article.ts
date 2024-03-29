@@ -329,6 +329,10 @@ function extractArticleMetadata(
 		validImageUrl = imageArray[0];
 	}
 
+	if (!z.string().url().safeParse(validImageUrl).success) {
+		validImageUrl = undefined;
+	}
+
 	return { title, description, image: validImageUrl, author };
 }
 

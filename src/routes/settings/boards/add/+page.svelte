@@ -58,9 +58,8 @@
 
 			const newFeeds: CreateFeedDto[] = $board.feeds.map((feed) => ({
 				name: feed.name,
-				description: feed.description,
-				link: feed.link,
-				type: feed.type
+				description: feed.description || undefined,
+				link: feed.link
 			}));
 
 			if (newFeeds.length > 0) {
@@ -83,7 +82,11 @@
 			goto('/settings/boards');
 		} catch (error) {
 			console.error('An error occurred while saving the board:', error);
-			showErrorDialog('Error', 'An error occurred while saving the board, please try again later');
+			showToast(
+				'Error',
+				'An error occurred while saving the board, please try again later',
+				'error'
+			);
 		} finally {
 			isLoading = false;
 		}
@@ -119,9 +122,9 @@
 			syncedAt: new Date(),
 			boardId: $board.id
 		};
-		if ($board && $board.feeds) $board.feeds = [...$board.feeds, newFeed];
-
-		$board.feeds?.push(newFeed);
+		if ($board && $board.feeds) {
+			$board.feeds = [...$board.feeds, newFeed];
+		}
 	}
 
 	function removeFeed(feed: Feed) {
@@ -135,7 +138,7 @@
 	<title>New board - Clairvue</title>
 </svelte:head>
 
-<AlertDialog {open} {title} {message} />
+<AlertDialog bind:open bind:title bind:message />
 
 <Page.Container>
 	<Page.Header title="New board" subtitle="Create a new board" />
