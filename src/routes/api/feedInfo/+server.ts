@@ -1,5 +1,5 @@
 import type { RequestHandler } from '@sveltejs/kit';
-import { JSDOM } from 'jsdom';
+import Parser from 'rss-parser';
 
 export const GET: RequestHandler = async ({ url }) => {
 	const encodedFeedLink = url.searchParams.get('link');
@@ -12,21 +12,27 @@ export const GET: RequestHandler = async ({ url }) => {
 
 	try {
 		const response = await fetch(feedLink);
-		const html = await response.text();
 
-		const dom = new JSDOM(html);
-		const document = dom.window.document;
+		if (!response.ok) {
+			return new Response('Could not fetch feed', { status: 404 });
+		}
 
-		const title = document.querySelector('title')?.textContent;
-		const description = document.querySelector('description')?.textContent;
+		const feedData = await response.text();
+		const parsedData = await new Parser().parseString(feedData);
 
-		if (!title || !description) {
-			return new Response('Invalid  feed', { status: 404 });
+		if (!parsedData) {
+			return new Response('Could not parse feed', { status: 404 });
+		}
+
+		const { title, description } = parsedData;
+
+		if (!title) {
+			return new Response('Invalid feed', { status: 404 });
 		}
 
 		return new Response(JSON.stringify({ title, description }), { status: 200 });
 	} catch (error) {
 		console.error('Error occurred while fetching feed:', error);
-		return new Response('Error occurred while fetching  feed', { status: 500 });
+		return new Response('Error occurred while fetching feed', { status: 500 });
 	}
 };
