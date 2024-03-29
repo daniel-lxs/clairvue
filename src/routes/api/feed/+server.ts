@@ -2,8 +2,8 @@ import type { RequestHandler } from '@sveltejs/kit';
 import feedRepository from '@/server/data/repositories/feed';
 import { createFeedDto, updateFeedDto, type CreateFeedDto } from '@/server/dto/feedDto';
 import type { CreateFeedResult } from '@/types/CreateFeedResult';
-import { syncArticles } from '@/server/services/article';
 import type { Feed } from '@/server/data/schema';
+import { getArticleQueue } from '../../../queue/articles';
 
 export const GET: RequestHandler = async ({ url }) => {
 	const feedId = url.searchParams.get('id');
@@ -28,13 +28,13 @@ export const POST: RequestHandler = async ({ request }) => {
 		return new Response('Missing body', { status: 400 });
 	}
 
-	const validateRequestBody = (requestBody: CreateFeedDto[]): boolean => {
-		const validationResults = requestBody.map((feed) => createFeedDto.safeParse(feed));
-		return validationResults.every((result) => result.success);
-	};
+	const validationResults = requestBody.map((feed) => createFeedDto.safeParse(feed));
 
-	if (!validateRequestBody(requestBody)) {
-		return new Response('Invalid request body', { status: 400 });
+	if (validationResults.some((result) => result.success === false)) {
+		return new Response(
+			JSON.stringify(validationResults.filter((result) => result.success === false)),
+			{ status: 400 }
+		);
 	}
 
 	const newFeeds: CreateFeedResult[] = await Promise.all(
@@ -45,7 +45,7 @@ export const POST: RequestHandler = async ({ request }) => {
 				return { result: 'error', data: null, reason: result.error.message };
 			}
 
-			const newFeedData = result.data;
+			const newFeedData = { ...result.data, description: result.data.description || null };
 
 			try {
 				const createdFeed = await feedRepository.create(newFeedData);
@@ -54,7 +54,14 @@ export const POST: RequestHandler = async ({ request }) => {
 					return { result: 'error', data: null, reason: 'Unable to create' };
 				}
 
-				syncArticles(createdFeed);
+				getArticleQueue().add(
+					'sync',
+					{ feedId: createdFeed.id },
+					{
+						jobId: createdFeed.id,
+						removeOnComplete: true
+					}
+				);
 
 				return { result: 'success', data: createdFeed, reason: null };
 			} catch (error) {
@@ -84,7 +91,7 @@ export const PATCH: RequestHandler = async ({ request }) => {
 	const feedToUpdate: Pick<Feed, 'name' | 'link' | 'description'> = {
 		name: data.name,
 		link: data.link,
-		description: data.description
+		description: data.description || null
 	};
 
 	try {
