@@ -108,7 +108,7 @@
 	}
 
 	.parsed-content :global(ul) :global(ul) {
-		@apply mt-4 pl-4;
+		@apply mb-6 mt-4 pl-4;
 	}
 
 	.parsed-content :global(ol) {
