@@ -1,6 +1,6 @@
 {
-  "id": "fc54c3ba-e576-4cfe-a8e4-c15c95abf3d3",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "60753fa2-66cc-4118-a1f5-996f6e34fbba",
+  "prevId": "fc54c3ba-e576-4cfe-a8e4-c15c95abf3d3",
   "version": "5",
   "dialect": "pg",
   "tables": {
@@ -116,7 +116,7 @@
           "name": "description",
           "type": "text",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "default": "'No description'"
         },
         "link": {

@@ -1,3 +1,9 @@
+DO $$ BEGIN
+ CREATE TYPE "type" AS ENUM('rss', 'atom');
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "boards" (
 	"id" varchar(8) PRIMARY KEY NOT NULL,
 	"slug" text NOT NULL,
@@ -7,21 +13,22 @@ CREATE TABLE IF NOT EXISTS "boards" (
 	"updatedAt" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "boardsToRssFeeds" (
+CREATE TABLE IF NOT EXISTS "boardsToFeeds" (
 	"boardId" varchar(8) NOT NULL,
-	"rssFeedId" varchar(8) NOT NULL,
-	CONSTRAINT "boardsToRssFeeds_boardId_rssFeedId_pk" PRIMARY KEY("boardId","rssFeedId")
+	"feedId" varchar(8) NOT NULL,
+	CONSTRAINT "boardsToFeeds_boardId_feedId_pk" PRIMARY KEY("boardId","feedId")
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "rssFeeds" (
+CREATE TABLE IF NOT EXISTS "feeds" (
 	"id" varchar(8) PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
 	"description" text DEFAULT 'No description' NOT NULL,
 	"link" text NOT NULL,
+	"type" "type" DEFAULT 'rss' NOT NULL,
 	"createdAt" timestamp DEFAULT now() NOT NULL,
 	"updatedAt" timestamp DEFAULT now() NOT NULL,
 	"syncedAt" timestamp DEFAULT now() NOT NULL,
-	CONSTRAINT "rssFeeds_link_unique" UNIQUE("link")
+	CONSTRAINT "feeds_link_unique" UNIQUE("link")
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "sessions" (
@@ -46,7 +53,7 @@ CREATE TABLE IF NOT EXISTS "articles" (
 	"slug" varchar(8) NOT NULL,
 	"title" text NOT NULL,
 	"link" text NOT NULL,
-	"rssFeedId" text NOT NULL,
+	"feedId" text NOT NULL,
 	"description" text,
 	"siteName" text,
 	"image" text,
