@@ -56,7 +56,7 @@ export const flyAndScale = (
 };
 
 export function calculateAge(date: Date | string, format: 'short' | 'long' = 'short'): string {
-  if (typeof date === 'string') date = new Date(date);
+	if (typeof date === 'string') date = new Date(date);
 
 	const now = new Date();
 	const timeDifference = now.getTime() - date.getTime();
@@ -71,6 +71,7 @@ export function calculateAge(date: Date | string, format: 'short' | 'long' = 'sh
 		if (months > 0) return `${months} month${months !== 1 ? 's' : ''} ago`;
 		if (days > 0) return `${days} day${days !== 1 ? 's' : ''} ago`;
 		if (hours > 0) return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+		if (minutes === 0) return 'just now';
 		return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
 	}
 
