@@ -100,7 +100,9 @@ async function fetchArticleMetadata(link: string): Promise<ArticleMetadata | und
 }
 
 async function createNewArticle(feed: Feed, article: Parser.Item): Promise<NewArticle | undefined> {
-	const { link, pubDate, title } = article;
+	const { link, title } = article;
+
+	const pubDate = article.pubDate || article.isoDate;
 
 	if (!link) return;
 
@@ -124,7 +126,7 @@ async function createNewArticle(feed: Feed, article: Parser.Item): Promise<NewAr
 		readable: articleMetadata?.readable || false,
 		image: articleMetadata?.image || null,
 		author: articleMetadata?.author || null,
-		publishedAt: new Date(pubDate as string)
+		publishedAt: new Date(pubDate || Date.now())
 	};
 
 	return newArticle;
