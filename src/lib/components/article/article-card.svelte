@@ -3,7 +3,6 @@
 	import type { Article } from '@/server/data/schema';
 	import { calculateAge, truncateDescription } from '@/utils';
 	import ArticleCardImage from './article-card-image.svelte';
-	import { Skeleton } from '../ui/skeleton';
 	import { BookOpen } from 'lucide-svelte';
 	import { onMount } from 'svelte';
 
@@ -64,14 +63,10 @@
 <div id={article.slug}>
 	<Card.Root class="flex shadow-lg">
 		<div class="flex w-full flex-col">
-			{#if article.image && !imageError && imageType === 'wide'}
-				{#if imageLoaded}
-					<div class="w-full">
-						<ArticleCardImage {article} bind:imageLoaded bind:imageError type={imageType} />
-					</div>
-				{:else}
-					<Skeleton class="h-48 object-cover" />
-				{/if}
+			{#if imageType === 'wide'}
+				<div class="w-full">
+					<ArticleCardImage {article} bind:imageLoaded bind:imageError type={imageType} />
+				</div>
 			{/if}
 			<div class="space-y-2 p-4">
 				<div class="flex w-full justify-between">
@@ -114,14 +109,10 @@
 							{/if}
 						</div>
 					</div>
-					{#if article.image && !imageError && imageType === 'square'}
-						{#if imageLoaded}
-							<div class="ml-4 pl-2">
-								<ArticleCardImage {article} bind:imageLoaded bind:imageError type={imageType} />
-							</div>
-						{:else}
-							<Skeleton class="h-48 object-cover" />
-						{/if}
+					{#if imageType === 'square'}
+						<div class="ml-4 pl-2">
+							<ArticleCardImage {article} bind:imageLoaded bind:imageError type={imageType} />
+						</div>
 					{/if}
 				</div>
 				{#if isMobile && imageType === 'square'}
