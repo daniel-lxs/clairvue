@@ -53,12 +53,8 @@
           "name": "boards_userId_users_id_fk",
           "tableFrom": "boards",
           "tableTo": "users",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -88,10 +84,7 @@
       "compositePrimaryKeys": {
         "boardsToFeeds_boardId_feedId_pk": {
           "name": "boardsToFeeds_boardId_feedId_pk",
-          "columns": [
-            "boardId",
-            "feedId"
-          ]
+          "columns": ["boardId", "feedId"]
         }
       },
       "uniqueConstraints": {}
@@ -161,9 +154,7 @@
         "feeds_link_unique": {
           "name": "feeds_link_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "link"
-          ]
+          "columns": ["link"]
         }
       }
     },
@@ -253,9 +244,7 @@
         "users_username_unique": {
           "name": "users_username_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "username"
-          ]
+          "columns": ["username"]
         }
       }
     },
@@ -353,9 +342,7 @@
         "articles_link_unique": {
           "name": "articles_link_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "link"
-          ]
+          "columns": ["link"]
         }
       }
     }

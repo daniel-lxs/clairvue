@@ -1,4 +1,4 @@
 export type PaginatedList<T> = {
-	items: T[];
-	totalCount: number;
+  items: T[];
+  totalCount: number;
 };
