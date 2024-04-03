@@ -2,11 +2,11 @@ import articleRepository from '@/server/data/repositories/article';
 import { redirect } from '@sveltejs/kit';
 import { parseReadableArticle } from '@/server/services/article';
 import type { PageServerLoad } from './$types';
+import { PUBLIC_USER_AGENT } from '$env/static/public';
 
-export const load: PageServerLoad = async ({ request, params }) => {
+export const load: PageServerLoad = async ({ params }) => {
   const slug = params.slug;
-  const requestHeaders = request.headers;
-  const userAgent = requestHeaders.get('user-agent');
+  const userAgent = PUBLIC_USER_AGENT;
 
   const article = await articleRepository.findBySlug(slug);
 

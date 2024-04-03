@@ -11,6 +11,7 @@ import { z } from 'zod';
 import type { ArticleMetadata } from '@/types/ArticleMetadata';
 import type { NewArticle } from '@/types/NewArticle';
 import { Logger } from '@control.systems/logger';
+import { PUBLIC_USER_AGENT } from '$env/static/public';
 
 const logger = new Logger('ArticleService');
 
@@ -76,8 +77,7 @@ export async function syncArticles(feed: Feed) {
 
 async function fetchArticleMetadata(link: string): Promise<ArticleMetadata | undefined> {
   try {
-    const ua =
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36';
+    const ua = PUBLIC_USER_AGENT;
     const isReadable = isArticleReadable(link, ua);
     const metadata = await urlMetadata(link, {
       timeout: 10000,
@@ -162,9 +162,7 @@ async function fetchAndCleanDocument(
   link: string,
   ua?: string | null
 ): Promise<Document | undefined> {
-  const userAgent =
-    ua ||
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36';
+  const userAgent = ua || PUBLIC_USER_AGENT;
 
   try {
     const pageResponse = await fetch(link, {
