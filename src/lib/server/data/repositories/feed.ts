@@ -85,11 +85,13 @@ async function findAll(take = 20, skip = 0): Promise<Feed[]> {
 
     take = take > 100 ? 100 : take;
 
-    const result = await db.query.feedSchema.findMany({
-      offset: skip,
-      limit: take,
-      orderBy: desc(feedSchema.createdAt)
-    });
+    const result = await db.query.feedSchema
+      .findMany({
+        offset: skip,
+        limit: take,
+        orderBy: desc(feedSchema.createdAt)
+      })
+      .execute();
     return result;
   } catch (error) {
     console.error('Error occurred while finding all feeds:', error);
@@ -97,18 +99,21 @@ async function findAll(take = 20, skip = 0): Promise<Feed[]> {
   }
 }
 
+//TODO: drizzle has a bug where it won't return anything if more than a day has passed
 async function findOutdated(take = 20, skip = 0): Promise<Feed[]> {
   try {
     const MAX_AGE = 10 * 60 * 1000; // 10 minutes
     take = take > 100 ? 100 : take;
     const db = getClient();
 
-    const result = await db.query.feedSchema.findMany({
-      offset: skip,
-      limit: take,
-      where: gte(feedSchema.syncedAt, new Date(Date.now() - MAX_AGE)),
-      orderBy: asc(feedSchema.syncedAt) // oldest first
-    });
+    const result = await db.query.feedSchema
+      .findMany({
+        offset: skip,
+        limit: take,
+        where: gte(feedSchema.syncedAt, new Date(Date.now() - MAX_AGE)),
+        orderBy: asc(feedSchema.syncedAt) // oldest first
+      })
+      .execute();
     return result;
   } catch (error) {
     console.error('Error occurred while finding all outdated feeds:', error);
@@ -148,15 +153,16 @@ async function update(id: string, updatedFeed: Pick<Feed, 'name' | 'description'
   }
 }
 
-async function updateLastSync(id: string, lastSync: Date) {
+async function updateLastSync(id: string) {
   try {
     const db = getClient();
     await db
       .update(feedSchema)
       .set({
-        syncedAt: lastSync
+        syncedAt: new Date()
       })
-      .where(eq(feedSchema.id, id)).execute;
+      .where(eq(feedSchema.id, id))
+      .execute();
   } catch (error) {
     console.error('Error occurred while updating feed:', error);
     throw error;

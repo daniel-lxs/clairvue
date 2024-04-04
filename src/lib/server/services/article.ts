@@ -66,7 +66,7 @@ export async function syncArticles(feed: Feed) {
       return;
     }
 
-    await feedRepository.updateLastSync(feed.id, new Date());
+    await feedRepository.updateLastSync(feed.id);
 
     logger.info(`Synced ${createdArticles.length} articles.`);
     return createdArticles;
