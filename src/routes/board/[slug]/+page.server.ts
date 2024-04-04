@@ -20,7 +20,7 @@ export const load: PageServerLoad = async ({ params: { slug }, cookies }) => {
   const board = await boardRepository.findBySlug(authSession.user.id, slug, true);
 
   if (!board) {
-    redirect(302, '/board/new');
+    throw new Error('Board not found');
   }
 
   const limitPerPage = 20;
