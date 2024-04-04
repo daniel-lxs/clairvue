@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, gte } from 'drizzle-orm';
+import { and, count, desc, eq, sql } from 'drizzle-orm';
 import ShortUniqueId from 'short-unique-id';
 import { getClient } from '../db';
 import { boardsToFeeds, feedSchema, type Feed, articleSchema } from '../schema';
@@ -106,14 +106,17 @@ async function findOutdated(take = 20, skip = 0): Promise<Feed[]> {
     take = take > 100 ? 100 : take;
     const db = getClient();
 
-    const result = await db.query.feedSchema
-      .findMany({
-        offset: skip,
-        limit: take,
-        where: gte(feedSchema.syncedAt, new Date(Date.now() - MAX_AGE)),
-        orderBy: asc(feedSchema.syncedAt) // oldest first
-      })
-      .execute();
+    const query = sql`
+      SELECT *
+      FROM ${feedSchema}
+      WHERE ${feedSchema.syncedAt} < ${new Date(Date.now() - MAX_AGE)}
+      ORDER BY ${feedSchema.syncedAt}
+      LIMIT ${take}
+      OFFSET ${skip}
+    `;
+
+    const result: Feed[] = await db.execute(query);
+
     return result;
   } catch (error) {
     console.error('Error occurred while finding all outdated feeds:', error);
