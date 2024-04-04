@@ -5,7 +5,7 @@ import { getArticleQueue } from '../queue/articles';
 
 export function startScheduler() {
   console.log(`[Scheduler] Started at ${new Date().toLocaleString()}`);
-  const job = new CronJob('*/10 * * * *', async () => {
+  const job = new CronJob('*/2 * * * *', async () => {
     // Every 2 minutes
     console.log(`[Scheduler] Running job at ${new Date().toLocaleString()}`);
 
@@ -14,7 +14,7 @@ export function startScheduler() {
 
     let feeds: Feed[] | undefined;
     do {
-      feeds = await feedRepository.findAll(pageSize, (page - 1) * pageSize);
+      feeds = await feedRepository.findOutdated(pageSize, (page - 1) * pageSize); //Only outdated feeds will be synced
 
       if (feeds.length > 0) {
         console.log(`[Scheduler] Syncing ${feeds.length} feeds...`);
@@ -35,6 +35,8 @@ export function startScheduler() {
             };
           })
         );
+      } else {
+        console.log(`[Scheduler] No feeds to sync...`);
       }
       page++;
     } while (feeds && feeds.length > 0);
