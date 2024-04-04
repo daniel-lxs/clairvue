@@ -59,7 +59,8 @@ export const POST: RequestHandler = async ({ request }) => {
           { feedId: createdFeed.id },
           {
             jobId: createdFeed.id,
-            removeOnComplete: true
+            removeOnComplete: true,
+            removeOnFail: true
           }
         );
 

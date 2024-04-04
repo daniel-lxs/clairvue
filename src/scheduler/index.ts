@@ -30,7 +30,8 @@ export function startScheduler() {
               },
               opts: {
                 jobId: feed.id,
-                removeOnComplete: true
+                removeOnComplete: true,
+                removeOnFail: true
               }
             };
           })
