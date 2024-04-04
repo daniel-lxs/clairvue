@@ -7,5 +7,7 @@
 
 <Toaster />
 <ModeWatcher />
-<SiteHeader />
-<slot />
+<div class="h-screen">
+  <SiteHeader />
+  <slot />
+</div>
