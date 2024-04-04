@@ -7,6 +7,7 @@ declare global {
       PRIVATE_REDIS_HOST: string;
       PRIVATE_REDIS_PORT: number;
       PRIVATE_REDIS_PASSWORD: string;
+      PUBLIC_USER_AGENT: string;
     }
   }
 }
