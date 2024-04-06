@@ -36,6 +36,11 @@ export function startScheduler() {
             };
           })
         );
+
+        if(feeds.length < pageSize) {
+          break;
+        }
+
       } else {
         console.log(`[Scheduler] No feeds to sync...`);
       }
