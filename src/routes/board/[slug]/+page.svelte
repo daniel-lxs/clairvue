@@ -105,19 +105,15 @@
 </svelte:head>
 
 <Page.Container>
-  <div class="fixed top-0 z-10">
-    {#if hasNewArticles}
-      <NewArticlesButton on:click={showNewArticles} />
-    {/if}
-  </div>
-
+  {#if hasNewArticles}
+    <NewArticlesButton on:click={showNewArticles} />
+  {/if}
   <Page.Header
     title={data.board?.name || 'Unnamed'}
     subtitle={data.board.feeds
       ? `Showing articles from ${data.board.feeds.length} feeds`
       : undefined}
   />
-
   <div class="space-y-4 sm:space-y-6 sm:px-0">
     {#if isLoading}
       {#each { length: perPage } as _}
@@ -127,7 +123,6 @@
       {#each articles as article}
         <ArticleCard {article} />
       {/each}
-
       {#if isLoadingMore}
         <ArticleCardSkeleton />
       {/if}
