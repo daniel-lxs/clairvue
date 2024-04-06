@@ -105,7 +105,7 @@
 </svelte:head>
 
 <Page.Container>
-  <div class="sticky top-0 z-10">
+  <div class="fixed top-0 z-10">
     {#if hasNewArticles}
       <NewArticlesButton on:click={showNewArticles} />
     {/if}
