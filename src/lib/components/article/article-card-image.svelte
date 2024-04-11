@@ -8,7 +8,7 @@
 </script>
 
 <div class="relative w-full overflow-hidden {type === 'square' ? 'rounded-lg' : 'rounded-t-lg'}">
-  <a href="/article/{article.slug}" target="_blank">
+  <a href={article.readable ? `/article/${article.slug}` : article.link} target="_blank">
     <img
       src={article.image}
       alt={article.title}

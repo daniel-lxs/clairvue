@@ -88,7 +88,10 @@
                     tag="h1"
                     class="text-xl font-bold transition-colors hover:text-primary sm:text-2xl"
                   >
-                    <a href="/article/{article.slug}" target="_blank">{article.title}</a>
+                    <a
+                      href={article.readable ? `/article/${article.slug}` : article.link}
+                      target="_blank">{article.title}</a
+                    >
                   </Card.Title>
                   <Card.Description class="sm:text-md text-sm">
                     <div class="flex items-center">
