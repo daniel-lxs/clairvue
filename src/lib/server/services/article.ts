@@ -19,10 +19,66 @@ interface ProcessArticlesOptions {
   parallelDelay?: number;
 }
 
+async function parseFeed(url: string): Promise<Parser.Output<Parser.Item> | undefined> {
+  const parser = new Parser({
+    timeout: 10000, // 10 seconds
+    headers: {
+      'User-Agent': process.env.PUBLIC_USER_AGENT
+    }
+  });
+
+  try {
+    const feed = await parser.parseURL(url);
+    return feed;
+  } catch (error) {
+    console.error('Feed could not be parsed, trying to find RSS or Atom feed link');
+
+    // Check for RSS or Atom feed links
+    const response = await fetch(url);
+    const html = await response.text();
+
+    const cleanHtml = DOMPurify.sanitize(html, {
+      ALLOWED_TAGS: ['head', 'link'],
+      ALLOWED_ATTR: ['href', 'rel', 'type'],
+      WHOLE_DOCUMENT: true
+    });
+
+    const { document } = new JSDOM(cleanHtml).window;
+
+    const rssLink = document.querySelector('link[rel="alternate"][type="application/rss+xml"]');
+    const atomLink = document.querySelector('link[rel="alternate"][type="application/atom+xml"]');
+
+    if (rssLink) {
+      let rssUrl = rssLink.getAttribute('href');
+      if (rssUrl && !rssUrl.startsWith('http')) {
+        const baseUrl = new URL(url).origin;
+        rssUrl = new URL(rssUrl, baseUrl).href;
+      }
+      if (!rssUrl) {
+        throw new Error('No RSS feed found');
+      }
+      console.log('Found RSS feed:', rssUrl);
+      return parseFeed(rssUrl);
+    } else if (atomLink) {
+      let atomUrl = atomLink.getAttribute('href');
+      if (atomUrl && !atomUrl.startsWith('http')) {
+        const baseUrl = new URL(url).origin;
+        atomUrl = new URL(atomUrl, baseUrl).href;
+      }
+      if (!atomUrl) {
+        throw new Error('No Atom feed found');
+      }
+      console.log('Found Atom feed:', atomUrl);
+      return parseFeed(atomUrl);
+    } else {
+      throw new Error('No valid feed found');
+    }
+  }
+}
+
 export async function fetchFeedArticles(link: string) {
   try {
-    const parser = new Parser();
-    const feed = await parser.parseURL(link);
+    const feed = await parseFeed(link);
 
     if (!feed || !feed.items || feed.items.length === 0) {
       throw new Error('No feed items found');
