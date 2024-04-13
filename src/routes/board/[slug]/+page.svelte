@@ -97,7 +97,7 @@
 </script>
 
 <svelte:head>
-  <title>{newArticlesCount > 0 ? `(${newArticlesCount}) ` : ' ' + data.board?.name}</title>
+  <title>{newArticlesCount > 0 ? `(${newArticlesCount}) ` : ' ' + data.board?.name} - Clairvue</title>
 </svelte:head>
 
 <Page.Container>
