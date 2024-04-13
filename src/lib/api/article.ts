@@ -24,3 +24,22 @@ export async function getArticlesByBoardId(
     return { items: [], totalCount: 0 };
   }
 }
+
+export async function countArticles(
+  afterPublishedAt: Date,
+  feedId?: string,
+  boardId?: string
+): Promise<number | undefined> {
+  try {
+    const response = await fetch(
+      `/api/article/count?afterPublishedAt=${afterPublishedAt.toISOString()}&${feedId ? `feedId=${feedId}` : ''}&${boardId ? `boardId=${boardId}` : ''}`
+    );
+    if (!response.ok) {
+      throw new Error(`Failed to get articles: ${response.statusText}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error occurred while getting articles:', error);
+    return undefined;
+  }
+}

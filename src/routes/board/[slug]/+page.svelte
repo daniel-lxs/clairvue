@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getArticlesByBoardId } from '@/api/article';
+  import { countArticles, getArticlesByBoardId } from '@/api/article';
   import ArticleCard from '@/components/article/article-card.svelte';
   import * as Page from '@/components/page';
   import { onMount } from 'svelte';
@@ -11,7 +11,7 @@
   export let data: PageData;
 
   let isLoading = true;
-  let hasNewArticles = false;
+  let newArticlesCount = 0;
   const perPage = 10;
   let isLoadingMore = false;
   let currentPage = 2; // Since we load 20 articles at first, we are starting at page 2
@@ -62,7 +62,7 @@
   };
 
   const showNewArticles = async () => {
-    hasNewArticles = false;
+    newArticlesCount = 0;
     isLoading = true;
     scrollTo(0, 0);
 
@@ -76,11 +76,7 @@
   };
 
   const checkNewArticles = async () => {
-    const newArticlesLimit = 5;
-    const newArticles = await fetchArticles(newArticlesLimit);
-    if (newArticles.some((newArticle, index) => newArticle.id !== articles[index].id)) {
-      hasNewArticles = true;
-    }
+    newArticlesCount = (await countArticles(articles[0].publishedAt, data.board.id)) || 0;
   };
 
   onMount(() => {
@@ -101,11 +97,11 @@
 </script>
 
 <svelte:head>
-  <title>{data.board.name} - Clairvue</title>
+  <title>{newArticlesCount > 0 ? `(${newArticlesCount}) ` : ' ' + data.board?.name}</title>
 </svelte:head>
 
 <Page.Container>
-  {#if hasNewArticles}
+  {#if newArticlesCount > 0}
     <NewArticlesButton on:click={showNewArticles} />
   {/if}
   <Page.Header

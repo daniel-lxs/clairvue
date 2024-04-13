@@ -138,21 +138,40 @@ async function findByBoardId(
       .limit(take)
       .execute();
 
-    const articleCount = await db
-      .select({ articlesCount: sql<number>`cast(${count(articleSchema.id)} as int)` })
-      .from(articleSchema)
-      .leftJoin(feedSchema, eq(articleSchema.feedId, feedSchema.id))
-      .leftJoin(boardsToFeeds, eq(feedSchema.id, boardsToFeeds.feedId))
-      .where(eq(boardsToFeeds.boardId, boardId))
-      .execute();
+    const articleCount = await countArticles(new Date(afterPublishedAt), undefined, boardId);
 
     return {
       items: queryResult,
-      totalCount: articleCount[0].articlesCount
+      totalCount: articleCount || 0
     };
   } catch (error) {
     console.log('Error occurred while finding Articles by boardId:', error);
   }
+}
+
+async function countArticles(
+  afterPublishedAt: Date,
+  feedId?: string,
+  boardId?: string
+): Promise<number | undefined> {
+  const db = getClient();
+
+  const articleCount = await db
+    .select({ count: sql<number>`cast(${count(articleSchema.id)} as int)` })
+    .from(articleSchema)
+    .leftJoin(feedSchema, eq(articleSchema.feedId, feedSchema.id))
+    .leftJoin(boardsToFeeds, eq(feedSchema.id, boardsToFeeds.feedId))
+    .where(
+      and(
+        boardId ? eq(boardsToFeeds.boardId, boardId) : undefined,
+        feedId ? eq(boardsToFeeds.feedId, feedId) : undefined,
+        lt(articleSchema.publishedAt, afterPublishedAt)
+      )
+    )
+    .limit(9)
+    .execute();
+
+  return articleCount[0].count;
 }
 
 export default {
@@ -160,5 +179,6 @@ export default {
   findBySlug,
   existsWithLink,
   findByFeedId,
-  findByBoardId
+  findByBoardId,
+  countArticles
 };
