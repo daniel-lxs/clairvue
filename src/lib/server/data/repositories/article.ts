@@ -1,7 +1,7 @@
 import ShortUniqueId from 'short-unique-id';
 import { getClient } from '../db';
 import { articleSchema, type Article, feedSchema, boardSchema, boardsToFeeds } from '../schema';
-import { count, desc, eq, lt, sql, and } from 'drizzle-orm';
+import { count, desc, eq, lt, sql, and, gt } from 'drizzle-orm';
 import type { NewArticle } from '@/types/NewArticle';
 import type { PaginatedList } from '@/types/PaginatedList';
 
@@ -165,10 +165,9 @@ async function countArticles(
       and(
         boardId ? eq(boardsToFeeds.boardId, boardId) : undefined,
         feedId ? eq(boardsToFeeds.feedId, feedId) : undefined,
-        lt(articleSchema.publishedAt, afterPublishedAt)
+        gt(articleSchema.publishedAt, afterPublishedAt)
       )
     )
-    .limit(9)
     .execute();
 
   return articleCount[0].count;

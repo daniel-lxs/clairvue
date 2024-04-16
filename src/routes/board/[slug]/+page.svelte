@@ -76,7 +76,7 @@
   };
 
   const checkNewArticles = async () => {
-    newArticlesCount = (await countArticles(articles[0].publishedAt, data.board.id)) || 0;
+    newArticlesCount = (await countArticles(articles[0].publishedAt, undefined, data.board.id)) || 0;
   };
 
   onMount(() => {
@@ -97,7 +97,7 @@
 </script>
 
 <svelte:head>
-  <title>{newArticlesCount > 0 ? `(${newArticlesCount}) ` : ' ' + data.board?.name} - Clairvue</title>
+  <title>{newArticlesCount > 0 ? `(${newArticlesCount}) ` : ''}{data.board?.name} - Clairvue</title>
 </svelte:head>
 
 <Page.Container>

@@ -26,13 +26,22 @@ export async function getArticlesByBoardId(
 }
 
 export async function countArticles(
-  afterPublishedAt: Date,
+  afterDate: Date | string,
   feedId?: string,
   boardId?: string
 ): Promise<number | undefined> {
   try {
+    let afterPublishedAt: string = '';
+
+    if (typeof afterDate !== 'string') {
+      afterPublishedAt = afterDate.toISOString();
+    } else {
+      afterPublishedAt = afterDate;
+    }
+
+
     const response = await fetch(
-      `/api/article/count?afterPublishedAt=${afterPublishedAt.toISOString()}&${feedId ? `feedId=${feedId}` : ''}&${boardId ? `boardId=${boardId}` : ''}`
+      `/api/article/count?afterPublishedAt=${afterPublishedAt}${feedId ? `&feedId=${feedId}` : ''}${boardId ? `&boardId=${boardId}` : ''}`
     );
     if (!response.ok) {
       throw new Error(`Failed to get articles: ${response.statusText}`);
