@@ -31,7 +31,9 @@ async function parseFeed(url: string): Promise<Parser.Output<Parser.Item> | unde
     const feed = await parser.parseURL(url);
     return feed;
   } catch (error) {
-    console.error('Feed could not be parsed, trying to find RSS or Atom feed link');
+    console.error(
+      `Feed with url: ${url} could not be parsed, trying to find RSS or Atom feed link`
+    );
 
     // Check for RSS or Atom feed links
     const response = await fetch(url);
