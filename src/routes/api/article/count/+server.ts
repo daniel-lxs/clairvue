@@ -4,15 +4,15 @@ import articleRepository from '@/server/data/repositories/article';
 export const GET: RequestHandler = async ({ url }) => {
   const boardId = url.searchParams.get('boardId') || undefined;
   const feedId = url.searchParams.get('feedId') || undefined;
-  const beforePublishedAt = url.searchParams.get('beforePublishedAt');
+  const afterPublishedAt = url.searchParams.get('afterPublishedAt');
 
-  if (!beforePublishedAt) {
+  if (!afterPublishedAt) {
     return new Response('Invalid request', { status: 400 });
   }
 
   let afterPublishedAtDate: Date;
   try {
-    afterPublishedAtDate = new Date(beforePublishedAt);
+    afterPublishedAtDate = new Date(afterPublishedAt);
   } catch (error) {
     afterPublishedAtDate = new Date();
   }

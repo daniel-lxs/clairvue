@@ -27,7 +27,7 @@ export const load: PageServerLoad = async ({ params: { slug: feedId }, cookies }
   return {
     feed,
     streamed: {
-      articles: articlesRepository.findByBoardId(feedId, undefined, limitPerPage)
+      articles: articlesRepository.findByFeedId(feedId, undefined, limitPerPage)
     }
   };
 };

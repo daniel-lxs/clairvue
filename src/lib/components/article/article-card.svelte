@@ -79,7 +79,7 @@
             <div class="space-y-2">
               <Card.Header class="p-0">
                 <a
-                  href="/dashboard"
+                  href="/feed/{article.feedId}"
                   class="text-xs font-bold transition-colors hover:text-primary sm:text-sm"
                   >{article.feed?.name}</a
                 >

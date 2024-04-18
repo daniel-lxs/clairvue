@@ -77,6 +77,9 @@ async function findByFeedId(
         eq(articleSchema.feedId, feedId),
         lt(articleSchema.publishedAt, new Date(beforePublishedAt))
       ),
+      with: {
+        feed: true
+      },
       limit: take,
       orderBy: (articleSchema, { desc }) => desc(articleSchema.publishedAt)
     });

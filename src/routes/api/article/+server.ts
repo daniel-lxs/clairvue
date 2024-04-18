@@ -17,7 +17,7 @@ export const GET: RequestHandler = async ({ url }) => {
   }
 
   if (feedId) {
-    const articles = await articleRepository.findByFeedId(feedId);
+    const articles = await articleRepository.findByFeedId(feedId, beforePublishedAt, take);
     return new Response(JSON.stringify(articles), { status: 200 });
   }
 
