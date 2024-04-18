@@ -3,17 +3,41 @@ import type { PaginatedList } from '@/types/PaginatedList';
 
 export async function getArticlesByBoardId(
   boardId: string,
-  afterPublishedAt?: Date | string,
+  beforePublishedAt?: Date | string,
   take = 5
 ): Promise<PaginatedList<Article>> {
   try {
-    afterPublishedAt = afterPublishedAt
-      ? typeof afterPublishedAt === 'string'
-        ? new Date(afterPublishedAt)
-        : afterPublishedAt
+    beforePublishedAt = beforePublishedAt
+      ? typeof beforePublishedAt === 'string'
+        ? new Date(beforePublishedAt)
+        : beforePublishedAt
       : undefined;
     const response = await fetch(
-      `/api/article?boardId=${boardId}&${afterPublishedAt ? `afterPublishedAt=${afterPublishedAt.toISOString()}` : ''}&take=${take}`
+      `/api/article?boardId=${boardId}&${beforePublishedAt ? `beforePublishedAt=${beforePublishedAt.toISOString()}` : ''}&take=${take}`
+    );
+    if (!response.ok) {
+      throw new Error(`Failed to get articles: ${response.statusText}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error occurred while getting articles:', error);
+    return { items: [], totalCount: 0 };
+  }
+}
+
+export async function getArticlesByFeedId(
+  feedId: string,
+  beforePublishedAt?: Date | string,
+  take = 5
+): Promise<PaginatedList<Article>> {
+  try {
+    beforePublishedAt = beforePublishedAt
+      ? typeof beforePublishedAt === 'string'
+        ? new Date(beforePublishedAt)
+        : beforePublishedAt
+      : undefined;
+    const response = await fetch(
+      `/api/article?feedId=${feedId}&${beforePublishedAt ? `beforePublishedAt=${beforePublishedAt.toISOString()}` : ''}&take=${take}`
     );
     if (!response.ok) {
       throw new Error(`Failed to get articles: ${response.statusText}`);
@@ -38,7 +62,6 @@ export async function countArticles(
     } else {
       afterPublishedAt = afterDate;
     }
-
 
     const response = await fetch(
       `/api/article/count?afterPublishedAt=${afterPublishedAt}${feedId ? `&feedId=${feedId}` : ''}${boardId ? `&boardId=${boardId}` : ''}`

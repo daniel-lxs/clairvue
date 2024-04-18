@@ -65,15 +65,25 @@ async function existsWithLink(link: string): Promise<boolean | undefined> {
   }
 }
 
-//TODO: implement pagination
-async function findByFeedId(feedId: string): Promise<Article[] | undefined> {
+async function findByFeedId(
+  feedId: string,
+  beforePublishedAt: string = new Date().toISOString(),
+  take = 5
+): Promise<PaginatedList<Article> | undefined> {
   try {
     const db = getClient();
     const result = await db.query.articleSchema.findMany({
-      where: eq(articleSchema.feedId, feedId),
+      where: and(
+        eq(articleSchema.feedId, feedId),
+        lt(articleSchema.publishedAt, new Date(beforePublishedAt))
+      ),
+      limit: take,
       orderBy: (articleSchema, { desc }) => desc(articleSchema.publishedAt)
     });
-    return result;
+    return {
+      items: result,
+      totalCount: result.length
+    };
   } catch (error) {
     console.error('Error occurred while finding Article by feedId:', error);
     return undefined;
@@ -82,7 +92,7 @@ async function findByFeedId(feedId: string): Promise<Article[] | undefined> {
 
 async function findByBoardId(
   boardId: string,
-  afterPublishedAt: string = new Date().toISOString(),
+  beforePublishedAt: string = new Date().toISOString(),
   take = 5
 ): Promise<PaginatedList<Article> | undefined> {
   try {
@@ -131,18 +141,16 @@ async function findByBoardId(
       .where(
         and(
           eq(boardsToFeeds.boardId, boardId),
-          lt(articleSchema.publishedAt, new Date(afterPublishedAt))
+          lt(articleSchema.publishedAt, new Date(beforePublishedAt))
         )
       )
       .orderBy(desc(articleSchema.publishedAt))
       .limit(take)
       .execute();
 
-    const articleCount = await countArticles(new Date(afterPublishedAt), undefined, boardId);
-
     return {
       items: queryResult,
-      totalCount: articleCount || 0
+      totalCount: queryResult.length
     };
   } catch (error) {
     console.log('Error occurred while finding Articles by boardId:', error);

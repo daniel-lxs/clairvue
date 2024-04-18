@@ -4,7 +4,7 @@ import articleRepository from '@/server/data/repositories/article';
 export const GET: RequestHandler = async ({ url }) => {
   const boardId = url.searchParams.get('boardId');
   let take = Number(url.searchParams.get('take'));
-  const afterPublishedAt = url.searchParams.get('afterPublishedAt') || undefined;
+  const beforePublishedAt = url.searchParams.get('beforePublishedAt') || undefined;
   const feedId = url.searchParams.get('feedId');
 
   if (boardId) {
@@ -12,7 +12,7 @@ export const GET: RequestHandler = async ({ url }) => {
       take = 5;
     }
 
-    const articles = await articleRepository.findByBoardId(boardId, afterPublishedAt, take);
+    const articles = await articleRepository.findByBoardId(boardId, beforePublishedAt, take);
     return new Response(JSON.stringify(articles), { status: 200 });
   }
 

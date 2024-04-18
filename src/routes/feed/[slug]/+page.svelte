@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { countArticles, getArticlesByBoardId } from '@/api/article';
+  import { countArticles, getArticlesByFeedId } from '@/api/article';
   import ArticleCard from '@/components/article/article-card.svelte';
   import * as Page from '@/components/page';
   import { onMount } from 'svelte';
@@ -28,8 +28,8 @@
   };
 
   const fetchArticles = async (limit: number, beforePublishedAt: Date | string = new Date()) => {
-    const { items: fetchedArticles } = await getArticlesByBoardId(
-      data.board.id,
+    const { items: fetchedArticles } = await getArticlesByFeedId(
+      data.feed.id,
       beforePublishedAt,
       limit
     );
@@ -76,8 +76,7 @@
   };
 
   const checkNewArticles = async () => {
-    newArticlesCount =
-      (await countArticles(articles[0].publishedAt, undefined, data.board.id)) || 0;
+    newArticlesCount = (await countArticles(articles[0].publishedAt, data.feed.id)) || 0;
   };
 
   onMount(() => {
@@ -98,19 +97,14 @@
 </script>
 
 <svelte:head>
-  <title>{newArticlesCount > 0 ? `(${newArticlesCount}) ` : ''}{data.board?.name} - Clairvue</title>
+  <title>{newArticlesCount > 0 ? `(${newArticlesCount}) ` : ''}{data.feed?.name} - Clairvue</title>
 </svelte:head>
 
 <Page.Container>
   {#if newArticlesCount > 0}
     <NewArticlesButton on:click={showNewArticles} />
   {/if}
-  <Page.Header
-    title={data.board?.name || 'Unnamed'}
-    subtitle={data.board.feeds
-      ? `Showing articles from ${data.board.feeds.length} feeds`
-      : undefined}
-  />
+  <Page.Header title={data.feed?.name || 'Unnamed'} />
   <div class="space-y-4 sm:space-y-6 sm:px-0">
     {#if isLoading}
       {#each { length: perPage } as _}
