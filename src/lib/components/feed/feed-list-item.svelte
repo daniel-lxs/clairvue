@@ -19,25 +19,22 @@
 </script>
 
 <div
-  class="rounded-lg border transition-colors hover:bg-muted"
+  class="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-muted"
   on:mouseenter={() => (isHovered = true)}
   on:mouseleave={() => (isHovered = false)}
   role="button"
   tabindex="0"
 >
-  <div class="flex items-center justify-between px-4 py-4">
-    <div class="item-body mr-4 flex flex-col">
-      <div class="text-sm font-semibold">{feed.name}</div>
-      <div class="item-description text-sm text-muted-foreground">
-        Created {calculateAge(feed.createdAt, 'long')} • {feed.articleCount || 0} articles
-      </div>
-    </div>
-    <div class="item-actions">
-      {#if isHovered}
-        <Button on:click={deleteFeed} variant="destructive" size="icon"
-          ><Trash class="h-4 w-4" /></Button
-        >
-      {/if}
+  <div class="flex flex-col">
+    <div class="text-sm font-semibold">{feed.name}</div>
+    <div class="text-xs text-muted-foreground">
+      Created {calculateAge(feed.createdAt, 'long')} • {feed.articleCount || 0} articles
     </div>
   </div>
+
+  {#if isHovered}
+    <Button on:click={deleteFeed} variant="destructive" size="sm" class="ml-2 flex-shrink-0">
+      <Trash class="h-4 w-4" />
+    </Button>
+  {/if}
 </div>
