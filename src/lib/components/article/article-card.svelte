@@ -79,7 +79,7 @@
             <div class="space-y-2">
               <Card.Header class="p-0">
                 <a
-                  href="/feed/{article.feedId}"
+                  href="/dashboard"
                   class="text-xs font-bold transition-colors hover:text-primary sm:text-sm"
                   >{article.feed?.name}</a
                 >
@@ -94,14 +94,20 @@
                     >
                   </Card.Title>
                   <Card.Description class="sm:text-md text-sm">
-                    <div class="flex items-center">
-                      <a href={article.link} class="hover:text-primary">({article.siteName})</a>
-                      <span class="text-md ml-1 text-muted-foreground">• {age} </span>
-                      {#if article.readable}
-                        <div class="ml-2" title="readable">
-                          <BookOpen class="h-4 w-4" />
-                        </div>
-                      {/if}
+                    <div class="flex flex-col items-start sm:flex-row sm:items-center">
+                      <a href={article.link} class="mb-1 hover:text-primary sm:mb-0"
+                        >({article.siteName})</a
+                      >
+                      <div class="mt-1 flex items-center sm:ml-1 sm:mt-0">
+                        <span class="text-md text-muted-foreground"
+                          >{!isMobile ? '•' : ''} {age}</span
+                        >
+                        {#if article.readable}
+                          <div class="ml-2" title="readable">
+                            <BookOpen class="h-4 w-4" />
+                          </div>
+                        {/if}
+                      </div>
                     </div>
                   </Card.Description>
                 </div>
@@ -119,7 +125,7 @@
           </div>
           {#if article.image && !imageError && imageType === 'square'}
             {#if imageLoaded}
-              <div class="ml-4 pl-2">
+              <div class="ml-2 pl-2 sm:ml-4">
                 <ArticleCardImage {article} bind:imageLoaded bind:imageError type={imageType} />
               </div>
             {:else}
