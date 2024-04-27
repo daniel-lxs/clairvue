@@ -31,9 +31,7 @@ async function parseFeed(url: string): Promise<Parser.Output<Parser.Item> | unde
     const feed = await parser.parseURL(url);
     return feed;
   } catch (error) {
-    console.error(
-      `Feed with url: ${url} could not be parsed, trying to find RSS or Atom feed link`
-    );
+    logger.error(`Feed with url: ${url} could not be parsed, trying to find RSS or Atom feed link`);
 
     // Check for RSS or Atom feed links
     const response = await fetch(url);
@@ -59,7 +57,6 @@ async function parseFeed(url: string): Promise<Parser.Output<Parser.Item> | unde
       if (!rssUrl) {
         throw new Error('No RSS feed found');
       }
-      console.log('Found RSS feed:', rssUrl);
       return parseFeed(rssUrl);
     } else if (atomLink) {
       let atomUrl = atomLink.getAttribute('href');
@@ -70,7 +67,6 @@ async function parseFeed(url: string): Promise<Parser.Output<Parser.Item> | unde
       if (!atomUrl) {
         throw new Error('No Atom feed found');
       }
-      console.log('Found Atom feed:', atomUrl);
       return parseFeed(atomUrl);
     } else {
       throw new Error('No valid feed found');
