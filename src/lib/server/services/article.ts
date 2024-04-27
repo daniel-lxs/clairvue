@@ -96,7 +96,11 @@ export async function fetchFeedArticles(link: string) {
 
     return feed.items;
   } catch (error) {
-    logger.error('Error fetching or parsing feed:', error);
+    if (error instanceof Error) {
+      logger.error('Error occurred while fetching feed articles:', error.message);
+    } else {
+      logger.error(`Unknown error occurred while fetching feed articles ${error}`);
+    }
     return undefined;
   }
 }
@@ -128,7 +132,11 @@ export async function syncArticles(feed: Feed) {
     logger.info(`Synced ${createdArticles.length} articles.`);
     return createdArticles;
   } catch (error) {
-    logger.error('Error occurred during sync:', error);
+    if (error instanceof Error) {
+      logger.error('Error occurred while fetching feed articles:', error.message);
+    } else {
+      logger.error(`Unknown error occurred while fetching feed articles ${error}`);
+    }
   }
 }
 
