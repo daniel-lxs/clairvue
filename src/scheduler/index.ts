@@ -1,6 +1,5 @@
 import { CronJob } from 'cron';
 import feedRepository from '@/server/data/repositories/feed';
-import type { Feed } from '@/server/data/schema';
 import { getArticleQueue } from '../queue/articles';
 
 export function startScheduler() {
@@ -8,44 +7,46 @@ export function startScheduler() {
   const job = new CronJob('*/2 * * * *', async () => {
     // Every 2 minutes
     console.log(`[Scheduler] Running job at ${new Date().toLocaleString()}`);
-
-    let page = 1;
     const pageSize = 20;
+    let page = 0;
+    let hasMoreFeeds = true;
 
-    let feeds: Feed[] | undefined;
-    do {
-      feeds = await feedRepository.findOutdated(pageSize, (page - 1) * pageSize); //Only outdated feeds will be synced
+    while (hasMoreFeeds) {
+      try {
+        const feeds = await feedRepository.findOutdated(pageSize, page * pageSize);
 
-      if (feeds.length > 0) {
-        console.log(`[Scheduler] Syncing ${feeds.length} feeds...`);
-
-        const articleQueue = getArticleQueue();
-
-        articleQueue.addBulk(
-          feeds.map((feed) => {
-            return {
-              name: 'sync',
-              data: {
-                feedId: feed.id
-              },
-              opts: {
-                jobId: feed.id,
-                removeOnComplete: true,
-                removeOnFail: true
-              }
-            };
-          })
-        );
-
-        if(feeds.length < pageSize) {
+        //Only outdated feeds will be synced
+        if (feeds.length === 0) {
+          console.log(`[Scheduler] No feeds to sync...`);
+          hasMoreFeeds = false;
           break;
         }
 
-      } else {
-        console.log(`[Scheduler] No feeds to sync...`);
+        console.log(`[Scheduler] Syncing ${feeds.length} feeds...`);
+        const articleQueue = getArticleQueue();
+        articleQueue.addBulk(
+          feeds.map((feed) => {
+            return (() => {
+              const feedId = feed.id;
+              return {
+                name: 'sync',
+                data: { feedId },
+                opts: { jobId: feedId, removeOnComplete: true, removeOnFail: true }
+              };
+            })();
+          })
+        );
+
+        if (feeds.length < pageSize) {
+          hasMoreFeeds = false; //No more feeds
+        } else {
+          page++;
+        }
+      } catch (error) {
+        console.error('[Scheduler] Error fetching outdated feeds:', error);
+        hasMoreFeeds = false;
       }
-      page++;
-    } while (feeds && feeds.length > 0);
+    }
   });
 
   job.start();
