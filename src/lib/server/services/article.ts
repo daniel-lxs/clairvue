@@ -140,6 +140,7 @@ async function fetchArticleMetadata(link: string): Promise<ArticleMetadata | und
   try {
     const ua = process.env.PUBLIC_USER_AGENT;
     const isReadable = isArticleReadable(link, ua);
+
     const metadata = await urlMetadata(link, {
       timeout: 10000,
       requestHeaders: {
@@ -153,7 +154,7 @@ async function fetchArticleMetadata(link: string): Promise<ArticleMetadata | und
     };
   } catch (error) {
     if (error instanceof Error) {
-      logger.error('Error occurred while fetching metadata:', error.message);
+      logger.error(`Error occurred while fetching metadata for article with link ${link}:`, error.message);
     } else {
       logger.error('Error occurred while fetching metadata');
     }
@@ -219,34 +220,46 @@ async function saveArticles(newArticles: NewArticle[]): Promise<string[] | undef
   return createdIds;
 }
 
-async function fetchAndCleanDocument(
-  link: string,
-  ua?: string | null
-): Promise<Document | undefined> {
+async function fetchAndCleanDocument(link: string, ua?: string | null): Promise<Document | undefined> {
   const userAgent = ua || process.env.PUBLIC_USER_AGENT;
+  const timeout = 20000; // 20 seconds
 
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+      logger.error(`Timeout reached while fetching article with link ${link}`);
+    }, timeout);
+
     const pageResponse = await fetch(link, {
-      headers: {
-        'User-Agent': userAgent
-      }
+      headers: { 'User-Agent': userAgent },
+      signal: controller.signal,
     });
 
+    clearTimeout(timeoutId);
+
     if (!pageResponse.ok) {
-      logger.error(`Error occurred while fetching article: ${pageResponse.statusText}`);
+      logger.error(`Error occurred while fetching article with link ${link}: ${pageResponse.statusText}`);
       return undefined;
     }
 
     const html = await pageResponse.text();
     const cleanHtml = DOMPurify.sanitize(html, {
       FORBID_TAGS: ['script', 'style', 'title', 'noscript', 'iframe'],
-      FORBID_ATTR: ['style', 'class']
+      FORBID_ATTR: ['style', 'class'],
     });
-
     const dom = new JSDOM(cleanHtml, { url: link });
     return dom.window.document;
   } catch (error) {
-    logger.error(`Error occurred while fetching article: ${error}`);
+    if (error instanceof Error) {
+      if (error.name === 'AbortError') {
+        logger.error(`Timeout reached while fetching article with link ${link}`);
+      } else {
+        logger.error(`Error occurred while fetching article: ${error}`);
+      }
+    } else {
+      logger.error(`Unknown error occurred while fetching article ${error}`);
+    }
     return undefined;
   }
 }
