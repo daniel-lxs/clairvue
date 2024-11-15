@@ -86,7 +86,7 @@
                 <div class="flex flex-col gap-2">
                   <Card.Title
                     tag="h1"
-                    class="text-xl font-bold transition-colors hover:text-primary sm:text-2xl"
+                    class="text-xl font-bold transition-colors hover:text-primary"
                   >
                     <a
                       href={article.readable ? `/article/${article.slug}` : article.link}
@@ -103,7 +103,7 @@
                           >{!isMobile ? '•' : ''} {age}</span
                         >
                         {#if article.readable}
-                          <div class="ml-2" title="readable">
+                          <div class="ml-2" title="Readable">
                             <BookOpen class="h-4 w-4" />
                           </div>
                         {/if}
