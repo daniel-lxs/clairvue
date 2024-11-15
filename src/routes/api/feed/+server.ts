@@ -54,7 +54,9 @@ export const POST: RequestHandler = async ({ request }) => {
           return { result: 'error', data: null, reason: 'Unable to create' };
         }
 
-        getArticleQueue().add(
+        const articleQueue = getArticleQueue();
+
+        articleQueue?.add(
           'sync',
           { feedId: createdFeed.id },
           {
