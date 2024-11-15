@@ -10,20 +10,19 @@ import type { ParsedArticle } from '@/types/ParsedArticle';
 import { z } from 'zod';
 import type { ArticleMetadata } from '@/types/ArticleMetadata';
 import type { NewArticle } from '@/types/NewArticle';
-import { Logger } from '@control.systems/logger';
-
-const logger = new Logger('ArticleService');
 
 interface ProcessArticlesOptions {
   chunkSize?: number;
   parallelDelay?: number;
 }
 
+const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/237.84.2.178 Safari/537.36';
+
 async function parseFeed(url: string): Promise<Parser.Output<Parser.Item> | undefined> {
   const parser = new Parser({
     timeout: 10000, // 10 seconds
     headers: {
-      'User-Agent': process.env.PUBLIC_USER_AGENT
+      'User-Agent': USER_AGENT
     }
   });
 
@@ -31,7 +30,10 @@ async function parseFeed(url: string): Promise<Parser.Output<Parser.Item> | unde
     const feed = await parser.parseURL(url);
     return feed;
   } catch (error) {
-    logger.error(`Feed with url: ${url} could not be parsed, trying to find RSS or Atom feed link`);
+    console.error(
+      `Feed with url: ${url} could not be parsed, trying to find RSS or Atom feed link`,
+      error
+    );
 
     // Check for RSS or Atom feed links
     const response = await fetch(url);
@@ -93,9 +95,9 @@ export async function fetchFeedArticles(link: string) {
     return feed.items;
   } catch (error) {
     if (error instanceof Error) {
-      logger.error('Error occurred while fetching feed articles:', error.message);
+      console.error('Error occurred while fetching feed articles:', error.message);
     } else {
-      logger.error(`Unknown error occurred while fetching feed articles ${error}`);
+      console.error(`Unknown error occurred while fetching feed articles ${error}`);
     }
     return undefined;
   }
@@ -107,38 +109,38 @@ export async function syncArticles(feed: Feed) {
 
     if (!orderedArticles) return;
 
-    logger.info(`Syncing ${orderedArticles.length} articles from ${feed.name}...`);
+    console.info(`Syncing ${orderedArticles.length} articles from ${feed.name}...`);
 
     await feedRepository.updateLastSync(feed.id);
 
     const newArticles = await processArticles(feed, orderedArticles);
 
     if (!newArticles || newArticles.length === 0) {
-      logger.info('No new articles found.');
+      console.info('No new articles found.');
       return;
     }
 
     const createdArticles = await saveArticles(newArticles);
 
     if (!createdArticles) {
-      logger.info('No new articles created.');
+      console.info('No new articles created.');
       return;
     }
 
-    logger.info(`Synced ${createdArticles.length} articles.`);
+    console.info(`Synced ${createdArticles.length} articles.`);
     return createdArticles;
   } catch (error) {
     if (error instanceof Error) {
-      logger.error('Error occurred while fetching feed articles:', error.message);
+      console.error('Error occurred while fetching feed articles:', error.message);
     } else {
-      logger.error(`Unknown error occurred while fetching feed articles ${error}`);
+      console.error(`Unknown error occurred while fetching feed articles ${error}`);
     }
   }
 }
 
 async function fetchArticleMetadata(link: string): Promise<ArticleMetadata | undefined> {
   try {
-    const ua = process.env.PUBLIC_USER_AGENT;
+    const ua = USER_AGENT;
     const isReadable = isArticleReadable(link, ua);
 
     const metadata = await urlMetadata(link, {
@@ -154,9 +156,12 @@ async function fetchArticleMetadata(link: string): Promise<ArticleMetadata | und
     };
   } catch (error) {
     if (error instanceof Error) {
-      logger.error(`Error occurred while fetching metadata for article with link ${link}:`, error.message);
+      console.error(
+        `Error occurred while fetching metadata for article with link ${link}:`,
+        error.message
+      );
     } else {
-      logger.error('Error occurred while fetching metadata');
+      console.error('Error occurred while fetching metadata');
     }
   }
 }
@@ -175,7 +180,7 @@ async function createNewArticle(feed: Feed, article: Parser.Item): Promise<NewAr
   // TODO: Allow duplicate articles if the existing article is too old
   if (existingArticle) return;
 
-  logger.info(`Processing article: ${link}`);
+  console.info(`Processing article: ${link}`);
 
   const articleMetadata = await fetchArticleMetadata(link);
 
@@ -220,45 +225,50 @@ async function saveArticles(newArticles: NewArticle[]): Promise<string[] | undef
   return createdIds;
 }
 
-async function fetchAndCleanDocument(link: string, ua?: string | null): Promise<Document | undefined> {
-  const userAgent = ua || process.env.PUBLIC_USER_AGENT;
+async function fetchAndCleanDocument(
+  link: string,
+  ua?: string | null
+): Promise<Document | undefined> {
+  const userAgent = ua || USER_AGENT;
   const timeout = 20000; // 20 seconds
 
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
       controller.abort();
-      logger.error(`Timeout reached while fetching article with link ${link}`);
+      console.error(`Timeout reached while fetching article with link ${link}`);
     }, timeout);
 
     const pageResponse = await fetch(link, {
       headers: { 'User-Agent': userAgent },
-      signal: controller.signal,
+      signal: controller.signal
     });
 
     clearTimeout(timeoutId);
 
     if (!pageResponse.ok) {
-      logger.error(`Error occurred while fetching article with link ${link}: ${pageResponse.statusText}`);
+      console.error(
+        `Error occurred while fetching article with link ${link}: ${pageResponse.statusText}`
+      );
       return undefined;
     }
 
     const html = await pageResponse.text();
     const cleanHtml = DOMPurify.sanitize(html, {
       FORBID_TAGS: ['script', 'style', 'title', 'noscript', 'iframe'],
-      FORBID_ATTR: ['style', 'class'],
+      FORBID_ATTR: ['style', 'class']
     });
     const dom = new JSDOM(cleanHtml, { url: link });
     return dom.window.document;
   } catch (error) {
     if (error instanceof Error) {
       if (error.name === 'AbortError') {
-        logger.error(`Timeout reached while fetching article with link ${link}`);
+        console.error(`Timeout reached while fetching article with link ${link}`);
       } else {
-        logger.error(`Error occurred while fetching article: ${error}`);
+        console.error(`Error occurred while fetching article: ${error}`);
       }
     } else {
-      logger.error(`Unknown error occurred while fetching article ${error}`);
+      console.error(`Unknown error occurred while fetching article ${error}`);
     }
     return undefined;
   }
@@ -289,7 +299,7 @@ export async function parseReadableArticle(
     // Parse the modified HTML using Readability
     const readableArticle = new Readability(document).parse();
     if (!readableArticle) {
-      logger.error('Error occurred while parsing article');
+      console.error('Error occurred while parsing article');
       return undefined;
     }
 
