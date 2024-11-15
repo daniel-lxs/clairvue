@@ -24,7 +24,7 @@ export function startScheduler() {
 
         console.log(`[Scheduler] Syncing ${feeds.length} feeds...`);
         const articleQueue = getArticleQueue();
-        articleQueue.addBulk(
+        articleQueue?.addBulk(
           feeds.map((feed) => {
             return (() => {
               const feedId = feed.id;
