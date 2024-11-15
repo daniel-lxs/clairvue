@@ -3,7 +3,7 @@
   import * as Card from '../ui/card';
 </script>
 
-<Card.Root class="flex shadow-lg">
+<Card.Root class="flex w-full shadow-lg">
   <div class="flex w-full flex-col">
     <div class="flex w-full justify-between p-4">
       <div class="flex w-full flex-col justify-between">

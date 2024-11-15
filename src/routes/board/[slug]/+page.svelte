@@ -111,7 +111,7 @@
       ? `Showing articles from ${data.board.feeds.length} feeds`
       : undefined}
   />
-  <div class="space-y-4 sm:space-y-6 sm:px-0">
+  <div class="w-full space-y-4 sm:space-y-6 sm:px-0">
     {#if isLoading}
       {#each { length: perPage } as _}
         <ArticleCardSkeleton />

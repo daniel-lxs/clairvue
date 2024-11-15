@@ -4,6 +4,7 @@
   import * as Page from '@/components/page';
   import { onMount } from 'svelte';
   import ArticlePageSkeleton from '@/components/article/article-page-skeleton.svelte';
+  import { BookOpen } from 'lucide-svelte';
 
   export let data: PageData;
 
@@ -30,12 +31,11 @@
     }
   };
 
-  function getReadingTime(text: string) {
-    const textWithoutHtml = text.replace(/<[^>]*>/g, '');
+  function getReadingTime(text: string): number {
     const wpm = 225;
-    const words = textWithoutHtml.trim().split(/\s+/).length;
-    const time = Math.ceil(words / wpm);
-    return time;
+    // Remove HTML tags and count words directly
+    const words = text.replace(/<[^>]*>/g, '').match(/\S+/g)?.length || 0;
+    return Math.ceil(words / wpm);
   }
 
   onMount(() => {
@@ -66,7 +66,8 @@
         {#if fomattedDate}
           <p class="text-sm text-muted-foreground">{fomattedDate}</p>
         {/if}
-        <p class="text-sm text-muted-foreground">
+        <p class="flex h-4 items-center text-sm text-muted-foreground">
+          <BookOpen class="my-0 mr-1 h-4 w-4" />
           {getReadingTime(parsedArticle?.content || '')} min. read
         </p>
       </div>
