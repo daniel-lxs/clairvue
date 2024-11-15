@@ -5,6 +5,7 @@ const config = {
   darkMode: ['class'],
   content: ['./src/**/*.{html,js,svelte,ts}'],
   safelist: ['dark'],
+  plugins: [require('@tailwindcss/typography')],
   theme: {
     container: {
       center: true,
@@ -56,6 +57,23 @@ const config = {
       },
       fontFamily: {
         sans: [...fontFamily.sans]
+      },
+      typography: {
+        DEFAULT: {
+          css: {
+            a: {
+              color: 'hsl(var(--primary))',
+              '&:hover': {
+                color: 'hsl(var(--foreground))'
+              }
+            },
+            img: {
+              objectFit: 'contain',
+              backgroundColor: 'hsl(var(--muted))',
+              maxWidth: '100%'
+            }
+          }
+        }
       }
     }
   }
