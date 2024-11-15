@@ -7,7 +7,7 @@
   class="fixed top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
 >
   <div
-    class="container relative mx-auto flex h-12 max-w-screen-2xl items-center justify-between px-4 sm:h-14 md:px-0"
+    class="container relative mx-auto flex h-12 max-w-screen-2xl items-center justify-between px-4 sm:h-14 sm:px-0 md:px-8"
   >
     <div class="mr-4 flex items-center md:flex-1">
       <a href="/" class="flex items-center space-x-2">
