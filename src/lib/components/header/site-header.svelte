@@ -1,6 +1,6 @@
-<script>
+<script lang="ts">
   import { BookOpenText } from 'lucide-svelte';
-  import LightSwitch from '@/components/header/light-switch.svelte';
+  import AppearancePopover from './appearance-popover.svelte';
 </script>
 
 <header
@@ -9,14 +9,16 @@
   <div
     class="container relative mx-auto flex h-12 max-w-screen-2xl items-center justify-between px-4 sm:h-14 sm:px-0 md:px-8"
   >
-    <div class="mr-4 flex items-center md:flex-1">
-      <a href="/" class="flex items-center space-x-2">
-        <BookOpenText />
-        <span class="font-bold">clairvue</span>
-      </a>
-    </div>
+  <div class="mr-4 flex items-center md:flex-1">
+    <a href="/" class="flex items-center space-x-2">
+      <BookOpenText />
+      <span class="font-bold">clairvue</span>
+    </a>
+  </div>
+
+    
     <div class="flex items-center space-x-2 md:ml-auto">
-      <div class="w-full md:w-auto"><LightSwitch /></div>
+      <AppearancePopover />
     </div>
   </div>
 </header>
