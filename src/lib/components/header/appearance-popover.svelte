@@ -1,10 +1,17 @@
 <script lang="ts">
-  import { CaseSensitive, Sun, Moon } from 'lucide-svelte';
+  import { CaseSensitive } from 'lucide-svelte';
   import Button from '../ui/button/button.svelte';
   import * as Popover from '$lib/components/ui/popover';
-  import { Toggle } from '$lib/components/ui/toggle';
+  import * as ToggleGroup from '$lib/components/ui/toggle-group';
   import { fontSize } from '@/stores/font-size';
-  import { toggleMode } from 'mode-watcher';
+  import { setMode, mode } from 'mode-watcher';
+
+  let theme = $state;
+
+  function handleThemeChange(theme: 'light' | 'dark') {
+    console.log(theme);
+    setMode(theme);
+  }
 </script>
 
 <Popover.Root portal={null}>
@@ -29,56 +36,38 @@
       <div class="grid gap-2">
         <div class="grid gap-2">
           <label class="text-sm font-medium leading-none" for="theme-toggle">Theme</label>
-          <div class="grid grid-cols-2 gap-2">
-            <Toggle
-              size="sm"
-              pressed={document.documentElement.classList.contains('light')}
-              on:click={toggleMode}
+          <div class="relative">
+            <ToggleGroup.Root
+              type="single"
+              on:change={(e) => handleThemeChange(e.detail.value)}
+              class="grid w-full grid-cols-2 gap-2"
             >
-              <Sun class="mr-2 h-4 w-4" />
-              Light
-            </Toggle>
-            <Toggle
-              size="sm"
-              pressed={document.documentElement.classList.contains('dark')}
-              on:click={toggleMode}
-            >
-              <Moon class="mr-2 h-4 w-4" />
-              Dark
-            </Toggle>
+              <ToggleGroup.Item value="light" class="w-full">Light</ToggleGroup.Item>
+              <ToggleGroup.Item value="dark" class="w-full">Dark</ToggleGroup.Item>
+            </ToggleGroup.Root>
           </div>
         </div>
         <div class="grid gap-2">
           <label class="text-sm font-medium leading-none" for="font-size">Font Size</label>
-          <div class="grid grid-cols-4 gap-2">
-            <Toggle
-              size="sm"
-              pressed={$fontSize === 'small'}
-              on:click={() => fontSize.set('small')}
+          <div class="relative">
+            <ToggleGroup.Root
+              type="single"
+              bind:value={$fontSize}
+              class="grid w-full grid-cols-4 gap-2"
             >
-              <span class="text-xs">A</span>
-            </Toggle>
-            <Toggle
-              size="sm"
-              pressed={$fontSize === 'default'}
-              on:click={() => fontSize.set('default')}
-            >
-              <span class="text-sm">A</span>
-            </Toggle>
-            <Toggle
-              size="sm"
-              pressed={$fontSize === 'large'}
-              on:click={() => fontSize.set('large')}
-            >
-              <span class="text-base">A</span>
-            </Toggle>
-            <Toggle
-              size="sm"
-              pressed={$fontSize === 'extra large'}
-              on:click={() => fontSize.set('extra large')}
-            >
-              <span class="text-lg">A</span>
-            </Toggle>
+              <ToggleGroup.Item value="small" class="w-full">
+                <span class="text-xs">A</span>
+              </ToggleGroup.Item>
+              <ToggleGroup.Item value="default" class="w-full">
+                <span class="text-sm">A</span>
+              </ToggleGroup.Item>
+              <ToggleGroup.Item value="large" class="w-full">
+                <span class="text-base">A</span>
+              </ToggleGroup.Item>
+              <ToggleGroup.Item value="extra large" class="w-full">
+                <span class="text-lg">A</span>
+              </ToggleGroup.Item>
+            </ToggleGroup.Root>
           </div>
         </div>
       </div>
