@@ -168,6 +168,9 @@ importers:
       typescript:
         specifier: ^5.6.3
         version: 5.6.3
+      vaul-svelte:
+        specifier: ^0.3.2
+        version: 0.3.2(svelte@4.2.19)
       vite:
         specifier: ^5.4.11
         version: 5.4.11(@types/node@22.9.0)
@@ -1467,6 +1470,11 @@ packages:
     resolution: {integrity: sha512-P0JRuWn+XpFYsAbGnPlyPVKab88v2S8Q57cUI3LZdh0nulO7fgxbXgBHgEAmmgNk63XxyvhmfYz44kZFRrHtLA==}
     peerDependencies:
       svelte: ^4.0.0
+
+  bits-ui@0.21.16:
+    resolution: {integrity: sha512-XFZ7/bK7j/K+5iktxX/ZpmoFHjYjpPzP5EOO/4bWiaFg5TG1iMcfjDhlBTQnJxD6BoVoHuqeZPHZvaTgF4Iv3Q==}
+    peerDependencies:
+      svelte: ^4.0.0 || ^5.0.0-next.118
 
   boolbase@1.0.0:
     resolution: {integrity: sha512-JZOSA7Mo9sNGB8+UjSgzdLtokWAky1zbztM3WRLCbZ70/3cTANmQmOdR7y2g+J0e2WXywy1yS468tY+IruqEww==}
@@ -3345,6 +3353,11 @@ packages:
   v8-compile-cache-lib@3.0.1:
     resolution: {integrity: sha512-wa7YjyUGfNZngI/vtK0UHAN+lgDCxBPCylVXGp0zu59Fz5aiGtNXaq3DhIov063MorB+VfufLh3JlF2KdTK3xg==}
 
+  vaul-svelte@0.3.2:
+    resolution: {integrity: sha512-X4OGWttSTVUl417qGDsSFgOvIx24DoiMRY/jaP9z0v9FL8LQQJ0RQ1ZM0QpdyQPRlNd24ewjNQHh5EgYDtfNpw==}
+    peerDependencies:
+      svelte: ^4.0.0 || ^5.0.0-next.1
+
   vite-imagetools@6.2.9:
     resolution: {integrity: sha512-C4ZYhgj2vAj43/TpZ06XlDNP0p/7LIeYbgUYr+xG44nM++4HGX6YZBKAYpiBNgiCFUTJ6eXkRppWBrfPMevgmg==}
     engines: {node: '>=12.0.0'}
@@ -4572,6 +4585,13 @@ snapshots:
   binary-extensions@2.3.0: {}
 
   bits-ui@0.20.1(svelte@4.2.19):
+    dependencies:
+      '@internationalized/date': 3.5.6
+      '@melt-ui/svelte': 0.76.2(svelte@4.2.19)
+      nanoid: 5.0.8
+      svelte: 4.2.19
+
+  bits-ui@0.21.16(svelte@4.2.19):
     dependencies:
       '@internationalized/date': 3.5.6
       '@melt-ui/svelte': 0.76.2(svelte@4.2.19)
@@ -6513,6 +6533,11 @@ snapshots:
 
   v8-compile-cache-lib@3.0.1:
     optional: true
+
+  vaul-svelte@0.3.2(svelte@4.2.19):
+    dependencies:
+      bits-ui: 0.21.16(svelte@4.2.19)
+      svelte: 4.2.19
 
   vite-imagetools@6.2.9(rollup@4.26.0):
     dependencies:
