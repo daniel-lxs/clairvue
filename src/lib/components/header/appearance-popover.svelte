@@ -5,27 +5,20 @@
   import { Toggle } from '$lib/components/ui/toggle';
   import { fontSize } from '@/stores/font-size';
   import { toggleMode } from 'mode-watcher';
-  import * as Tooltip from '$lib/components/ui/tooltip/index.js';
 </script>
 
-<Popover.Root>
+<Popover.Root portal={null}>
   <Popover.Trigger asChild let:builder>
-    <Tooltip.Root>
-      <Tooltip.Trigger asChild let:builder>
-        <Button
-          builders={[builder]}
-          variant="outline"
-          size="icon"
-          class="h-8 w-8 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sm:h-10 sm:w-10"
-        >
-          <CaseSensitive class="h-[1.2rem] w-[1.2rem]" />
-          <span class="sr-only">Open appearance settings</span>
-        </Button>
-      </Tooltip.Trigger>
-      <Tooltip.Content>
-        <p>Appearance settings</p>
-      </Tooltip.Content>
-    </Tooltip.Root>
+    <Button
+      builders={[builder]}
+      variant="outline"
+      size="icon"
+      title="Appearance settings"
+      class="h-8 w-8 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sm:h-10 sm:w-10"
+    >
+      <CaseSensitive class="h-[1.2rem] w-[1.2rem]" />
+      <span class="sr-only">Open appearance settings</span>
+    </Button>
   </Popover.Trigger>
   <Popover.Content class="w-80">
     <div class="grid gap-4">
