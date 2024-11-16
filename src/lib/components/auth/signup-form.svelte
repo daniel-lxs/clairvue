@@ -6,10 +6,14 @@
   import Button from '@/components/ui/button/button.svelte';
   import { AlertOctagon } from 'lucide-svelte';
 
-  export let form: { errors: Record<string, string[]> } | null;
+  interface Props {
+    form: { errors: Record<string, string[]> } | null;
+  }
 
-  let password: string;
-  let confirmPassword: string;
+  let { form = $bindable() }: Props = $props();
+
+  let password: string = $state();
+  let confirmPassword: string = $state();
 
   function checkPassword() {
     if ((password || confirmPassword) && password !== confirmPassword) {

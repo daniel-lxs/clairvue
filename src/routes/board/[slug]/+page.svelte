@@ -9,14 +9,18 @@
   import NewArticlesButton from '@/components/board/new-articles-button.svelte';
     import { beforeNavigate, afterNavigate } from '$app/navigation';
 
-  export let data: PageData;
+  interface Props {
+    data: PageData;
+  }
 
-  let isLoading = true;
-  let newArticlesCount = 0;
+  let { data }: Props = $props();
+
+  let isLoading = $state(true);
+  let newArticlesCount = $state(0);
   const perPage = 10;
-  let isLoadingMore = false;
+  let isLoadingMore = $state(false);
   let currentPage = 2; // Since we load 20 articles at first, we are starting at page 2
-  let articles: Article[] = [];
+  let articles: Article[] = $state([]);
   let savedScrollPosition = 0;
   let hasReachedEnd = false;
 

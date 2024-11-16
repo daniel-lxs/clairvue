@@ -3,7 +3,11 @@
   import { Button } from '../ui/button';
   import { calculateAge } from '@/utils';
 
-  export let board: Board;
+  interface Props {
+    board: Board;
+  }
+
+  let { board }: Props = $props();
   let feedsCount = board.feeds?.length || 0;
   
   const feedText = feedsCount === 1 ? 'feed' : 'feeds';

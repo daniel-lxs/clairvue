@@ -6,10 +6,14 @@
   import * as Card from '@/components/ui/card';
   import { AlertOctagon } from 'lucide-svelte';
 
-  export let form: {
+  interface Props {
+    form: {
     message: string;
     errors?: Record<string, string[]>;
   } | null;
+  }
+
+  let { form }: Props = $props();
 </script>
 
 <Card.Root

@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { run } from 'svelte/legacy';
+
   import { createFeeds, deleteFeedFromBoard, updateBoard } from '@/api';
   import CreateFeedDialog from '@/components/feed/create-feed-dialog.svelte';
   import FeedListItem from '@/components/feed/feed-list-item.svelte';
@@ -14,10 +16,13 @@
   import { debounce } from 'throttle-debounce';
   import BoardSettingsSkeleton from '@/components/board/board-settings-skeleton.svelte';
 
-  export let data: PageData;
+  interface Props {
+    data: PageData;
+  }
+
+  let { data }: Props = $props();
   let board = writable<Board>();
 
-  $: loadBoard();
 
   async function loadBoard() {
     board.set(await data.streamed.board);
@@ -91,6 +96,9 @@
       action
     });
   }
+  run(() => {
+    loadBoard();
+  });
 </script>
 
 <svelte:head>

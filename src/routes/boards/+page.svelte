@@ -6,7 +6,11 @@
   import { Label } from '@/components/ui/label';
   import { PlusCircle } from 'lucide-svelte';
 
-  export let data: PageData;
+  interface Props {
+    data: PageData;
+  }
+
+  let { data }: Props = $props();
 </script>
 
 <Page.Container>

@@ -1,10 +1,19 @@
 <script lang="ts">
   import type { Article } from '@/server/data/schema';
 
-  export let article: Article;
-  export let imageLoaded = false;
-  export let imageError = false;
-  export let type = 'wide';
+  interface Props {
+    article: Article;
+    imageLoaded?: boolean;
+    imageError?: boolean;
+    type?: string;
+  }
+
+  let {
+    article,
+    imageLoaded = $bindable(false),
+    imageError = $bindable(false),
+    type = 'wide'
+  }: Props = $props();
 </script>
 
 <div class="relative w-full overflow-hidden {type === 'square' ? 'rounded-lg' : 'rounded-t-lg'}">
@@ -16,10 +25,10 @@
       class="h-full w-full bg-muted object-contain {type === 'square'
         ? 'max-h-36 min-h-24 min-w-24 max-w-52'
         : ''}"
-      on:load={() => {
+      onload={() => {
         imageLoaded = true;
       }}
-      on:error={() => {
+      onerror={() => {
         imageError = true;
       }}
     />

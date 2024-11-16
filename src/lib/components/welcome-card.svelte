@@ -1,11 +1,13 @@
 <script lang="ts">
+  import { preventDefault } from 'svelte/legacy';
+
   import * as Card from '@/components/ui/card';
   import { Input } from '@/components/ui/input';
   import Button from '@/components/ui/button/button.svelte';
   import { goto } from '$app/navigation';
 
-  let isInputVisible = false;
-  let boardCode = '';
+  let isInputVisible = $state(false);
+  let boardCode = $state('');
 
   function onBoardCodeSubmit() {
     if (boardCode) {
@@ -40,7 +42,7 @@
 
     {#if isInputVisible}
       <form
-        on:submit|preventDefault={onBoardCodeSubmit}
+        onsubmit={preventDefault(onBoardCodeSubmit)}
         class="flex w-full max-w-sm items-center space-x-2 mx-auto"
       >
         <Input type="text" autofocus placeholder="Enter your board code" bind:value={boardCode} />

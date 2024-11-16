@@ -1,13 +1,18 @@
-<script>
+<script lang="ts">
   import { ModeWatcher } from 'mode-watcher';
   import SiteHeader from '@/components/header/site-header.svelte';
   import '../app.pcss';
   import { Toaster } from '$lib/components/ui/sonner';
+  interface Props {
+    children?: import('svelte').Snippet;
+  }
+
+  let { children }: Props = $props();
 </script>
 
 <Toaster />
 <ModeWatcher />
 <div class="min-h-screen">
   <SiteHeader />
-  <slot />
+  {@render children?.()}
 </div>

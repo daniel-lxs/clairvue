@@ -6,9 +6,13 @@
   import ArticlePageSkeleton from '@/components/article/article-page-skeleton.svelte';
   import { BookOpen } from 'lucide-svelte';
 
-  export let data: PageData;
+  interface Props {
+    data: PageData;
+  }
 
-  let fomattedDate: string;
+  let { data }: Props = $props();
+
+  let fomattedDate: string = $state();
 
   const formatArticleDate = async () => {
     const parsedArticle = await data.streamed.parsedArticle;

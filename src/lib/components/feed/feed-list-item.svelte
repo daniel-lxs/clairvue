@@ -6,7 +6,11 @@
   import { createEventDispatcher } from 'svelte';
   import * as DropdownMenu from '../ui/dropdown-menu';
 
-  export let feed: Feed;
+  interface Props {
+    feed: Feed;
+  }
+
+  let { feed }: Props = $props();
 
   const dispatch = createEventDispatcher();
 
@@ -30,16 +34,18 @@
   </div>
 
   <DropdownMenu.Root>
-    <DropdownMenu.Trigger asChild let:builder>
-      <Button
-        builders={[builder]}
-        variant="ghost"
-        size="sm"
-        class="ml-2 flex-shrink-0 h-8 w-8 p-0"
-      >
-        <MoreVertical class="h-4 w-4" />
-      </Button>
-    </DropdownMenu.Trigger>
+    <DropdownMenu.Trigger asChild >
+      {#snippet children({ builder })}
+            <Button
+          builders={[builder]}
+          variant="ghost"
+          size="sm"
+          class="ml-2 flex-shrink-0 h-8 w-8 p-0"
+        >
+          <MoreVertical class="h-4 w-4" />
+        </Button>
+                {/snippet}
+        </DropdownMenu.Trigger>
     <DropdownMenu.Content>
       <DropdownMenu.Item on:click={deleteFeed}>
         <Trash class="mr-2 h-4 w-4" />

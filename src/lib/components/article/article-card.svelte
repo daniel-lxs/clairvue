@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { run } from 'svelte/legacy';
+
   import * as Card from '@/components/ui/card';
   import type { Article } from '@/server/data/schema';
   import { calculateAge, truncateDescription } from '@/utils';
@@ -7,19 +9,28 @@
   import { BookOpen } from 'lucide-svelte';
   import { onMount } from 'svelte';
 
-  export let article: Article;
+  interface Props {
+    article: Article;
+  }
 
-  $: imageLoaded = false;
-  $: imageError = false;
-  $: imageType = 'wide';
-  $: age = calculateAge(new Date(article.publishedAt));
-  $: imageWidth = 0;
-  $: imageHeight = 0;
-  $: aspectRatio = 0;
+  let { article }: Props = $props();
 
-  let isMobile = false;
+  let imageLoaded = $state(false);
 
-  let descriptionLength: number = 300;
+  let imageError = $state(false);
+
+  let imageType = $state('wide');
+
+  let age = $derived(calculateAge(new Date(article.publishedAt)));
+  let imageWidth = $state(0);
+
+  let imageHeight = $state(0);
+
+  let aspectRatio = $state(0);
+
+  let isMobile = $state(false);
+
+  let descriptionLength: number = $state(300);
 
   const loadImage = () => {
     if (!article.image || imageError) {
@@ -42,11 +53,11 @@
     };
   };
 
-  $: {
+  run(() => {
     if (imageError) {
       descriptionLength = 500;
     }
-  }
+  });
 
   loadImage();
 
@@ -88,8 +99,8 @@
                     tag="h1"
                     class="text-xl font-bold transition-colors hover:text-primary"
                   >
-                    <a
-                      href={article.readable ? `/article/${article.slug}` : article.link}>{article.title}</a
+                    <a href={article.readable ? `/article/${article.slug}` : article.link}
+                      >{article.title}</a
                     >
                   </Card.Title>
                   <Card.Description class="sm:text-md text-sm">

@@ -3,7 +3,11 @@
   import LoginForm from '@/components/auth/login-form.svelte';
   import * as Page from '@/components/page';
 
-  export let form: ActionData;
+  interface Props {
+    form: ActionData;
+  }
+
+  let { form }: Props = $props();
 </script>
 
 <Page.Container>

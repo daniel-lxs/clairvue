@@ -1,6 +1,10 @@
 <script lang="ts">
-  export let title: string;
-  export let subtitle: string | undefined = undefined;
+  interface Props {
+    title: string;
+    subtitle?: string | undefined;
+  }
+
+  let { title, subtitle = undefined }: Props = $props();
 </script>
 
 <div class="flex w-full flex-col items-start pb-6 sm:space-y-2 sm:py-4">

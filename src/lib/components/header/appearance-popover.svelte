@@ -6,12 +6,11 @@
   import { fontSize } from '@/stores/font-size';
   import { setMode, mode } from 'mode-watcher';
 
-  let theme = $state;
+  let theme = $state<'light' | 'dark'>($mode || 'dark');
 
-  function handleThemeChange(theme: 'light' | 'dark') {
-    console.log(theme);
+  $effect(() => {
     setMode(theme);
-  }
+  });
 </script>
 
 <Popover.Root portal={null}>
@@ -39,7 +38,7 @@
           <div class="relative">
             <ToggleGroup.Root
               type="single"
-              on:change={(e) => handleThemeChange(e.detail.value)}
+              bind:value={theme}
               class="grid w-full grid-cols-2 gap-2"
             >
               <ToggleGroup.Item value="light" class="w-full">Light</ToggleGroup.Item>

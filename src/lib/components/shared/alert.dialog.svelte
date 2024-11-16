@@ -3,9 +3,13 @@
   import * as Dialog from '../ui/dialog';
   import { Label } from '../ui/label';
 
-  export let open: boolean;
-  export let title: string;
-  export let message: string;
+  interface Props {
+    open: boolean;
+    title: string;
+    message: string;
+  }
+
+  let { open = $bindable(), title, message }: Props = $props();
 
   function onClick() {
     open = false;

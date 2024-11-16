@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { run } from 'svelte/legacy';
+
   import { Button, buttonVariants } from '@/components/ui/button';
   import * as Dialog from '@/components/ui/dialog';
   import { Input } from '@/components/ui/input';
@@ -12,16 +14,16 @@
     create: NewFeed;
   }>();
 
-  let isLoading = false;
-  let hasError = false;
-  let newFeed: NewFeed = {
+  let isLoading = $state(false);
+  let hasError = $state(false);
+  let newFeed: NewFeed = $state({
     id: '',
     name: '',
     description: '',
     link: ''
-  };
-  let open: boolean;
-  let link: string = '';
+  });
+  let open: boolean = $state();
+  let link: string = $state('');
 
   async function save() {
     isLoading = true;
@@ -46,17 +48,19 @@
     isLoading = false;
   }
 
-  $: if (open === false) {
-    newFeed = {
-      id: '',
-      name: '',
-      description: '',
-      link: ''
-    };
-    link = '';
-    hasError = false;
-    isLoading = false;
-  }
+  run(() => {
+    if (open === false) {
+      newFeed = {
+        id: '',
+        name: '',
+        description: '',
+        link: ''
+      };
+      link = '';
+      hasError = false;
+      isLoading = false;
+    }
+  });
 </script>
 
 <Dialog.Root bind:open>

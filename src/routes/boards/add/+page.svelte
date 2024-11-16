@@ -16,13 +16,17 @@
   import { writable } from 'svelte/store';
   import type { PageServerData } from './$types';
 
-  export let data: PageServerData;
+  interface Props {
+    data: PageServerData;
+  }
 
-  let isLoading = false;
+  let { data }: Props = $props();
+
+  let isLoading = $state(false);
   let board = writable<Board>();
 
   //Alert dialog
-  let open = false;
+  let open = $state(false);
   let title = '';
   let message = '';
 
@@ -190,14 +194,16 @@
       </div>
     </div>
   </div>
-  <svelte:fragment slot="footer">
-    <Button disabled={isLoading} type="submit" on:click={saveBoard}>
-      {#if isLoading}
-        <Loader2 class="mr-2 h-4 w-4 animate-spin" />
-        Saving...
-      {:else}
-        Save feed
-      {/if}
-    </Button>
-  </svelte:fragment>
+  {#snippet footer()}
+  
+      <Button disabled={isLoading} type="submit" on:click={saveBoard}>
+        {#if isLoading}
+          <Loader2 class="mr-2 h-4 w-4 animate-spin" />
+          Saving...
+        {:else}
+          Save feed
+        {/if}
+      </Button>
+    
+  {/snippet}
 </Page.Container>
