@@ -1,5 +1,15 @@
 <script>
   import WelcomeCard from '@/components/welcome-card.svelte';
+  import { onMount } from 'svelte';
+  import { goto } from '$app/navigation';
+  import { page } from '$app/stores';
+
+  onMount(() => {
+    // Check if user is authenticated using the session from the page store
+    if ($page.data.session?.user) {
+      goto('/boards');
+    }
+  });
 </script>
 
 <div class="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center">
