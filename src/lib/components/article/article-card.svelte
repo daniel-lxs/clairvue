@@ -89,8 +89,7 @@
                     class="text-xl font-bold transition-colors hover:text-primary"
                   >
                     <a
-                      href={article.readable ? `/article/${article.slug}` : article.link}
-                      target="_blank">{article.title}</a
+                      href={article.readable ? `/article/${article.slug}` : article.link}>{article.title}</a
                     >
                   </Card.Title>
                   <Card.Description class="sm:text-md text-sm">

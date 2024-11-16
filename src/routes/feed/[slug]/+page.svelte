@@ -7,6 +7,7 @@
   import type { Article } from '@/server/data/schema';
   import ArticleCardSkeleton from '@/components/article/article-card-skeleton.svelte';
   import NewArticlesButton from '@/components/board/new-articles-button.svelte';
+    import { afterNavigate, beforeNavigate } from '$app/navigation';
 
   export let data: PageData;
 
@@ -16,6 +17,42 @@
   let isLoadingMore = false;
   let currentPage = 2; // Since we load 20 articles at first, we are starting at page 2
   let articles: Article[] = [];
+  let savedScrollPosition = 0;
+  let hasReachedEnd = false;
+
+  // Save the current state before navigating away
+  beforeNavigate(({ to }) => {
+    if (to?.url.pathname.includes('/article/')) {
+      savedScrollPosition = window.scrollY;
+      sessionStorage.setItem('feed_articles_' + data.feed.id, JSON.stringify(articles));
+      sessionStorage.setItem('feed_scroll_' + data.feed.id, savedScrollPosition.toString());
+      sessionStorage.setItem('feed_reached_end_' + data.feed.id, hasReachedEnd.toString());
+    }
+  });
+
+  // Restore the state when navigating back
+  afterNavigate(({ type }) => {
+    if (type === 'popstate') {
+      const savedArticles = sessionStorage.getItem('feed_articles_' + data.feed.id);
+      const savedScroll = sessionStorage.getItem('feed_scroll_' + data.feed.id);
+      const savedReachedEnd = sessionStorage.getItem('feed_reached_end_' + data.feed.id);
+      
+      if (savedArticles) {
+        articles = JSON.parse(savedArticles);
+        isLoading = false;
+      }
+      
+      if (savedReachedEnd) {
+        hasReachedEnd = savedReachedEnd === 'true';
+      }
+      
+      if (savedScroll) {
+        setTimeout(() => {
+          window.scrollTo(0, parseInt(savedScroll));
+        }, 0);
+      }
+    }
+  });
 
   const getArticles = async () => {
     try {
@@ -39,19 +76,25 @@
 
   // Separate function for loading more articles
   const loadMoreArticles = async () => {
-    if (isLoadingMore) return;
+    if (isLoadingMore || hasReachedEnd) return;
 
     isLoadingMore = true;
 
     const newArticles = await fetchArticles(perPage, articles[articles.length - 1].publishedAt);
-    articles = [...articles, ...newArticles];
-    currentPage += 1;
+    if (newArticles.length === 0) {
+      hasReachedEnd = true;
+    } else {
+      articles = [...articles, ...newArticles];
+      currentPage += 1;
+    }
 
     isLoadingMore = false;
   };
 
   // Scroll event handler
   const handleScroll = () => {
+    if (hasReachedEnd) return;
+    
     const scrollHeight = document.documentElement.scrollHeight;
     const scrollTop = document.documentElement.scrollTop;
     const clientHeight = document.documentElement.clientHeight;
@@ -80,7 +123,13 @@
   };
 
   onMount(() => {
-    getArticles();
+    const savedArticles = sessionStorage.getItem('feed_articles_' + data.feed.id);
+    if (savedArticles) {
+      articles = JSON.parse(savedArticles);
+      isLoading = false;
+    } else {
+      getArticles();
+    }
 
     // Check for new articles every minute
     const intervalId = setInterval(checkNewArticles, 60 * 1000);
