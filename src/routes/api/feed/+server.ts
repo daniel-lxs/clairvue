@@ -3,7 +3,7 @@ import feedRepository from '@/server/data/repositories/feed';
 import { createFeedDto, updateFeedDto, type CreateFeedDto } from '@/server/dto/feedDto';
 import type { CreateFeedResult } from '@/types/CreateFeedResult';
 import type { Feed } from '@/server/data/schema';
-import { getArticleQueue } from '../../../queue/articles';
+import { getArticleQueue } from '@/server/queue/articles';
 
 export const GET: RequestHandler = async ({ url }) => {
   const feedId = url.searchParams.get('id');

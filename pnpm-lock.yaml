@@ -32,6 +32,9 @@ importers:
       drizzle-orm:
         specifier: ^0.29.5
         version: 0.29.5(bun-types@1.1.34)(pg@8.13.1)(postgres@https://github.com/porsager/postgres/archive/2b85ea7fb8b50f7c69232bd8074aa11c8cbe9d3a.tar.gz)
+      ioredis:
+        specifier: ^5.4.1
+        version: 5.4.1
       isomorphic-dompurify:
         specifier: ^2.16.0
         version: 2.16.0

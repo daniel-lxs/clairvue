@@ -2,7 +2,7 @@ import { Worker, type ConnectionOptions } from 'bullmq';
 import feedRepository from '@/server/data/repositories/feed';
 import { syncArticles } from '@/server/services/article';
 
-export async function startWorker() {
+export async function startArticlesWorker() {
   const connection: ConnectionOptions = {
     host: process.env.PRIVATE_REDIS_HOST,
     port: process.env.PRIVATE_REDIS_PORT,
@@ -40,6 +40,4 @@ export async function startWorker() {
     }
     console.info(`A unknown error occurred on worker.`);
   });
-
-  console.info('Worker started🚀');
 }

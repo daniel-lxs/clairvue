@@ -1,6 +1,6 @@
 import { CronJob } from 'cron';
 import feedRepository from '@/server/data/repositories/feed';
-import { getArticleQueue } from '../queue/articles';
+import { getArticleQueue } from '@/server/queue/articles';
 
 export function startScheduler() {
   console.log(`[Scheduler] Started at ${new Date().toLocaleString()}`);
