@@ -103,7 +103,7 @@
   {:then}
     <Page.Header title="Edit board" subtitle="Edit board name and feeds" />
 
-    <div class="space-y-12">
+    <div class="space-y-12 w-full">
       <div class="space-y-2">
         <Label for="boardName" class="font-semibold">Board name</Label>
         <Input
@@ -126,7 +126,7 @@
           <CreateFeedDialog on:create={saveFeed} />
         </div>
 
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {#each $board.feeds || [] as feed}
             <FeedListItem {feed} on:delete={() => removeFeed(feed)} />
           {/each}
