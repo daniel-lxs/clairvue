@@ -1,5 +1,6 @@
 import { validateAuthSession } from '@/server/services/auth';
 import type { PageServerLoad } from './$types';
+import { redirect } from '@sveltejs/kit';
 
 export const load: PageServerLoad = async ({ cookies }) => {
   const cookieHeader = cookies.get('auth_session');
@@ -18,7 +19,5 @@ export const load: PageServerLoad = async ({ cookies }) => {
     };
   }
 
-  return {
-    session: authSession
-  };
+  redirect(302, '/boards');
 };
