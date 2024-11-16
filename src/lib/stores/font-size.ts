@@ -1,5 +1,5 @@
 import { writable } from 'svelte/store';
 
-export type FontSize = 'small' | 'default' | 'large' | 'extra large';
+export type FontSize = 'sm' | 'base' | 'lg' | 'xl';
 
-export const fontSize = writable<FontSize>('default');
+export const fontSize = writable<FontSize>('base');

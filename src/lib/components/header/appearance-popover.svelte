@@ -1,15 +1,32 @@
 <script lang="ts">
-  import { CaseSensitive } from 'lucide-svelte';
+  import { CaseSensitive, Moon, Sun } from 'lucide-svelte';
   import Button from '../ui/button/button.svelte';
   import * as Popover from '$lib/components/ui/popover';
   import * as ToggleGroup from '$lib/components/ui/toggle-group';
-  import { fontSize } from '@/stores/font-size';
+  import { fontSize, type FontSize } from '@/stores/font-size';
   import { setMode, mode } from 'mode-watcher';
 
   let theme = $state<'light' | 'dark'>($mode || 'dark');
+  let previousTheme = $state($mode || 'dark');
+
+  let selectedFontSize = $state($fontSize);
+  let previousFontSize: FontSize = $state($fontSize);
 
   $effect(() => {
+    // Needed cause the toggle group let's you set the value to undefined
+    previousTheme = $mode || 'dark';
+    if (theme === undefined) {
+      theme = previousTheme;
+    }
     setMode(theme);
+  });
+
+  $effect(() => {
+    previousFontSize = $fontSize;
+    if (selectedFontSize === undefined) {
+      selectedFontSize = previousFontSize;
+    }
+    fontSize.set(selectedFontSize);
   });
 </script>
 
@@ -41,8 +58,12 @@
               bind:value={theme}
               class="grid w-full grid-cols-2 gap-2"
             >
-              <ToggleGroup.Item value="light" class="w-full">Light</ToggleGroup.Item>
-              <ToggleGroup.Item value="dark" class="w-full">Dark</ToggleGroup.Item>
+              <ToggleGroup.Item value="light" class="w-full"
+                ><Sun class="mr-2 h-4 w-4" />Light</ToggleGroup.Item
+              >
+              <ToggleGroup.Item value="dark" class="w-full"
+                ><Moon class="mr-2 h-4 w-4" />Dark</ToggleGroup.Item
+              >
             </ToggleGroup.Root>
           </div>
         </div>
@@ -51,19 +72,19 @@
           <div class="relative">
             <ToggleGroup.Root
               type="single"
-              bind:value={$fontSize}
+              bind:value={selectedFontSize}
               class="grid w-full grid-cols-4 gap-2"
             >
-              <ToggleGroup.Item value="small" class="w-full">
+              <ToggleGroup.Item value="sm" class="w-full">
                 <span class="text-xs">A</span>
               </ToggleGroup.Item>
-              <ToggleGroup.Item value="default" class="w-full">
+              <ToggleGroup.Item value="base" class="w-full">
                 <span class="text-sm">A</span>
               </ToggleGroup.Item>
-              <ToggleGroup.Item value="large" class="w-full">
+              <ToggleGroup.Item value="lg" class="w-full">
                 <span class="text-base">A</span>
               </ToggleGroup.Item>
-              <ToggleGroup.Item value="extra large" class="w-full">
+              <ToggleGroup.Item value="xl" class="w-full">
                 <span class="text-lg">A</span>
               </ToggleGroup.Item>
             </ToggleGroup.Root>

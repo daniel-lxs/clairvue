@@ -5,6 +5,7 @@
   import { onMount } from 'svelte';
   import ArticlePageSkeleton from '@/components/article/article-page-skeleton.svelte';
   import { BookOpen } from 'lucide-svelte';
+  import { fontSize } from '@/stores/font-size';
 
   interface Props {
     data: PageData;
@@ -12,7 +13,7 @@
 
   let { data }: Props = $props();
 
-  let fomattedDate: string = $state();
+  let fomattedDate: string = $state('');
 
   const formatArticleDate = async () => {
     const parsedArticle = await data.streamed.parsedArticle;
@@ -58,7 +59,7 @@
   {#await data.streamed.parsedArticle}
     <ArticlePageSkeleton />
   {:then parsedArticle}
-    <article class="prose dark:prose-invert sm:pt-4">
+    <article class="prose dark:prose-invert prose-{$fontSize} sm:pt-4">
       <div class="space-y-6">
         <a href={data.article?.link} target="_blank">{data.article?.siteName}</a>
         <h2>{data.article?.title}</h2>
