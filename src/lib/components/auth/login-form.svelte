@@ -13,7 +13,7 @@
 </script>
 
 <Card.Root
-  class="relative flex flex-col items-center justify-center space-y-4 p-6 text-center md:w-1/3"
+  class="relative flex flex-col items-center justify-center space-y-4 p-6 text-center w-full"
 >
   <Card.Header>
     <Card.Title tag="h1" class="text-3xl font-bold">Login to Clairvue</Card.Title>
