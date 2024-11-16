@@ -2,14 +2,13 @@
   import type { Feed } from '@/server/data/schema';
   import { calculateAge } from '@/utils';
   import { Button } from '../ui/button';
-  import { Trash } from 'lucide-svelte';
+  import { Trash, MoreVertical } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
+  import * as DropdownMenu from '../ui/dropdown-menu';
 
   export let feed: Feed;
 
   const dispatch = createEventDispatcher();
-
-  let isHovered = false;
 
   function deleteFeed() {
     dispatch('delete', {
@@ -19,9 +18,7 @@
 </script>
 
 <div
-  class="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-muted"
-  on:mouseenter={() => (isHovered = true)}
-  on:mouseleave={() => (isHovered = false)}
+  class="flex items-center justify-between rounded-lg p-4 transition-colors bg-muted"
   role="button"
   tabindex="0"
 >
@@ -32,9 +29,22 @@
     </div>
   </div>
 
-  {#if isHovered}
-    <Button on:click={deleteFeed} variant="destructive" size="sm" class="ml-2 flex-shrink-0">
-      <Trash class="h-4 w-4" />
-    </Button>
-  {/if}
+  <DropdownMenu.Root>
+    <DropdownMenu.Trigger asChild let:builder>
+      <Button
+        builders={[builder]}
+        variant="ghost"
+        size="sm"
+        class="ml-2 flex-shrink-0 h-8 w-8 p-0"
+      >
+        <MoreVertical class="h-4 w-4" />
+      </Button>
+    </DropdownMenu.Trigger>
+    <DropdownMenu.Content>
+      <DropdownMenu.Item on:click={deleteFeed}>
+        <Trash class="mr-2 h-4 w-4" />
+        <span>Delete</span>
+      </DropdownMenu.Item>
+    </DropdownMenu.Content>
+  </DropdownMenu.Root>
 </div>
