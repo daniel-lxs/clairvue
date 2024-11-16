@@ -128,6 +128,7 @@
     if (savedArticles) {
       articles = JSON.parse(savedArticles);
       isLoading = false;
+      checkNewArticles();
     } else {
       getArticles();
     }
