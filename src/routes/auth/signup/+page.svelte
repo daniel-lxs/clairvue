@@ -7,7 +7,7 @@
 </script>
 
 <Page.Container>
-  <div class="flex h-full flex-col items-center justify-center">
+  <div class="flex h-full flex-col items-center justify-center w-full">
     <SignupForm {form} />
   </div>
 </Page.Container>
