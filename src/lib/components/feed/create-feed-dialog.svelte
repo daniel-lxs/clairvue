@@ -5,7 +5,7 @@
   import { Label } from '@/components/ui/label';
   import { getFeedInfo } from '@/api';
   import { createEventDispatcher } from 'svelte';
-  import { Loader2 } from 'lucide-svelte';
+  import { Loader2, PlusCircle } from 'lucide-svelte';
   import type { NewFeed } from '@/types/NewFeed';
 
   const dispatch = createEventDispatcher<{
@@ -60,7 +60,7 @@
 </script>
 
 <Dialog.Root bind:open>
-  <Dialog.Trigger class={buttonVariants({ variant: 'outline' })}>Add new feed</Dialog.Trigger>
+  <Dialog.Trigger class={buttonVariants({ variant: 'outline' })}><PlusCircle class="h-4 w-4 mr-2" />Add new feed</Dialog.Trigger>
 
   <Dialog.Content class="sm:max-w-[425px]">
     <Dialog.Header>
