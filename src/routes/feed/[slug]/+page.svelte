@@ -7,7 +7,7 @@
   import type { Article } from '@/server/data/schema';
   import ArticleCardSkeleton from '@/components/article/article-card-skeleton.svelte';
   import NewArticlesButton from '@/components/board/new-articles-button.svelte';
-    import { afterNavigate, beforeNavigate } from '$app/navigation';
+  import { afterNavigate, beforeNavigate } from '$app/navigation';
 
   interface Props {
     data: PageData;
@@ -40,21 +40,26 @@
       const savedArticles = sessionStorage.getItem('feed_articles_' + data.feed.id);
       const savedScroll = sessionStorage.getItem('feed_scroll_' + data.feed.id);
       const savedReachedEnd = sessionStorage.getItem('feed_reached_end_' + data.feed.id);
-      
+
       if (savedArticles) {
         articles = JSON.parse(savedArticles);
         isLoading = false;
       }
-      
+
       if (savedReachedEnd) {
         hasReachedEnd = savedReachedEnd === 'true';
       }
-      
+
       if (savedScroll) {
         setTimeout(() => {
           window.scrollTo(0, parseInt(savedScroll));
         }, 0);
       }
+    } else if (type === 'enter') {
+      getArticles();
+      sessionStorage.removeItem('feed_articles_' + data.feed.id);
+      sessionStorage.removeItem('feed_scroll_' + data.feed.id);
+      sessionStorage.removeItem('feed_reached_end_' + data.feed.id);
     }
   });
 
@@ -98,7 +103,7 @@
   // Scroll event handler
   const handleScroll = () => {
     if (hasReachedEnd) return;
-    
+
     const scrollHeight = document.documentElement.scrollHeight;
     const scrollTop = document.documentElement.scrollTop;
     const clientHeight = document.documentElement.clientHeight;
@@ -131,6 +136,7 @@
     if (savedArticles) {
       articles = JSON.parse(savedArticles);
       isLoading = false;
+      checkNewArticles();
     } else {
       getArticles();
     }
