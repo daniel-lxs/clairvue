@@ -12,8 +12,8 @@
 
   let { form = $bindable() }: Props = $props();
 
-  let password: string = $state();
-  let confirmPassword: string = $state();
+  let password: string = $state('');
+  let confirmPassword: string = $state('');
 
   function checkPassword() {
     if ((password || confirmPassword) && password !== confirmPassword) {
@@ -28,9 +28,7 @@
   }
 </script>
 
-<Card.Root
-  class="relative flex flex-col items-center justify-center space-y-4 p-6 text-center"
->
+<Card.Root class="relative flex flex-col items-center justify-center space-y-4 p-6 text-center">
   <Card.Header>
     <Card.Title tag="h1" class="text-3xl font-bold">Register a New Clairvue Account</Card.Title>
   </Card.Header>

@@ -3,19 +3,12 @@
   import { buttonVariants } from '$lib/components/ui/button/index.js';
   import { cn } from '$lib/utils.js';
 
-  type $$Props = AlertDialogPrimitive.ActionProps;
+  type $$Props = AlertDialogPrimitive.ActionProps & {
+    children?: (props: { builder: any }) => any;
+  };
   type $$Events = AlertDialogPrimitive.ActionEvents;
 
-  interface Props {
-    class?: $$Props['class'];
-    children?: import('svelte').Snippet<[any]>;
-    [key: string]: any
-  }
-
-  let { class: className = undefined, children, ...rest }: Props = $props();
-  
-
-  const children_render = $derived(children);
+  let { class: className = undefined, children, ...rest }: $$Props = $props();
 </script>
 
 <AlertDialogPrimitive.Action
@@ -23,9 +16,7 @@
   {...rest}
   on:click
   on:keydown
-  
+  let:builder
 >
-  {#snippet children({ builder })}
-    {@render children_render?.({ builder, })}
-  {/snippet}
+  {@render children?.({ builder })}
 </AlertDialogPrimitive.Action>

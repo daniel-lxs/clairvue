@@ -13,7 +13,7 @@
     page?: $$Props['page'];
     siblingCount?: $$Props['siblingCount'];
     children?: import('svelte').Snippet<[any]>;
-    [key: string]: any
+    [key: string]: any;
   }
 
   let {
@@ -26,11 +26,7 @@
     ...rest
   }: Props = $props();
 
-  
-
   let currentPage = $derived(page);
-
-  const children_render = $derived(children);
 </script>
 
 <PaginationPrimitive.Root
@@ -38,15 +34,13 @@
   {perPage}
   {siblingCount}
   bind:page
-  
-  
-  
+  let:builder
+  let:pages
+  let:range
   asChild
   {...rest}
 >
-  {#snippet children({ builder, pages, range })}
-    <nav {...builder} class={cn('mx-auto flex w-full flex-col items-center', className)}>
-      {@render children_render?.({ pages, range, currentPage, })}
-    </nav>
-  {/snippet}
+  <nav {...builder} class={cn('mx-auto flex w-full flex-col items-center', className)}>
+    {@render children?.({ pages, range, currentPage })}
+  </nav>
 </PaginationPrimitive.Root>

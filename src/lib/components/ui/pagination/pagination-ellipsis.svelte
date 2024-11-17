@@ -7,15 +7,14 @@
 
   interface Props {
     class?: $$Props['class'];
-    [key: string]: any
+    [key: string]: any;
   }
 
   let { class: className = undefined, ...rest }: Props = $props();
-  
 </script>
 
 <span
-  aria-hidden
+  aria-hidden="true"
   class={cn('flex h-9 w-9 items-center justify-center', className)}
   {...rest}
 >

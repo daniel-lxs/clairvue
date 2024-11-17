@@ -188,22 +188,20 @@
           </div>
         {:else}
           {#each $board.feeds as feed}
-            <FeedListItem {feed} on:delete={() => removeFeed(feed)} />
+            <FeedListItem {feed} deleteFeed={removeFeed} />
           {/each}
         {/if}
       </div>
     </div>
   </div>
   {#snippet footer()}
-  
-      <Button disabled={isLoading} type="submit" on:click={saveBoard}>
-        {#if isLoading}
-          <Loader2 class="mr-2 h-4 w-4 animate-spin" />
-          Saving...
-        {:else}
-          Save feed
-        {/if}
-      </Button>
-    
+    <Button disabled={isLoading} type="submit" on:click={saveBoard}>
+      {#if isLoading}
+        <Loader2 class="mr-2 h-4 w-4 animate-spin" />
+        Saving...
+      {:else}
+        Save feed
+      {/if}
+    </Button>
   {/snippet}
 </Page.Container>

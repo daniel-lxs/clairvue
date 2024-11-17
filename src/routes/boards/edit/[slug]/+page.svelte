@@ -23,7 +23,6 @@
   let { data }: Props = $props();
   let board = writable<Board>();
 
-
   async function loadBoard() {
     board.set(await data.streamed.board);
   }
@@ -111,7 +110,7 @@
   {:then}
     <Page.Header title="Edit board" subtitle="Edit board name and feeds" />
 
-    <div class="space-y-12 w-full">
+    <div class="w-full space-y-12">
       <div class="space-y-2">
         <Label for="boardName" class="font-semibold">Board name</Label>
         <Input
@@ -136,7 +135,7 @@
 
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {#each $board.feeds || [] as feed}
-            <FeedListItem {feed} on:delete={() => removeFeed(feed)} />
+            <FeedListItem {feed} deleteFeed={removeFeed} />
           {/each}
         </div>
       </div>

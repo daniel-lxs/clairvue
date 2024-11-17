@@ -22,7 +22,7 @@
     description: '',
     link: ''
   });
-  let open: boolean = $state();
+  let open: boolean = $state(false);
   let link: string = $state('');
 
   async function save() {
@@ -64,7 +64,9 @@
 </script>
 
 <Dialog.Root bind:open>
-  <Dialog.Trigger class={buttonVariants({ variant: 'outline' })}><PlusCircle class="h-4 w-4 mr-2" />Add new feed</Dialog.Trigger>
+  <Dialog.Trigger class={buttonVariants({ variant: 'outline' })}
+    ><PlusCircle class="mr-2 h-4 w-4" />Add new feed</Dialog.Trigger
+  >
 
   <Dialog.Content class="sm:max-w-[425px]">
     <Dialog.Header>
