@@ -19,7 +19,11 @@
   tabindex="0"
 >
   <div class="flex flex-col">
-    <div class="text-sm font-semibold">{feed.name}</div>
+    <a
+      href="/board/{feed.id}"
+      class="item-title truncate text-sm font-medium text-primary decoration-primary/30 underline-offset-4 transition-colors hover:text-primary/80 hover:underline"
+      >{feed.name}</a
+    >
     <div class="text-xs text-muted-foreground">
       Created {calculateAge(feed.createdAt, 'long')} • {feed.articleCount || 0} articles
     </div>
