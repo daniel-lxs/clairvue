@@ -3,14 +3,13 @@
   import Button from '../ui/button/button.svelte';
   import * as Popover from '$lib/components/ui/popover';
   import * as ToggleGroup from '$lib/components/ui/toggle-group';
-  import { fontSize, type FontSize } from '@/stores/font-size';
+  import { fontSize, updateFontSize } from '@/stores/font-size';
   import { setMode, mode } from 'mode-watcher';
 
   let theme = $state<'light' | 'dark'>($mode || 'dark');
   let previousTheme = $state($mode || 'dark');
 
   let selectedFontSize = $state($fontSize);
-  let previousFontSize: FontSize = $state($fontSize);
 
   $effect(() => {
     // Needed cause the toggle group let's you set the value to undefined
@@ -22,11 +21,10 @@
   });
 
   $effect(() => {
-    previousFontSize = $fontSize;
     if (selectedFontSize === undefined) {
-      selectedFontSize = previousFontSize;
+      selectedFontSize = $fontSize;
     }
-    fontSize.set(selectedFontSize);
+    updateFontSize(selectedFontSize);
   });
 </script>
 
