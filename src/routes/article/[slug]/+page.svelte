@@ -59,7 +59,13 @@
   {#await data.streamed.parsedArticle}
     <ArticlePageSkeleton />
   {:then parsedArticle}
-    <article class="prose {`prose-${$fontSize}`} dark:prose-invert sm:pt-4">
+    <article
+      class="prose dark:prose-invert sm:pt-4"
+      class:prose-sm={$fontSize === 'sm'}
+      class:prose-base={$fontSize === 'base'}
+      class:prose-lg={$fontSize === 'lg'}
+      class:prose-xl={$fontSize === 'xl'}
+    >
       <div class="space-y-6">
         <a href={data.article?.link} target="_blank">{data.article?.siteName}</a>
         <h2>{data.article?.title}</h2>
