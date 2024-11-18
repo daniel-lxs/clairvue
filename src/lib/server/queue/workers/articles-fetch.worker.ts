@@ -20,7 +20,7 @@ export async function startArticlesWorker() {
           console.error('Feed not found');
           return;
         }
-        const createdArticlesIds = await syncArticles(feed);
+        const createdArticlesIds = await syncArticles(feed, job.id);
         return createdArticlesIds;
       }
     },

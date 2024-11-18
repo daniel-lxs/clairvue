@@ -16,7 +16,8 @@ interface ProcessArticlesOptions {
   parallelDelay?: number;
 }
 
-const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/237.84.2.178 Safari/537.36';
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/237.84.2.178 Safari/537.36';
 
 async function parseFeed(url: string): Promise<Parser.Output<Parser.Item> | undefined> {
   const parser = new Parser({
@@ -103,37 +104,37 @@ export async function fetchFeedArticles(link: string) {
   }
 }
 
-export async function syncArticles(feed: Feed) {
+export async function syncArticles(feed: Feed, jobContext: string = 'None') {
   try {
     const orderedArticles = await fetchFeedArticles(feed.link);
 
     if (!orderedArticles) return;
 
-    console.info(`Syncing ${orderedArticles.length} articles from ${feed.name}...`);
+    console.info(`[${jobContext}] Syncing ${orderedArticles.length} articles from ${feed.name}...`);
 
     await feedRepository.updateLastSync(feed.id);
 
     const newArticles = await processArticles(feed, orderedArticles);
 
     if (!newArticles || newArticles.length === 0) {
-      console.info('No new articles found.');
+      console.info(`[${jobContext}] No new articles found.`);
       return;
     }
 
     const createdArticles = await saveArticles(newArticles);
 
     if (!createdArticles) {
-      console.info('No new articles created.');
+      console.info(`[${jobContext}] No new articles created.`);
       return;
     }
 
-    console.info(`Synced ${createdArticles.length} articles.`);
+    console.info(`[${jobContext}] Synced ${createdArticles.length} articles.`);
     return createdArticles;
   } catch (error) {
     if (error instanceof Error) {
-      console.error('Error occurred while fetching feed articles:', error.message);
+      console.error(`[${jobContext}] Error occurred while fetching feed articles:`, error.message);
     } else {
-      console.error(`Unknown error occurred while fetching feed articles ${error}`);
+      console.error(`[${jobContext}] Unknown error occurred while fetching feed articles ${error}`);
     }
   }
 }
