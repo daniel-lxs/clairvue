@@ -8,6 +8,9 @@
   import ArticleCardSkeleton from '@/components/article/article-card-skeleton.svelte';
   import NewArticlesButton from '@/components/board/new-articles-button.svelte';
   import { beforeNavigate, afterNavigate } from '$app/navigation';
+  import Button from '@/components/ui/button/button.svelte';
+  import MoreHorizontal from 'lucide-svelte/icons/more-horizontal';
+  import * as Tooltip from '@/components/ui/tooltip';
 
   interface Props {
     data: PageData;
@@ -160,12 +163,26 @@
   <title>{newArticlesCount > 0 ? `(${newArticlesCount}) ` : ''}{data.board?.name} - Clairvue</title>
 </svelte:head>
 
+{#snippet title()}
+  <div class="flex w-full justify-between">
+    <h1 class="text-xl font-bold sm:text-3xl">{data.board?.name}</h1>
+    <Button
+      title="Edit feed collection"
+      href="/boards/edit/{data.board.slug}"
+      variant="ghost"
+      size="icon"
+    >
+      <MoreHorizontal class="h-6 w-6" />
+    </Button>
+  </div>
+{/snippet}
+
 <Page.Container>
   {#if newArticlesCount > 0}
     <NewArticlesButton on:click={showNewArticles} />
   {/if}
   <Page.Header
-    title={data.board?.name || 'Unnamed'}
+    {title}
     subtitle={data.board.feeds
       ? `Showing articles from ${data.board.feeds.length} feeds`
       : undefined}
