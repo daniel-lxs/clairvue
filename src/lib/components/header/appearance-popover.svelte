@@ -32,7 +32,7 @@
   <Popover.Trigger asChild let:builder>
     <Button
       builders={[builder]}
-      variant="outline"
+      variant="ghost"
       size="icon"
       title="Appearance settings"
       class="h-8 w-8 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sm:h-10 sm:w-10"
