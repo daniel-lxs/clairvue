@@ -146,7 +146,6 @@ async function getMimeType(url: string, ua: string): Promise<string | undefined>
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     const mimeType = response.headers.get('content-type');
-    console.log(`MIME type of ${url}: ${mimeType}`);
     return mimeType ?? undefined;
   } catch (error) {
     console.error('Error fetching MIME type:', error);
@@ -160,7 +159,7 @@ async function fetchArticleMetadata(link: string): Promise<ArticleMetadata | und
 
     const mimeType = await getMimeType(link, ua);
     if (!mimeType || !mimeType.startsWith('text/html')) {
-      console.error(`File with link ${link} is not an HTML file`);
+      console.error(`File with link ${link} is not an HTML file or could not be fetched`);
       return undefined;
     }
 
