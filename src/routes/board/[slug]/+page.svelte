@@ -132,7 +132,7 @@
 
   const checkNewArticles = async () => {
     newArticlesCount =
-      (await countArticles(articles[0].publishedAt, undefined, data.board.id)) || 0;
+      (await countArticles(articles[0].publishedAt, undefined, data.board.id)) ?? 0;
   };
 
   onMount(() => {
@@ -166,14 +166,19 @@
 {#snippet title()}
   <div class="flex w-full justify-between">
     <h1 class="text-xl font-bold sm:text-3xl">{data.board?.name}</h1>
-    <Button
-      title="Edit feed collection"
-      href="/boards/edit/{data.board.slug}"
-      variant="ghost"
-      size="icon"
-    >
-      <MoreHorizontal class="h-6 w-6" />
-    </Button>
+    <Tooltip.Root>
+      <Button
+        title="Edit feed collection"
+        href="/boards/edit/{data.board.slug}"
+        variant="ghost"
+        size="icon"
+      >
+        <MoreHorizontal class="h-6 w-6" />
+      </Button>
+      <Tooltip.Content>
+        <p class="text-xs leading-4">Edit feed collection</p>
+      </Tooltip.Content>
+    </Tooltip.Root>
   </div>
 {/snippet}
 
