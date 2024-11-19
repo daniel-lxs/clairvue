@@ -1,12 +1,10 @@
 import { Argon2id } from 'oslo/password';
 import { generateId } from 'lucia';
-import { getClient } from '../data/db';
-import { userSchema } from '../data/schema/user';
-import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import type { LoginResult } from '@/types/auth/LoginResult';
 import type { SignupResult } from '@/types/auth/SignupResult';
 import type { ValidationResult } from '@/types/auth/ValidationResult';
+import * as userRepository from '../data/repositories/user';
 
 const validateUserForm = z.object({
   username: z
@@ -40,10 +38,7 @@ const login = async (username: string, password: string): Promise<LoginResult> =
     };
   }
 
-  const db = getClient();
-  const existingUser = (
-    await db.select().from(userSchema).where(eq(userSchema.username, username)).execute()
-  )[0];
+  const existingUser = await userRepository.findByUsername(username);
 
   // Simulate a delay to prevent timing attacks
   //TODO: Replace with a better solution
@@ -52,7 +47,9 @@ const login = async (username: string, password: string): Promise<LoginResult> =
   if (!existingUser) {
     return {
       success: false,
-      error: 'Incorrect username or password'
+      errors: {
+        username: ['Invalid username or password']
+      }
     };
   }
 
@@ -60,7 +57,9 @@ const login = async (username: string, password: string): Promise<LoginResult> =
   if (!validPassword) {
     return {
       success: false,
-      error: 'Incorrect username or password'
+      errors: {
+        username: ['Invalid username or password']
+      }
     };
   }
 
@@ -79,26 +78,21 @@ const signup = async (username: string, password: string): Promise<SignupResult>
     };
   }
 
-  const db = getClient();
-  const usernameExists = await db
-    .select()
-    .from(userSchema)
-    .where(eq(userSchema.username, username))
-    .execute();
+  const existingUser = await userRepository.findByUsername(username);
 
-  if (usernameExists.length > 0) {
+  if (existingUser) {
     return {
       success: false,
       errors: {
-        username: ['Username already exists']
+        username: ['Username already taken']
       }
     };
   }
 
-  const userId = generateId(15);
   const hashedPassword = await new Argon2id().hash(password);
+  const userId = generateId(15);
 
-  await db.insert(userSchema).values({
+  await userRepository.create({
     id: userId,
     username,
     hashedPassword
