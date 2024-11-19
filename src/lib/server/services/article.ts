@@ -222,7 +222,7 @@ async function createNewArticle(feed: Feed, article: Parser.Item): Promise<NewAr
         feedId: feed.id,
         link,
         siteName: new URL(link).hostname.replace('www.', ''),
-        title: articleMetadata.title ?? 'Untitled',
+        title: title ?? articleMetadata.title ?? 'Untitled',
         publishedAt: pubDate ? new Date(pubDate) : new Date(),
         readable: articleMetadata.readable,
         image: articleMetadata.image ?? null,
