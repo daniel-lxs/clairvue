@@ -1,6 +1,6 @@
-import { lucia } from '@/lib/server/services/auth';
-import { redirect } from '@sveltejs/kit';
-import userService from '@/lib/server/services/user';
+import { lucia } from '@/server/services/auth';
+import { fail, redirect } from '@sveltejs/kit';
+import userService from '@/server/services/user';
 
 import type { Actions } from './$types';
 
@@ -10,11 +10,17 @@ export const actions: Actions = {
     const username = formData.get('username');
     const password = formData.get('password');
 
-    const result = await userService.signup(username as string, password as string);
+    if (!username || typeof username !== 'string' || !password || typeof password !== 'string') {
+      throw fail(400, {
+        message: 'Invalid username or password'
+      });
+    }
+
+    const result = await userService.signup(username, password);
     if (!result.success) {
-      return {
+      throw fail(400, {
         errors: result.errors
-      };
+      });
     }
 
     const session = await lucia.createSession(result.userId, {});

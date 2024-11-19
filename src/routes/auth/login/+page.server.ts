@@ -10,9 +10,15 @@ export const actions: Actions = {
     const username = formData.get('username');
     const password = formData.get('password');
 
-    const result = await userService.login(username as string, password as string);
+    if (!username || typeof username !== 'string' || !password || typeof password !== 'string') {
+      throw fail(400, {
+        message: 'Invalid username or password'
+      });
+    }
+
+    const result = await userService.login(username, password);
     if (!result.success) {
-      return fail(400, {
+      throw fail(400, {
         message: result.error,
         errors: result.errors
       });
