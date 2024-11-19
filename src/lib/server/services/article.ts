@@ -139,10 +139,32 @@ export async function syncArticles(feed: Feed, jobContext: string = 'None') {
   }
 }
 
+async function getMimeType(url: string, ua: string): Promise<string | undefined> {
+  try {
+    const response = await fetch(url, { method: 'HEAD', headers: { 'User-Agent': ua } });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const mimeType = response.headers.get('content-type');
+    console.log(`MIME type of ${url}: ${mimeType}`);
+    return mimeType ?? undefined;
+  } catch (error) {
+    console.error('Error fetching MIME type:', error);
+    return undefined;
+  }
+}
+
 async function fetchArticleMetadata(link: string): Promise<ArticleMetadata | undefined> {
   try {
     const ua = USER_AGENT;
-    const isReadable = isArticleReadable(link, ua);
+
+    const mimeType = await getMimeType(link, ua);
+    if (!mimeType || !mimeType.startsWith('text/html')) {
+      console.error(`File with link ${link} is not an HTML file`);
+      return undefined;
+    }
+
+    const isReadablePromise = isArticleReadable(link, ua);
 
     const metadata = await urlMetadata(link, {
       timeout: 10000,
@@ -150,10 +172,22 @@ async function fetchArticleMetadata(link: string): Promise<ArticleMetadata | und
         'User-Agent': ua
       }
     });
+
+    // Wait for readability check with a timeout
+    const readable = await Promise.race([
+      isReadablePromise,
+      new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 15000))
+    ]);
+
     const articleMetadata = extractArticleMetadata(metadata, new URL(link).hostname);
+
+    if (!articleMetadata) {
+      return undefined;
+    }
+
     return {
       ...articleMetadata,
-      readable: await isReadable
+      readable
     };
   } catch (error) {
     if (error instanceof Error) {
@@ -164,40 +198,57 @@ async function fetchArticleMetadata(link: string): Promise<ArticleMetadata | und
     } else {
       console.error('Error occurred while fetching metadata');
     }
+    return undefined;
   }
 }
 
 async function createNewArticle(feed: Feed, article: Parser.Item): Promise<NewArticle | undefined> {
   const { link, title } = article;
-
-  const pubDate = article.pubDate || article.isoDate;
+  const pubDate = article.pubDate ?? article.isoDate;
 
   if (!link) return;
-
   if (!z.string().url().safeParse(link).success) return;
 
-  const existingArticle = await articleRepository.existsWithLink(link);
+  try {
+    const existingArticle = await articleRepository.existsWithLink(link);
+    if (existingArticle) return;
 
-  // TODO: Allow duplicate articles if the existing article is too old
-  if (existingArticle) return;
+    console.info(`Processing article: ${link}`);
 
-  console.info(`Processing article: ${link}`);
+    const articleMetadata = await fetchArticleMetadata(link);
 
-  const articleMetadata = await fetchArticleMetadata(link);
+    if (articleMetadata) {
+      const newArticle: NewArticle = {
+        feedId: feed.id,
+        link,
+        siteName: new URL(link).hostname.replace('www.', ''),
+        title: articleMetadata.title ?? 'Untitled',
+        publishedAt: pubDate ? new Date(pubDate) : new Date(),
+        readable: articleMetadata.readable,
+        image: articleMetadata.image ?? null,
+        author: articleMetadata.author ?? null,
+        description: articleMetadata.description ?? null
+      };
+      return newArticle;
+    }
 
-  const newArticle: NewArticle = {
-    feedId: feed.id,
-    title: title || articleMetadata?.title || 'Untitled',
-    link,
-    description: articleMetadata?.description || null,
-    siteName: new URL(link).hostname.replace('www.', ''),
-    readable: articleMetadata?.readable || false,
-    image: articleMetadata?.image || null,
-    author: articleMetadata?.author || null,
-    publishedAt: new Date(pubDate || Date.now())
-  };
+    const newArticle: NewArticle = {
+      feedId: feed.id,
+      link,
+      siteName: new URL(link).hostname.replace('www.', ''),
+      title: title ?? 'Untitled',
+      publishedAt: pubDate ? new Date(pubDate) : new Date(),
+      readable: false,
+      image: null,
+      author: null,
+      description: null
+    };
 
-  return newArticle;
+    return newArticle;
+  } catch (error) {
+    console.error(`Error processing article ${link}:`, error);
+    return;
+  }
 }
 
 async function processArticles(
@@ -323,9 +374,9 @@ export async function isArticleReadable(link: string, ua?: string | null): Promi
 function extractArticleMetadata(
   metadata: urlMetadata.Result | undefined,
   domain: string
-): ArticleMetadata {
+): ArticleMetadata | undefined {
   if (!metadata) {
-    return {};
+    return undefined;
   }
 
   const title = ((metadata: urlMetadata.Result): string | undefined => {
@@ -418,7 +469,7 @@ function extractArticleMetadata(
     validImageUrl = undefined;
   }
 
-  return { title, description, image: validImageUrl, author };
+  return { title, description, image: validImageUrl, author, readable: false };
 }
 
 // Helper function to check if the given data is a NewsArticle JSON-LD object
