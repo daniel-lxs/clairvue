@@ -1,10 +1,9 @@
-import type { CreateFeedDto } from '@/server/dto/feedDto';
+import type { CreateFeedDto } from '@/server/dto/feed.dto';
 import type { CreateFeedResult } from '@/types/CreateFeedResult';
 import type { Feed } from '@/server/data/schema';
 
 export async function createFeeds(
   feeds: CreateFeedDto[],
-  boardId: string
 ): Promise<CreateFeedResult[]> {
   try {
     const response = await fetch('/api/feed', {
@@ -25,23 +24,6 @@ export async function createFeeds(
     const results: CreateFeedResult[] = await response.json();
     if (results.length !== feeds.length) {
       throw new Error('Failed to create all feeds');
-    }
-
-    const assignments: { id: string; feedId: string }[] = results
-      .map((r) => {
-        if (r.result === 'error') {
-          return undefined;
-        }
-
-        return {
-          id: boardId,
-          feedId: r.data?.id
-        };
-      })
-      .filter(Boolean) as { id: string; feedId: string }[];
-
-    if (assignments.length > 0) {
-      await addFeedToBoard(assignments);
     }
 
     return results;
@@ -115,25 +97,6 @@ export async function updateFeed(
     return data;
   } catch (error) {
     console.error('Error occurred while updating feed:', error);
-    throw error;
-  }
-}
-
-export async function addFeedToBoard(assignments: { id: string; feedId: string }[]) {
-  try {
-    const response = await fetch('/api/board', {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(assignments)
-    });
-    if (!response.ok) {
-      console.error(`Failed to add feed: ${response.statusText}`);
-      throw new Error('Failed to add feed');
-    }
-  } catch (error) {
-    console.error('Error occurred while adding feed:', error);
     throw error;
   }
 }

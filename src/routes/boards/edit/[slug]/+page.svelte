@@ -51,30 +51,22 @@
 
   async function saveFeed(e: CustomEvent<NewFeed>) {
     const newFeed = {
-      ...e.detail,
-      id: '',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      syncedAt: new Date(),
+      name: e.detail.name,
+      link: e.detail.link,
       description: e.detail.description || undefined,
       boardId: $board.id
     };
 
-    const createFeedResults = await createFeeds([newFeed], $board.id);
+    const createFeedResult = (await createFeeds([newFeed]))[0];
 
-    if (
-      !createFeedResults ||
-      createFeedResults.length === 0 ||
-      createFeedResults.some((r) => r.result === 'error') ||
-      createFeedResults.some((r) => !r.data)
-    ) {
+    if (!createFeedResult || createFeedResult.result === 'error') {
       showToast('Failed to create new feed', 'Please try again later', 'error');
       throw new Error('Failed to create new feed');
     }
 
-    const createdFeed = createFeedResults[0].data;
+    const createdFeed = createFeedResult.data;
 
-    if ($board.feeds && createdFeed) {
+    if ($board.feeds) {
       $board.feeds = [...$board.feeds, createdFeed];
     }
 

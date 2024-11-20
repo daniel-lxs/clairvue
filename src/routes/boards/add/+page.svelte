@@ -9,7 +9,7 @@
   import { Input } from '@/components/ui/input';
   import Label from '@/components/ui/label/label.svelte';
   import type { Board, Feed } from '@/server/data/schema';
-  import type { CreateFeedDto } from '@/server/dto/feedDto';
+  import type { CreateFeedDto } from '@/server/dto/feed.dto';
   import type { NewFeed } from '@/types/NewFeed';
   import { Loader2 } from 'lucide-svelte';
   import { toast } from 'svelte-sonner';
@@ -63,23 +63,25 @@
       const newFeeds: CreateFeedDto[] = $board.feeds.map((feed) => ({
         name: feed.name,
         description: feed.description || undefined,
-        link: feed.link
+        link: feed.link,
+        boardId: newBoard.id
       }));
 
       if (newFeeds.length > 0) {
-        const createFeedResults = await createFeeds(newFeeds, newBoard.id);
+        const createFeedResults = await createFeeds(newFeeds);
 
         if (
           !createFeedResults ||
           createFeedResults.length === 0 ||
-          createFeedResults.some((r) => r.result === 'error') ||
-          createFeedResults.some((r) => !r.data)
+          createFeedResults.some((r) => r.result === 'error')
         ) {
           showToast('Failed to create new feed', 'Please try again later', 'error');
           return;
         }
 
-        newBoard.feeds = createFeedResults.map((c) => ({ ...(c.data as Feed) }));
+        newBoard.feeds = createFeedResults
+          .filter((c) => c.result === 'success')
+          .map((c) => ({ ...c.data }));
       }
 
       board.set(newBoard);
