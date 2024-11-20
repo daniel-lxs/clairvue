@@ -120,7 +120,7 @@ const signup = async (username: string, password: string): Promise<SignupResult>
   const defaultFeed = await createFeed({
     name: 'Saved Articles',
     description: 'Articles you have saved',
-    link: 'user-saved-articles',
+    link: `default-feed-${userId}`,
     boardId: defaultBoard?.id
   });
 
