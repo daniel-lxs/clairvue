@@ -22,16 +22,19 @@ export async function createFeed(feedData: CreateFeedDto): Promise<CreateFeedRes
       await addFeedToBoard(feedData.boardId, createdFeed.id);
     }
 
-    const articleQueue = getArticleQueue();
-    articleQueue?.add(
-      'sync',
-      { feedId: createdFeed.id },
-      {
-        jobId: createdFeed.id,
-        removeOnComplete: true,
-        removeOnFail: true
-      }
-    );
+    if(!createdFeed.link.includes('default-feed')){
+      const articleQueue = getArticleQueue();
+      articleQueue?.add(
+        'sync',
+        { feedId: createdFeed.id },
+        {
+          jobId: createdFeed.id,
+          removeOnComplete: true,
+          removeOnFail: true
+        }
+      );
+  
+    }
 
     return { result: 'success', data: createdFeed };
   } catch (error) {
