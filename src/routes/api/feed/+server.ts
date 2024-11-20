@@ -1,9 +1,8 @@
 import type { RequestHandler } from '@sveltejs/kit';
-import feedRepository from '@/server/data/repositories/feed';
+import { findFeedById, createFeed, updateFeed } from '@/server/services/feed';
 import { createFeedDto, updateFeedDto, type CreateFeedDto } from '@/server/dto/feedDto';
 import type { CreateFeedResult } from '@/types/CreateFeedResult';
 import type { Feed } from '@/server/data/schema';
-import { getArticleQueue } from '@/server/queue/articles';
 
 export const GET: RequestHandler = async ({ url }) => {
   const feedId = url.searchParams.get('id');
@@ -12,7 +11,7 @@ export const GET: RequestHandler = async ({ url }) => {
     return new Response('Invalid Feed ID', { status: 400 });
   }
 
-  const feed = await feedRepository.findById(feedId);
+  const feed = await findFeedById(feedId);
 
   if (!feed) {
     return new Response('Feed not found', { status: 404 });
@@ -45,31 +44,7 @@ export const POST: RequestHandler = async ({ request }) => {
         return { result: 'error', data: null, reason: result.error.message };
       }
 
-      const newFeedData = { ...result.data, description: result.data.description || null };
-
-      try {
-        const createdFeed = await feedRepository.create(newFeedData);
-
-        if (!createdFeed) {
-          return { result: 'error', data: null, reason: 'Unable to create' };
-        }
-
-        const articleQueue = getArticleQueue();
-
-        articleQueue?.add(
-          'sync',
-          { feedId: createdFeed.id },
-          {
-            jobId: createdFeed.id,
-            removeOnComplete: true,
-            removeOnFail: true
-          }
-        );
-
-        return { result: 'success', data: createdFeed, reason: null };
-      } catch (error) {
-        return { result: 'error', data: null, reason: 'Internal error' };
-      }
+      return await createFeed(result.data);
     })
   );
 
@@ -98,10 +73,10 @@ export const PATCH: RequestHandler = async ({ request }) => {
   };
 
   try {
-    await feedRepository.update(validationResult.data.id, feedToUpdate);
+    await updateFeed(validationResult.data.id, feedToUpdate);
+    return new Response(null, { status: 200 });
   } catch (error) {
-    return new Response(JSON.stringify('Something went wrong'), { status: 500 });
+    console.error('Error updating feed:', error);
+    return new Response('Internal server error', { status: 500 });
   }
-
-  return new Response(JSON.stringify(' Feed updated successfully'), { status: 200 });
 };

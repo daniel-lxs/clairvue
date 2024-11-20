@@ -22,6 +22,7 @@ async function create(newBoard: Pick<Board, 'name' | 'userId'>) {
       .execute();
     return {
       id,
+      name: newBoard.name,
       slug
     };
   } catch (error) {

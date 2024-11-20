@@ -1,5 +1,5 @@
 import type { RequestHandler } from '@sveltejs/kit';
-import articleRepository from '@/server/data/repositories/article';
+import { findArticlesByBoardId, findArticlesByFeedId } from '@/server/services/article';
 
 export const GET: RequestHandler = async ({ url }) => {
   const boardId = url.searchParams.get('boardId');
@@ -12,12 +12,12 @@ export const GET: RequestHandler = async ({ url }) => {
       take = 5;
     }
 
-    const articles = await articleRepository.findByBoardId(boardId, beforePublishedAt, take);
+    const articles = await findArticlesByBoardId(boardId, beforePublishedAt, take);
     return new Response(JSON.stringify(articles), { status: 200 });
   }
 
   if (feedId) {
-    const articles = await articleRepository.findByFeedId(feedId, beforePublishedAt, take);
+    const articles = await findArticlesByFeedId(feedId, beforePublishedAt, take);
     return new Response(JSON.stringify(articles), { status: 200 });
   }
 

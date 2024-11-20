@@ -481,3 +481,19 @@ function isNewsArticle(
   }
   return false;
 }
+
+export async function findArticlesByBoardId(
+  boardId: string,
+  beforePublishedAt?: string,
+  take: number = 5
+) {
+  return await articleRepository.findByBoardId(boardId, beforePublishedAt, take);
+}
+
+export async function findArticlesByFeedId(
+  feedId: string,
+  beforePublishedAt?: string,
+  take: number = 5
+) {
+  return await articleRepository.findByFeedId(feedId, beforePublishedAt, take);
+}

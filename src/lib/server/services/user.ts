@@ -98,6 +98,7 @@ const signup = async (username: string, password: string): Promise<SignupResult>
     hashedPassword
   });
 
+
   return {
     success: true,
     userId
