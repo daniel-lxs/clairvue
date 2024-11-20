@@ -3,8 +3,9 @@ import type { Feed } from '@/server/data/schema';
 import type { CreateFeedDto } from '@/server/dto/feedDto';
 import type { CreateFeedResult } from '@/types/CreateFeedResult';
 import { getArticleQueue } from '@/server/queue/articles';
+import { addFeedToBoard } from './board';
 
-export async function findFeedById(id: string): Promise<Feed | null> {
+export async function findFeedById(id: string): Promise<Feed | undefined> {
   return await feedRepository.findById(id);
 }
 
@@ -14,7 +15,11 @@ export async function createFeed(feedData: CreateFeedDto): Promise<CreateFeedRes
     const createdFeed = await feedRepository.create(newFeedData);
 
     if (!createdFeed) {
-      return { result: 'error', data: null, reason: 'Unable to create' };
+      return { result: 'error', reason: 'Unable to create' };
+    }
+
+    if (feedData.boardId) {
+      await addFeedToBoard(feedData.boardId, createdFeed.id);
     }
 
     const articleQueue = getArticleQueue();
@@ -28,12 +33,15 @@ export async function createFeed(feedData: CreateFeedDto): Promise<CreateFeedRes
       }
     );
 
-    return { result: 'success', data: createdFeed, reason: null };
+    return { result: 'success', data: createdFeed };
   } catch (error) {
-    return { result: 'error', data: null, reason: 'Internal error' };
+    return { result: 'error', reason: 'Internal error' };
   }
 }
 
-export async function updateFeed(id: string, data: Pick<Feed, 'name' | 'link' | 'description'>): Promise<void> {
+export async function updateFeed(
+  id: string,
+  data: Pick<Feed, 'name' | 'link' | 'description'>
+): Promise<void> {
   await feedRepository.update(id, data);
 }

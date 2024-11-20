@@ -4,7 +4,9 @@ import { z } from 'zod';
 import type { LoginResult } from '@/types/auth/LoginResult';
 import type { SignupResult } from '@/types/auth/SignupResult';
 import type { ValidationResult } from '@/types/auth/ValidationResult';
-import * as userRepository from '../data/repositories/user';
+import { findByUsername, create as createUser } from '@/server/data/repositories/user';
+import { createBoard } from './board';
+import { createFeed } from './feed';
 
 const validateUserForm = z.object({
   username: z
@@ -38,7 +40,7 @@ const login = async (username: string, password: string): Promise<LoginResult> =
     };
   }
 
-  const existingUser = await userRepository.findByUsername(username);
+  const existingUser = await findByUsername(username);
 
   // Simulate a delay to prevent timing attacks
   //TODO: Replace with a better solution
@@ -78,7 +80,7 @@ const signup = async (username: string, password: string): Promise<SignupResult>
     };
   }
 
-  const existingUser = await userRepository.findByUsername(username);
+  const existingUser = await findByUsername(username);
 
   if (existingUser) {
     return {
@@ -92,12 +94,45 @@ const signup = async (username: string, password: string): Promise<SignupResult>
   const hashedPassword = await new Argon2id().hash(password);
   const userId = generateId(15);
 
-  await userRepository.create({
+  await createUser({
     id: userId,
     username,
     hashedPassword
   });
 
+  // Create a default board for the user
+  const defaultBoard = await createBoard({
+    name: 'My Board',
+    userId
+  });
+
+  if (!defaultBoard) {
+    console.error('Error creating default board');
+    return {
+      success: false,
+      errors: {
+        board: ['Failed to create default board']
+      }
+    };
+  }
+
+  // Create a default feed for saved articles
+  const defaultFeed = await createFeed({
+    name: 'Saved Articles',
+    description: 'Articles you have saved',
+    link: 'user-saved-articles',
+    boardId: defaultBoard?.id
+  });
+
+  if (!defaultFeed) {
+    console.error('Error creating default feed');
+    return {
+      success: false,
+      errors: {
+        feed: ['Failed to create default feed']
+      }
+    };
+  }
 
   return {
     success: true,
