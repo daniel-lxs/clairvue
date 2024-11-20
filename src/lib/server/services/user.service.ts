@@ -4,9 +4,9 @@ import { z } from 'zod';
 import type { LoginResult } from '@/types/auth/LoginResult';
 import type { SignupResult } from '@/types/auth/SignupResult';
 import type { ValidationResult } from '@/types/auth/ValidationResult';
-import { findByUsername, create as createUser } from '@/server/data/repositories/user';
-import { createBoard } from './board';
-import { createFeed } from './feed';
+import { findByUsername, create as createUser } from '@/server/data/repositories/user.repository';
+import { createBoard } from './board.service';
+import { createFeed } from './feed.service';
 
 const validateUserForm = z.object({
   username: z

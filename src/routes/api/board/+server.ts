@@ -5,14 +5,14 @@ import {
   updateBoard,
   addFeedToBoard,
   removeFeedFromBoard
-} from '@/server/services/board';
+} from '@/server/services/board.service';
 import {
   addFeedToBoardDto,
   createBoardDto,
   deleteFeedFromBoardDto,
   updateBoardDto
-} from '@/server/dto/boardDto';
-import { lucia, validateAuthSession } from '@/server/services/auth';
+} from '@/server/dto/board.dto';
+import { lucia, validateAuthSession } from '@/server/services/auth.service';
 
 export const GET: RequestHandler = async ({ url, cookies }) => {
   const boardSlug = url.searchParams.get('slug');

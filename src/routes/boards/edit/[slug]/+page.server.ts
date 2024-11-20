@@ -1,8 +1,8 @@
-import boardRepository from '@/server/data/repositories/board';
+import boardRepository from '@/server/data/repositories/board.repository';
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { validateAuthSession } from '@/server/services/auth';
-import feedRepository from '@/server/data/repositories/feed';
+import { validateAuthSession } from '@/server/services/auth.service';
+import feedRepository from '@/server/data/repositories/feed.repository';
 
 export const load = (async ({ params: { slug }, cookies }) => {
   const cookieHeader = cookies.get('auth_session');

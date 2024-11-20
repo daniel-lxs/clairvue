@@ -1,6 +1,6 @@
 import type { RequestHandler } from '@sveltejs/kit';
-import { findFeedById, createFeed, updateFeed } from '@/server/services/feed';
-import { createFeedDto, updateFeedDto, type CreateFeedDto } from '@/server/dto/feedDto';
+import { findFeedById, createFeed, updateFeed } from '@/server/services/feed.service';
+import { createFeedDto, updateFeedDto, type CreateFeedDto } from '@/server/dto/feed.dto';
 import type { CreateFeedResult } from '@/types/CreateFeedResult';
 import type { Feed } from '@/server/data/schema';
 

@@ -1,9 +1,9 @@
-import feedRepository from '@/server/data/repositories/feed';
+import feedRepository from '@/server/data/repositories/feed.repository';
 import type { Feed } from '@/server/data/schema';
-import type { CreateFeedDto } from '@/server/dto/feedDto';
+import type { CreateFeedDto } from '@/server/dto/feed.dto';
 import type { CreateFeedResult } from '@/types/CreateFeedResult';
 import { getArticleQueue } from '@/server/queue/articles';
-import { addFeedToBoard } from './board';
+import { addFeedToBoard } from './board.service';
 
 export async function findFeedById(id: string): Promise<Feed | undefined> {
   return await feedRepository.findById(id);

@@ -1,7 +1,7 @@
 import { getClient } from '../db';
-import { userSchema } from '../schema/user';
+import { userSchema } from '../schema/user.schema';
 import { eq } from 'drizzle-orm';
-import type { User } from '../schema/user';
+import type { User } from '../schema/user.schema';
 
 export async function findByUsername(username: string): Promise<User | undefined> {
   const db = getClient();

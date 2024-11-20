@@ -1,5 +1,5 @@
 import { boolean, pgTable, serial, text, timestamp, varchar } from 'drizzle-orm/pg-core';
-import { feedSchema, type Feed } from './feed';
+import { feedSchema, type Feed } from './feed.schema';
 import { relations, type InferSelectModel } from 'drizzle-orm';
 
 export const articleSchema = pgTable('articles', {

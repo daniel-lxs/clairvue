@@ -1,6 +1,6 @@
 import { Worker, type ConnectionOptions } from 'bullmq';
-import feedRepository from '@/server/data/repositories/feed';
-import { syncArticles } from '@/server/services/article';
+import feedRepository from '@/server/data/repositories/feed.repository';
+import { syncArticles } from '@/server/services/article.service';
 
 export async function startArticlesWorker() {
   const connection: ConnectionOptions = {

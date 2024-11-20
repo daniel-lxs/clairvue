@@ -1,4 +1,4 @@
-import { validateAuthSession } from '@/server/services/auth';
+import { validateAuthSession } from '@/server/services/auth.service';
 import type { PageServerLoad } from './$types';
 import { redirect } from '@sveltejs/kit';
 

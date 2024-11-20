@@ -1,5 +1,5 @@
 import type { RequestHandler } from '@sveltejs/kit';
-import articleRepository from '@/server/data/repositories/article';
+import articleRepository from '@/server/data/repositories/article.repository';
 
 export const GET: RequestHandler = async ({ url }) => {
   const boardId = url.searchParams.get('boardId') || undefined;

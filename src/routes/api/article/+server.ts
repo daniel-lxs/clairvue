@@ -1,5 +1,5 @@
 import type { RequestHandler } from '@sveltejs/kit';
-import { findArticlesByBoardId, findArticlesByFeedId } from '@/server/services/article';
+import { findArticlesByBoardId, findArticlesByFeedId } from '@/server/services/article.service';
 
 export const GET: RequestHandler = async ({ url }) => {
   const boardId = url.searchParams.get('boardId');

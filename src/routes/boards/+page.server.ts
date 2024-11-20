@@ -1,5 +1,5 @@
-import boardRepository from '@/server/data/repositories/board';
-import { validateAuthSession } from '@/server/services/auth';
+import boardRepository from '@/server/data/repositories/board.repository';
+import { validateAuthSession } from '@/server/services/auth.service';
 import type { PageServerLoad } from './$types';
 import { redirect } from '@sveltejs/kit';
 

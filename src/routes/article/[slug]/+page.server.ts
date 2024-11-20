@@ -1,7 +1,7 @@
-import articleRepository from '@/server/data/repositories/article';
+import articleRepository from '@/server/data/repositories/article.repository';
 import { redirect } from '@sveltejs/kit';
-import { parseReadableArticle } from '@/server/services/article';
-import { getCachedArticle } from '@/server/services/cache';
+import { parseReadableArticle } from '@/server/services/article.service';
+import { getCachedArticle } from '@/server/services/cache.service';
 import { getArticleCacheQueue } from '@/server/queue/articles';
 import type { PageServerLoad } from './$types';
 
@@ -27,7 +27,7 @@ export const load: PageServerLoad = async ({ params }) => {
 
   // Try to get the article from cache first
   const cachedArticle = await getCachedArticle(slug);
-  
+
   // If not in cache, parse it and queue caching job
   if (!cachedArticle) {
     const queue = getArticleCacheQueue();
@@ -40,10 +40,10 @@ export const load: PageServerLoad = async ({ params }) => {
 
   return {
     status: 200,
-    streamed: { 
-      parsedArticle: cachedArticle ? 
-        Promise.resolve(cachedArticle) : 
-        parseReadableArticle(article.link, userAgent) 
+    streamed: {
+      parsedArticle: cachedArticle
+        ? Promise.resolve(cachedArticle)
+        : parseReadableArticle(article.link, userAgent)
     },
     article,
     error: undefined

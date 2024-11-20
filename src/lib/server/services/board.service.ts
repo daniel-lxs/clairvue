@@ -1,4 +1,4 @@
-import boardRepository from '@/server/data/repositories/board';
+import boardRepository from '@/server/data/repositories/board.repository';
 import type { Board } from '@/server/data/schema';
 
 export async function findBoardBySlug(userId: string, slug: string): Promise<Board | undefined> {

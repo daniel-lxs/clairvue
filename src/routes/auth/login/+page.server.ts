@@ -1,6 +1,6 @@
-import { lucia } from '@/server/services/auth';
+import { lucia } from '@/server/services/auth.service';
 import { fail, redirect } from '@sveltejs/kit';
-import userService from '@/server/services/user';
+import userService from '@/server/services/user.service';
 
 import type { Actions } from './$types';
 

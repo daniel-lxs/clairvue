@@ -1,6 +1,6 @@
 import { pgEnum, pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core';
-import { boardsToFeeds } from './board';
-import { articleSchema, type Article } from './article';
+import { boardsToFeeds } from './board.schema';
+import { articleSchema, type Article } from './article.schema';
 import { relations, type InferSelectModel } from 'drizzle-orm';
 
 export const feedTypeEnum = pgEnum('type', ['rss', 'atom']);

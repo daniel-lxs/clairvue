@@ -1,6 +1,6 @@
 import { Worker, type ConnectionOptions } from 'bullmq';
-import { parseReadableArticle } from '@/server/services/article';
-import { cacheArticle } from '@/server/services/cache';
+import { parseReadableArticle } from '@/server/services/article.service';
+import { cacheArticle } from '@/server/services/cache.service';
 
 interface CacheArticleJob {
   slug: string;

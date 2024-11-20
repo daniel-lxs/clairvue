@@ -1,5 +1,5 @@
 import { CronJob } from 'cron';
-import feedRepository from '@/server/data/repositories/feed';
+import feedRepository from '@/server/data/repositories/feed.repository';
 import { getArticleQueue } from '@/server/queue/articles';
 
 export function startScheduler() {
