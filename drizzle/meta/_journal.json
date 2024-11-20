@@ -15,6 +15,13 @@
       "when": 1711684879358,
       "tag": "0001_fine_psylocke",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1732076028279,
+      "tag": "0002_deep_puff_adder",
+      "breakpoints": true
     }
   ]
 }

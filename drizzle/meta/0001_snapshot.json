@@ -1,10 +1,8 @@
 {
-  "id": "60753fa2-66cc-4118-a1f5-996f6e34fbba",
-  "prevId": "fc54c3ba-e576-4cfe-a8e4-c15c95abf3d3",
-  "version": "5",
-  "dialect": "pg",
+  "version": "7",
+  "dialect": "postgresql",
   "tables": {
-    "boards": {
+    "public.boards": {
       "name": "boards",
       "schema": "",
       "columns": {
@@ -52,17 +50,24 @@
         "boards_userId_users_id_fk": {
           "name": "boards_userId_users_id_fk",
           "tableFrom": "boards",
+          "columnsFrom": [
+            "userId"
+          ],
           "tableTo": "users",
-          "columnsFrom": ["userId"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "policies": {},
+      "isRLSEnabled": false,
+      "checkConstraints": {}
     },
-    "boardsToFeeds": {
+    "public.boardsToFeeds": {
       "name": "boardsToFeeds",
       "schema": "",
       "columns": {
@@ -84,12 +89,18 @@
       "compositePrimaryKeys": {
         "boardsToFeeds_boardId_feedId_pk": {
           "name": "boardsToFeeds_boardId_feedId_pk",
-          "columns": ["boardId", "feedId"]
+          "columns": [
+            "boardId",
+            "feedId"
+          ]
         }
       },
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "policies": {},
+      "isRLSEnabled": false,
+      "checkConstraints": {}
     },
-    "feeds": {
+    "public.feeds": {
       "name": "feeds",
       "schema": "",
       "columns": {
@@ -153,12 +164,17 @@
       "uniqueConstraints": {
         "feeds_link_unique": {
           "name": "feeds_link_unique",
-          "nullsNotDistinct": false,
-          "columns": ["link"]
+          "columns": [
+            "link"
+          ],
+          "nullsNotDistinct": false
         }
-      }
+      },
+      "policies": {},
+      "isRLSEnabled": false,
+      "checkConstraints": {}
     },
-    "sessions": {
+    "public.sessions": {
       "name": "sessions",
       "schema": "",
       "columns": {
@@ -198,9 +214,12 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "policies": {},
+      "isRLSEnabled": false,
+      "checkConstraints": {}
     },
-    "users": {
+    "public.users": {
       "name": "users",
       "schema": "",
       "columns": {
@@ -243,12 +262,17 @@
       "uniqueConstraints": {
         "users_username_unique": {
           "name": "users_username_unique",
-          "nullsNotDistinct": false,
-          "columns": ["username"]
+          "columns": [
+            "username"
+          ],
+          "nullsNotDistinct": false
         }
-      }
+      },
+      "policies": {},
+      "isRLSEnabled": false,
+      "checkConstraints": {}
     },
-    "articles": {
+    "public.articles": {
       "name": "articles",
       "schema": "",
       "columns": {
@@ -341,25 +365,37 @@
       "uniqueConstraints": {
         "articles_link_unique": {
           "name": "articles_link_unique",
-          "nullsNotDistinct": false,
-          "columns": ["link"]
+          "columns": [
+            "link"
+          ],
+          "nullsNotDistinct": false
         }
-      }
+      },
+      "policies": {},
+      "isRLSEnabled": false,
+      "checkConstraints": {}
     }
   },
   "enums": {
-    "type": {
+    "public.type": {
       "name": "type",
-      "values": {
-        "rss": "rss",
-        "atom": "atom"
-      }
+      "schema": "public",
+      "values": [
+        "rss",
+        "atom"
+      ]
     }
   },
   "schemas": {},
   "_meta": {
-    "columns": {},
     "schemas": {},
-    "tables": {}
-  }
+    "tables": {},
+    "columns": {}
+  },
+  "id": "60753fa2-66cc-4118-a1f5-996f6e34fbba",
+  "prevId": "fc54c3ba-e576-4cfe-a8e4-c15c95abf3d3",
+  "sequences": {},
+  "policies": {},
+  "views": {},
+  "roles": {}
 }
