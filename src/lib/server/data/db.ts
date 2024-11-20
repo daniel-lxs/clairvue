@@ -3,6 +3,10 @@ import * as schema from './schema';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { DrizzlePostgreSQLAdapter } from '@lucia-auth/adapter-drizzle';
 
+if (!process.env.PRIVATE_DB_URL) {
+  throw new Error('Connection: Database is invalid or nonexistent');
+}
+
 const queryClient = postgres(process.env.PRIVATE_DB_URL, {
   keep_alive: 30000
 });
