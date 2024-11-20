@@ -41,7 +41,7 @@ export const POST: RequestHandler = async ({ request }) => {
       const result = createFeedDto.safeParse(feed);
 
       if (!result.success) {
-        return { result: 'error', data: null, reason: result.error.message };
+        return { result: 'error', reason: result.error.message };
       }
 
       return await createFeed(result.data);
