@@ -109,7 +109,9 @@ async function findOutdated(take = 20, skip = 0): Promise<Feed[]> {
     const query = sql`
       SELECT *
       FROM ${feedSchema}
-      WHERE ${feedSchema.syncedAt} < ${new Date(Date.now() - MAX_AGE)}
+      WHERE
+        ${feedSchema.syncedAt} < ${new Date(Date.now() - MAX_AGE)}
+        AND ${feedSchema.link} NOT LIKE 'default-feed%'
       ORDER BY ${feedSchema.syncedAt}
       LIMIT ${take}
       OFFSET ${skip}
