@@ -3,7 +3,7 @@ import { Queue, type ConnectionOptions } from 'bullmq';
 export const getArticleQueue = () => {
   const connection: ConnectionOptions = {
     host: process.env.PRIVATE_REDIS_HOST,
-    port: process.env.PRIVATE_REDIS_PORT,
+    port: Number(process.env.PRIVATE_REDIS_PORT),
     password: process.env.REDIS_PASSWORD
   };
 
@@ -13,7 +13,7 @@ export const getArticleQueue = () => {
 export const getArticleCacheQueue = () => {
   const connection: ConnectionOptions = {
     host: process.env.PRIVATE_REDIS_HOST,
-    port: process.env.PRIVATE_REDIS_PORT,
+    port: Number(process.env.PRIVATE_REDIS_PORT),
     password: process.env.REDIS_PASSWORD
   };
 

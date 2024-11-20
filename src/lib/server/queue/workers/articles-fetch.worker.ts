@@ -5,7 +5,7 @@ import { syncArticles } from '@/server/services/article.service';
 export async function startArticlesWorker() {
   const connection: ConnectionOptions = {
     host: process.env.PRIVATE_REDIS_HOST,
-    port: process.env.PRIVATE_REDIS_PORT,
+    port: Number(process.env.PRIVATE_REDIS_PORT),
     password: process.env.REDIS_PASSWORD
   };
 
