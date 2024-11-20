@@ -1,4 +1,4 @@
-import { startScheduler } from './scheduler';
+import { startScheduler } from './lib/server/scheduler';
 import { startWorkers } from './lib/server/queue/workers';
 
 const onStartup = () => {
