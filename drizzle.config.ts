@@ -1,10 +1,14 @@
-import type { Config } from 'drizzle-kit';
+import { defineConfig } from 'drizzle-kit';
 
-export default {
+export default defineConfig({
+  dialect: 'postgresql',
   schema: 'src/lib/server/data/schema/*',
   out: './drizzle',
-  driver: 'pg',
   dbCredentials: {
-    connectionString: process.env.PRIVATE_DB_URL
+    host: process.env.PRIVATE_DB_HOST,
+    user: process.env.PRIVATE_DB_USER,
+    password: process.env.PRIVATE_DB_PASS,
+    database: process.env.PRIVATE_DB_NAME,
+    ssl: false
   }
-} satisfies Config;
+});

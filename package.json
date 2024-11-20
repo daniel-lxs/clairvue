@@ -15,8 +15,8 @@
     "format": "prettier --write .",
     "test:integration": "playwright test",
     "test:unit": "vitest",
-    "generate-migrations": "pnpm dlx drizzle-kit generate:pg --schema ./src/lib/server/data/schema/index.ts",
-    "run-migrations": "pnpm dlx tsx ./src/lib/server/data/migrate.ts"
+    "make-migrations": "pnpm exec drizzle-kit generate",
+    "migrate": "pnpm exec drizzle-kit migrate"
   },
   "devDependencies": {
     "@playwright/test": "^1.48.2",
@@ -30,10 +30,10 @@
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
     "autoprefixer": "^10.4.20",
-    "bits-ui": "^0.20.1",
+    "bits-ui": "^0.21.16",
     "concurrently": "^8.2.2",
     "dotenv-cli": "^7.4.2",
-    "drizzle-kit": "^0.20.18",
+    "drizzle-kit": "^0.28.1",
     "eslint": "^8.57.1",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-svelte": "^2.46.0",
@@ -62,7 +62,7 @@
     "clsx": "^2.1.1",
     "cron": "^3.2.1",
     "dotenv": "^16.4.5",
-    "drizzle-orm": "^0.29.5",
+    "drizzle-orm": "^0.36.3",
     "ioredis": "^5.4.1",
     "isomorphic-dompurify": "^2.16.0",
     "jsdom": "^24.1.3",
