@@ -47,3 +47,13 @@ export async function updateFeed(
 ): Promise<void> {
   await feedRepository.update(id, data);
 }
+
+export async function findBySlug(slug: string): Promise<Feed> {
+  const feed = await feedRepository.findBySlug(slug);
+
+  if (!feed) {
+    throw new Error('Feed not found');
+  }
+
+  return feed;
+}
