@@ -2,6 +2,7 @@ import { and, count, desc, eq, sql } from 'drizzle-orm';
 import ShortUniqueId from 'short-unique-id';
 import { getClient } from '../db';
 import { boardsToFeeds, feedSchema, type Feed, articleSchema } from '../schema';
+import slugify from 'slugify';
 
 async function create(
   newFeed: Pick<Feed, 'name' | 'description' | 'link'>
@@ -18,27 +19,35 @@ async function create(
 
     const { randomUUID } = new ShortUniqueId({ length: 8 });
     const id = randomUUID();
+    const slug = slugify(newFeed.name, {
+      lower: true,
+      remove: /[*+~.()'"!:@]/g
+    });
 
-    const result = await db
-      .insert(feedSchema)
-      .values({
-        id,
-        name: newFeed.name,
-        description: newFeed.description,
-        link: newFeed.link
-      })
-      .returning({
-        id: feedSchema.id,
-        name: feedSchema.name,
-        description: feedSchema.description,
-        link: feedSchema.link,
-        createdAt: feedSchema.createdAt,
-        updatedAt: feedSchema.updatedAt,
-        syncedAt: feedSchema.syncedAt
-      })
-      .execute();
+    const result = (
+      await db
+        .insert(feedSchema)
+        .values({
+          id,
+          name: newFeed.name,
+          slug,
+          description: newFeed.description,
+          link: newFeed.link
+        })
+        .returning({
+          id: feedSchema.id,
+          name: feedSchema.name,
+          slug: feedSchema.slug,
+          description: feedSchema.description,
+          link: feedSchema.link,
+          createdAt: feedSchema.createdAt,
+          updatedAt: feedSchema.updatedAt,
+          syncedAt: feedSchema.syncedAt
+        })
+        .execute()
+    )[0];
 
-    return result[0];
+    return result;
   } catch (error) {
     console.error('Error occurred while creating new feed:', error);
     return undefined;
@@ -60,6 +69,19 @@ async function findById(id: string): Promise<Feed | undefined> {
     };
   } catch (error) {
     console.error('Error occurred while finding feed by link:', error);
+    return undefined;
+  }
+}
+
+async function findBySlug(slug: string): Promise<Feed | undefined> {
+  try {
+    const db = getClient();
+    const result = await db.query.feedSchema
+      .findFirst({ where: eq(feedSchema.slug, slug) })
+      .execute();
+    return result;
+  } catch (error) {
+    console.error('Error occurred while finding feed by slug:', error);
     return undefined;
   }
 }
@@ -200,6 +222,7 @@ async function remove(id: string, boardId: string) {
 export default {
   create,
   findById,
+  findBySlug,
   findByLink,
   findAll,
   findOutdated,

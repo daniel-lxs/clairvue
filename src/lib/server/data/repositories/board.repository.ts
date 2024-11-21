@@ -2,6 +2,7 @@ import ShortUniqueId from 'short-unique-id';
 import { getClient } from '../db';
 import { boardSchema, feedSchema, boardsToFeeds, type Board } from '../schema';
 import { and, eq } from 'drizzle-orm';
+import slugify from 'slugify';
 
 async function create(newBoard: Pick<Board, 'name' | 'userId'> & { default?: boolean }) {
   //TODO: Limit the number of boards per user to 5
@@ -10,7 +11,10 @@ async function create(newBoard: Pick<Board, 'name' | 'userId'> & { default?: boo
     const { randomUUID } = new ShortUniqueId({ length: 8 });
 
     const id = (newBoard.default ? 'default-' : '') + randomUUID();
-    const slug = randomUUID(); //TODO: Generate slug
+    const slug = slugify(newBoard.name, {
+      lower: true,
+      remove: /[*+~.()'"!:@]/g
+    });
 
     await db
       .insert(boardSchema)

@@ -72,6 +72,7 @@
     "postgres": "https://github.com/porsager/postgres/archive/2b85ea7fb8b50f7c69232bd8074aa11c8cbe9d3a.tar.gz",
     "rss-parser": "^3.13.0",
     "short-unique-id": "^5.2.0",
+    "slugify": "^1.6.6",
     "svelte-sonner": "^0.3.28",
     "tailwind-merge": "^2.5.4",
     "tailwind-variants": "^0.2.1",
