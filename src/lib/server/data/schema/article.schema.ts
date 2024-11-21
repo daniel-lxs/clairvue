@@ -4,7 +4,7 @@ import { relations, type InferSelectModel } from 'drizzle-orm';
 
 export const articleSchema = pgTable('articles', {
   id: serial('id').primaryKey(),
-  slug: varchar('slug', { length: 8 }).notNull(),
+  slug: varchar('slug').notNull(),
   title: text('title').notNull(),
   link: text('link').unique().notNull(),
   feedId: text('feedId').notNull(),

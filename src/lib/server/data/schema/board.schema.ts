@@ -4,7 +4,7 @@ import { relations, type InferSelectModel } from 'drizzle-orm';
 import { userSchema } from '.';
 
 export const boardSchema = pgTable('boards', {
-  id: varchar('id', { length: 8 }).primaryKey().notNull(),
+  id: varchar('id').primaryKey().notNull(),
   slug: text('slug').notNull(),
   name: text('name').notNull(),
   userId: text('userId')
@@ -23,8 +23,8 @@ export const boardRelations = relations(boardSchema, ({ one, many }) => ({
 export const boardsToFeeds = pgTable(
   'boardsToFeeds',
   {
-    boardId: varchar('boardId', { length: 8 }).notNull(),
-    feedId: varchar('feedId', { length: 8 }).notNull()
+    boardId: varchar('boardId').notNull(),
+    feedId: varchar('feedId').notNull()
   },
   (t) => ({
     pk: primaryKey({ columns: [t.boardId, t.feedId] })

@@ -6,7 +6,7 @@ import { relations, type InferSelectModel } from 'drizzle-orm';
 export const feedTypeEnum = pgEnum('type', ['rss', 'atom']);
 
 export const feedSchema = pgTable('feeds', {
-  id: varchar('id', { length: 8 }).primaryKey().notNull(),
+  id: varchar('id').primaryKey().notNull(),
   slug: text('slug').notNull(),
   name: text('name').notNull(),
   description: text('description'),
