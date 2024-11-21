@@ -39,6 +39,7 @@ services:
     build: .
     command: pnpm run migrate
     environment:
+      - PRIVATE_DB_URL=${PRIVATE_DB_URL}
       - PRIVATE_DB_HOST=${PRIVATE_DB_HOST}
       - PRIVATE_DB_PORT=${PRIVATE_DB_PORT}
       - PRIVATE_DB_USER=${PRIVATE_DB_USER}

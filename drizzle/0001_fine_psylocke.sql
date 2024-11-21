@@ -1,1 +1,0 @@
-ALTER TABLE "feeds" ALTER COLUMN "description" DROP NOT NULL;

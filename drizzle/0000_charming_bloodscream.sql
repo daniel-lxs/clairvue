@@ -1,11 +1,23 @@
-DO $$ BEGIN
- CREATE TYPE "type" AS ENUM('rss', 'atom');
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
+CREATE TYPE "public"."type" AS ENUM('rss', 'atom');--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "articles" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"slug" varchar NOT NULL,
+	"title" text NOT NULL,
+	"link" text NOT NULL,
+	"feedId" text NOT NULL,
+	"description" text,
+	"siteName" text,
+	"image" text,
+	"author" text,
+	"readable" boolean DEFAULT false NOT NULL,
+	"publishedAt" timestamp DEFAULT now() NOT NULL,
+	"createdAt" timestamp DEFAULT now(),
+	"updatedAt" timestamp DEFAULT now(),
+	CONSTRAINT "articles_link_unique" UNIQUE("link")
+);
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "boards" (
-	"id" varchar(8) PRIMARY KEY NOT NULL,
+	"id" varchar PRIMARY KEY NOT NULL,
 	"slug" text NOT NULL,
 	"name" text NOT NULL,
 	"userId" text NOT NULL,
@@ -14,17 +26,17 @@ CREATE TABLE IF NOT EXISTS "boards" (
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "boardsToFeeds" (
-	"boardId" varchar(8) NOT NULL,
-	"feedId" varchar(8) NOT NULL,
+	"boardId" varchar NOT NULL,
+	"feedId" varchar NOT NULL,
 	CONSTRAINT "boardsToFeeds_boardId_feedId_pk" PRIMARY KEY("boardId","feedId")
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "feeds" (
-	"id" varchar(8) PRIMARY KEY NOT NULL,
+	"id" varchar PRIMARY KEY NOT NULL,
+	"slug" text NOT NULL,
 	"name" text NOT NULL,
-	"description" text DEFAULT 'No description' NOT NULL,
+	"description" text,
 	"link" text NOT NULL,
-	"type" "type" DEFAULT 'rss' NOT NULL,
 	"createdAt" timestamp DEFAULT now() NOT NULL,
 	"updatedAt" timestamp DEFAULT now() NOT NULL,
 	"syncedAt" timestamp DEFAULT now() NOT NULL,
@@ -48,25 +60,8 @@ CREATE TABLE IF NOT EXISTS "users" (
 	CONSTRAINT "users_username_unique" UNIQUE("username")
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "articles" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"slug" varchar(8) NOT NULL,
-	"title" text NOT NULL,
-	"link" text NOT NULL,
-	"feedId" text NOT NULL,
-	"description" text,
-	"siteName" text,
-	"image" text,
-	"author" text,
-	"readable" boolean DEFAULT false NOT NULL,
-	"publishedAt" timestamp DEFAULT now() NOT NULL,
-	"createdAt" timestamp DEFAULT now(),
-	"updatedAt" timestamp DEFAULT now(),
-	CONSTRAINT "articles_link_unique" UNIQUE("link")
-);
---> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "boards" ADD CONSTRAINT "boards_userId_users_id_fk" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "boards" ADD CONSTRAINT "boards_userId_users_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;

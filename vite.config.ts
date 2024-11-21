@@ -10,5 +10,20 @@ export default defineConfig({
   },
   test: {
     include: ['src/**/*.{test,spec}.{js,ts}']
+  },
+  build: {
+    rollupOptions: {
+      external: [
+        'crypto',
+        'stream',
+        'perf_hooks',
+        'postgres',
+        'drizzle-orm/postgres-js',
+        '@lucia-auth/adapter-drizzle'
+      ]
+    }
+  },
+  optimizeDeps: {
+    exclude: ['postgres', 'drizzle-orm', '@lucia-auth/adapter-drizzle']
   }
 });

@@ -1,7 +1,6 @@
 FROM node:18-alpine
 
 RUN npm install -g pnpm
-RUN npm install -g ts-node typescript
 
 WORKDIR /app
 
