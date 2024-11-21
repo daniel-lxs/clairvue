@@ -3,14 +3,14 @@ import { getClient } from '../db';
 import { boardSchema, feedSchema, boardsToFeeds, type Board } from '../schema';
 import { and, eq } from 'drizzle-orm';
 
-async function create(newBoard: Pick<Board, 'name' | 'userId'>) {
+async function create(newBoard: Pick<Board, 'name' | 'userId'> & { default?: boolean }) {
   //TODO: Limit the number of boards per user to 5
   try {
     const db = getClient();
     const { randomUUID } = new ShortUniqueId({ length: 8 });
 
-    const id = randomUUID();
-    const slug = randomUUID();
+    const id = (newBoard.default ? 'default-' : '') + randomUUID();
+    const slug = randomUUID(); //TODO: Generate slug
 
     await db
       .insert(boardSchema)

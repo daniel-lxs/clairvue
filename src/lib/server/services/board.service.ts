@@ -5,11 +5,12 @@ export async function findBoardBySlug(userId: string, slug: string): Promise<Boa
   return await boardRepository.findBySlug(userId, slug);
 }
 
-export async function createBoard(data: {
-  name: string;
-  userId: string;
-}): Promise<Pick<Board, 'id' | 'name' | 'slug'> | undefined> {
-  return await boardRepository.create(data);
+export async function createBoard(
+  name: string,
+  userId: string,
+  defaultBoard?: boolean
+): Promise<Pick<Board, 'id' | 'name' | 'slug'> | undefined> {
+  return await boardRepository.create({ name, userId, default: defaultBoard });
 }
 
 export async function updateBoard(id: string, data: Pick<Board, 'name'>) {

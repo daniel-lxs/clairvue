@@ -72,10 +72,10 @@ export const POST: RequestHandler = async ({ request }) => {
     return new Response(JSON.stringify(validationResult.error), { status: 400 });
   }
 
-  const createdBoard = await createBoard({
-    name: requestBody.name,
-    userId: user.id
-  });
+  const createdBoard = await createBoard(
+    validationResult.data.name,
+    user.id
+  );
 
   if (!createdBoard) {
     return new Response('Failed to create board', { status: 500 });

@@ -101,10 +101,7 @@ const signup = async (username: string, password: string): Promise<SignupResult>
   });
 
   // Create a default board for the user
-  const defaultBoard = await createBoard({
-    name: 'My Board',
-    userId
-  });
+  const defaultBoard = await createBoard('My Board', userId, true);
 
   if (!defaultBoard) {
     console.error('Error creating default board');
