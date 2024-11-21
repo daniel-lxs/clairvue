@@ -1,11 +1,22 @@
 import type { RequestHandler } from '@sveltejs/kit';
 import { findArticlesByBoardId, findArticlesByFeedId } from '@/server/services/article.service';
+import { validateAuthSession } from '@/server/services/auth.service';
 
-export const GET: RequestHandler = async ({ url }) => {
+export const GET: RequestHandler = async ({ url, cookies }) => {
   const boardId = url.searchParams.get('boardId');
   let take = Number(url.searchParams.get('take'));
   const beforePublishedAt = url.searchParams.get('beforePublishedAt') || undefined;
   const feedId = url.searchParams.get('feedId');
+
+  const authSession = await validateAuthSession(cookies);
+  if (
+    !authSession ||
+    !authSession.session ||
+    !authSession.user ||
+    authSession.session.expiresAt < new Date()
+  ) {
+    return new Response('Unauthorized', { status: 401 });
+  }
 
   if (boardId) {
     if (isNaN(take)) {
