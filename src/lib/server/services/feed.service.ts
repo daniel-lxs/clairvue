@@ -22,7 +22,7 @@ export async function createFeed(feedData: CreateFeedDto): Promise<CreateFeedRes
       await addFeedToBoard(feedData.boardId, createdFeed.id);
     }
 
-    if(!createdFeed.link.includes('default-feed')){
+    if (!createdFeed.link.startsWith('default-feed')) {
       const articleQueue = getArticleQueue();
       articleQueue?.add(
         'sync',
@@ -33,7 +33,6 @@ export async function createFeed(feedData: CreateFeedDto): Promise<CreateFeedRes
           removeOnFail: true
         }
       );
-  
     }
 
     return { result: 'success', data: createdFeed };

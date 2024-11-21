@@ -179,6 +179,12 @@ async function updateLastSync(id: string) {
 //delete is a ts keyword
 async function remove(id: string, boardId: string) {
   try {
+    // Check if it's a default feed
+    const feed = await findById(id);
+    if (feed?.link.startsWith('default-feed-')) {
+      throw 'Cannot delete default feed';
+    }
+
     const db = getClient();
 
     await db
@@ -187,6 +193,7 @@ async function remove(id: string, boardId: string) {
       .execute();
   } catch (error) {
     console.error('Error occurred while deleting feed:', error);
+    throw new Error('Failed to delete feed', { cause: error });
   }
 }
 
