@@ -5,11 +5,12 @@ import urlMetadata from 'url-metadata';
 import Parser from 'rss-parser';
 import articleRepository from '@/server/data/repositories/article.repository';
 import feedRepository from '@/server/data/repositories/feed.repository';
-import type { Feed } from '@/server/data/schema';
+import type { Article, Feed } from '@/server/data/schema';
 import type { ParsedArticle } from '@/types/ParsedArticle';
 import { z } from 'zod';
 import type { ArticleMetadata } from '@/types/ArticleMetadata';
 import type { NewArticle } from '@/types/NewArticle';
+import type { PaginatedList } from '@/types/PaginatedList';
 
 interface ProcessArticlesOptions {
   chunkSize?: number;
@@ -486,7 +487,7 @@ export async function findArticlesByBoardId(
   boardId: string,
   beforePublishedAt?: string,
   take: number = 5
-) {
+): Promise<PaginatedList<Article> | undefined> {
   return await articleRepository.findByBoardId(boardId, beforePublishedAt, take);
 }
 
@@ -494,6 +495,18 @@ export async function findArticlesByFeedId(
   feedId: string,
   beforePublishedAt?: string,
   take: number = 5
-) {
+): Promise<PaginatedList<Article> | undefined> {
   return await articleRepository.findByFeedId(feedId, beforePublishedAt, take);
+}
+
+export async function findBySlug(slug: string): Promise<Article | undefined> {
+  return await articleRepository.findBySlug(slug);
+}
+
+export async function countArticles(
+  afterPublishedAt: Date,
+  feedId?: string,
+  boardId?: string
+): Promise<number | undefined> {
+  return await articleRepository.countArticles(afterPublishedAt, feedId, boardId);
 }

@@ -1,4 +1,4 @@
-import articleRepository from '@/server/data/repositories/article.repository';
+import { findBySlug as findArticleBySlug } from '@/server/services/article.service';
 import { redirect } from '@sveltejs/kit';
 import { parseReadableArticle } from '@/server/services/article.service';
 import { getCachedArticle } from '@/server/services/cache.service';
@@ -10,7 +10,7 @@ export const load: PageServerLoad = async ({ params }) => {
   const userAgent =
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/237.84.2.178 Safari/537.36';
 
-  const article = await articleRepository.findBySlug(slug);
+  const article = await findArticleBySlug(slug);
 
   if (!article) {
     return {
