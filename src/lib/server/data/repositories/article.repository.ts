@@ -129,6 +129,7 @@ async function findByBoardId(
         feed: {
           id: feedSchema.id,
           name: feedSchema.name,
+          slug: feedSchema.slug,
           description: feedSchema.description,
           link: feedSchema.link,
           createdAt: feedSchema.createdAt,
