@@ -131,6 +131,7 @@
     const newFeed = {
       ...e.detail,
       id: '',
+      slug: '',
       createdAt: new Date(),
       updatedAt: new Date(),
       syncedAt: new Date(),

@@ -5,13 +5,7 @@ import type { PageServerLoad } from './$types';
 import feedRepository from '@/server/data/repositories/feed.repository';
 
 export const load: PageServerLoad = async ({ params: { slug: feedId }, cookies }) => {
-  const cookieHeader = cookies.get('auth_session');
-
-  if (!cookieHeader) {
-    redirect(302, '/auth/login');
-  }
-
-  const authSession = await validateAuthSession(cookieHeader);
+  const authSession = await validateAuthSession(cookies);
 
   if (!authSession) {
     redirect(302, '/auth/login');

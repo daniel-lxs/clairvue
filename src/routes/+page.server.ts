@@ -3,15 +3,7 @@ import type { PageServerLoad } from './$types';
 import { redirect } from '@sveltejs/kit';
 
 export const load: PageServerLoad = async ({ cookies }) => {
-  const cookieHeader = cookies.get('auth_session');
-
-  if (!cookieHeader) {
-    return {
-      session: null
-    };
-  }
-
-  const authSession = await validateAuthSession(cookieHeader);
+  const authSession = await validateAuthSession(cookies);
 
   if (!authSession) {
     return {
