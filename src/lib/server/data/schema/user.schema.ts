@@ -11,10 +11,14 @@ export const userSchema = pgTable('users', {
 
 export const sessionSchema = pgTable('sessions', {
   id: text('id').primaryKey(),
-  userId: text('userId').notNull(),
-  expiresAt: timestamp('expiresAt', { mode: 'date', withTimezone: true }).notNull(),
+  userId: text('userId').notNull().references(() => userSchema.id),
+	expiresAt: timestamp("expiresAt", {
+		withTimezone: true,
+		mode: "date"
+	}).notNull(),
   createdAt: timestamp('createdAt').defaultNow(),
   updatedAt: timestamp('updatedAt').defaultNow()
 });
 
 export type User = InferSelectModel<typeof userSchema>;
+export type Session = InferSelectModel<typeof sessionSchema>;

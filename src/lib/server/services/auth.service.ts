@@ -1,36 +1,65 @@
-import { Lucia, type Session, type User } from 'lucia';
-import { dev } from '$app/environment';
-import { adapter } from '@/server/data/db';
+import { encodeBase32LowerCaseNoPadding, encodeHexLowerCase } from "@oslojs/encoding";
 import type { Cookies } from '@sveltejs/kit';
+import type { Session, User } from '../data/schema';
+import { sha256 } from "@oslojs/crypto/sha2";
+import { createSession as insertSession, validateSession, deleteSession } from "../data/repositories/user.repository";
+import type { SessionValidationResult } from "@/types/auth/SessionValidationResult";
 
-export const lucia = new Lucia(adapter, {
-  sessionCookie: {
+export function generateSessionToken(): string {
+	const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return encodeBase32LowerCaseNoPadding(bytes);
+}
+
+export async function createSession(token: string, userId: string): Promise<Session> {
+  const sessionId = encodeHexLowerCase(sha256(new TextEncoder().encode(token)));
+	const session: Session = {
+		id: sessionId,
+		userId,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+		expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30)
+	};
+	await insertSession(session);
+	return session;
+}
+
+export async function validateSessionToken(token: string): Promise<SessionValidationResult> {
+	const { session, user } = await validateSession(token);
+  return { session, user };
+}
+
+export async function invalidateSession(sessionId: string): Promise<void> {
+	await deleteSession(sessionId);
+}
+
+export function generateSessionCookie(sessionId: string) {
+  return {
+    name: 'auth_session',
+    value: sessionId,
     attributes: {
-      secure: !dev
+      path: '/',
+      expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30),
+      httpOnly: true,
+      sameSite: 'lax' as const
     }
-  },
-  getUserAttributes: (attributes) => {
-    return {
-      // attributes has the type of DatabaseUserAttributes
-      username: attributes.username
-    };
   }
-});
+}
+  
+
 
 export async function validateAuthSession(
   cookies: Cookies
 ): Promise<{ session: Session; user: User } | undefined> {
-  const cookieHeader = cookies.get('auth_session');
-  if (!cookieHeader) {
-    return undefined;
-  }
+  const sessionId = cookies.get('auth_session');
 
-  const sessionId = lucia.readSessionCookie(cookieHeader);
+
   if (!sessionId) {
     return undefined;
   }
 
-  const { session, user } = await lucia.validateSession(sessionId);
+
+  const { session, user } = await validateSession(sessionId);
   if (!session || !user || session.expiresAt < new Date()) {
     return undefined;
   }
@@ -39,15 +68,4 @@ export async function validateAuthSession(
     session,
     user
   };
-}
-
-declare module 'lucia' {
-  interface Register {
-    Lucia: typeof lucia;
-    DatabaseUserAttributes: DatabaseUserAttributes;
-  }
-}
-
-interface DatabaseUserAttributes {
-  username: string;
 }

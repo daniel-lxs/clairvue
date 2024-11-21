@@ -1,5 +1,3 @@
-import { Argon2id } from 'oslo/password';
-import { generateId } from 'lucia';
 import { z } from 'zod';
 import type { LoginResult } from '@/types/auth/LoginResult';
 import type { SignupResult } from '@/types/auth/SignupResult';
@@ -7,6 +5,9 @@ import type { ValidationResult } from '@/types/auth/ValidationResult';
 import { findByUsername, create as createUser } from '@/server/data/repositories/user.repository';
 import { createBoard } from './board.service';
 import { createFeed } from './feed.service';
+import { generateRandomString } from '@oslojs/crypto/random';
+import argon2 from 'argon2';
+import { generateId } from '@/utils/generateId';
 
 const validateUserForm = z.object({
   username: z
@@ -55,7 +56,7 @@ const login = async (username: string, password: string): Promise<LoginResult> =
     };
   }
 
-  const validPassword = await new Argon2id().verify(existingUser.hashedPassword, password);
+  const validPassword = await argon2.verify(existingUser.hashedPassword, password);
   if (!validPassword) {
     return {
       success: false,
@@ -91,7 +92,7 @@ const signup = async (username: string, password: string): Promise<SignupResult>
     };
   }
 
-  const hashedPassword = await new Argon2id().hash(password);
+  const hashedPassword = await argon2.hash(password);
   const userId = generateId(15);
 
   await createUser({
@@ -101,7 +102,7 @@ const signup = async (username: string, password: string): Promise<SignupResult>
   });
 
   // Create a default board for the user
-  const defaultBoard = await createBoard('My Board', userId, true);
+  const defaultBoard = await createBoard('All Feeds', userId, true);
 
   if (!defaultBoard) {
     console.error('Error creating default board');

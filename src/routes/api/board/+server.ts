@@ -12,7 +12,7 @@ import {
   deleteFeedFromBoardDto,
   updateBoardDto
 } from '@/server/dto/board.dto';
-import { lucia, validateAuthSession } from '@/server/services/auth.service';
+import { validateAuthSession } from '@/server/services/auth.service';
 
 export const GET: RequestHandler = async ({ url, cookies }) => {
   try {

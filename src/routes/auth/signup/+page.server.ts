@@ -1,8 +1,8 @@
-import { lucia } from '@/server/services/auth.service';
 import { fail, redirect } from '@sveltejs/kit';
 import userService from '@/server/services/user.service';
 
 import type { Actions } from './$types';
+import { createSession, generateSessionCookie, generateSessionToken } from '@/server/services/auth.service';
 
 export const actions: Actions = {
   default: async (event) => {
@@ -11,25 +11,29 @@ export const actions: Actions = {
     const password = formData.get('password');
 
     if (!username || typeof username !== 'string' || !password || typeof password !== 'string') {
-      throw fail(400, {
-        message: 'Invalid username or password'
+      const errors: Record<string, string[]> = {
+        username: ['Invalid or missing username'],
+        password: ['Invalid or missing password']
+      };
+      return fail(400, {
+        message: 'Invalid username or password',
+        errors
       });
     }
 
     const result = await userService.signup(username, password);
     if (!result.success) {
-      throw fail(400, {
+      return fail(400, {
         errors: result.errors
       });
     }
 
-    const session = await lucia.createSession(result.userId, {});
-    const sessionCookie = lucia.createSessionCookie(session.id);
-    event.cookies.set(sessionCookie.name, sessionCookie.value, {
-      path: '.',
-      ...sessionCookie.attributes
-    });
+    const token = generateSessionToken();
 
-    throw redirect(302, '/');
+    const session = await createSession(token, result.userId);
+    const sessionCookie = generateSessionCookie(session.id);
+    event.cookies.set(sessionCookie.name, token, sessionCookie.attributes);
+
+    return redirect(302, '/');
   }
 };
