@@ -6,13 +6,10 @@
   import { Input } from '@/components/ui/input';
   import { Label } from '@/components/ui/label';
   import { getFeedInfo } from '@/api';
-  import { createEventDispatcher } from 'svelte';
   import { Loader2, PlusCircle } from 'lucide-svelte';
   import type { NewFeed } from '@/types/NewFeed';
 
-  const dispatch = createEventDispatcher<{
-    create: NewFeed;
-  }>();
+  let { create }: { create: (feed: NewFeed) => void } = $props();
 
   let isLoading = $state(false);
   let hasError = $state(false);
@@ -39,8 +36,7 @@
       hasError = false;
       link = '';
 
-      console.log('dispatching create', newFeed);
-      dispatch('create', newFeed);
+      create(newFeed);
       return;
     }
 
