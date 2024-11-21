@@ -8,16 +8,16 @@
 
   interface Props {
     form: {
-    message: string;
-    errors?: Record<string, string[]>;
-  } | null;
+      message: string | undefined;
+      errors?: Record<string, string[] | undefined>;
+    } | null;
   }
 
   let { form }: Props = $props();
 </script>
 
 <Card.Root
-  class="relative flex flex-col items-center justify-center space-y-4 p-6 text-center w-full"
+  class="relative flex w-full flex-col items-center justify-center space-y-4 p-6 text-center"
 >
   <Card.Header>
     <Card.Title tag="h1" class="text-3xl font-bold">Login to Clairvue</Card.Title>

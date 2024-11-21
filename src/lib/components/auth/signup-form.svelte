@@ -7,7 +7,7 @@
   import { AlertOctagon } from 'lucide-svelte';
 
   interface Props {
-    form: { errors: Record<string, string[]> } | null;
+    form: { errors: Record<string, string[] | undefined> } | null;
   }
 
   let { form = $bindable() }: Props = $props();
