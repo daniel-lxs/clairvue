@@ -25,6 +25,20 @@ export async function removeFeedFromBoard(boardId: string, feedId: string): Prom
   await boardRepository.deleteFeedFromBoard(boardId, feedId);
 }
 
+export async function findBoardsByUserId(
+  userId: string,
+  withRelated: boolean = false
+): Promise<Board[] | undefined> {
+  return await boardRepository.findBoardsByUserId(userId, withRelated);
+}
+
+export async function findBoardById(
+  id: string,
+  withRelated: boolean = false
+): Promise<Board | undefined> {
+  return await boardRepository.findById(id, withRelated);
+}
+
 /*export async function deleteBoard(id: string): Promise<void> {
   await boardRepository.deleteBoard(id);
 }*/
