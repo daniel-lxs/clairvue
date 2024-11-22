@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { run } from 'svelte/legacy';
-
   import { Button, buttonVariants } from '@/components/ui/button';
   import * as Dialog from '@/components/ui/dialog';
   import { Input } from '@/components/ui/input';
@@ -8,6 +6,7 @@
   import { getFeedInfo } from '@/api';
   import { Loader2, PlusCircle } from 'lucide-svelte';
   import type { NewFeed } from '@/types/NewFeed';
+  import { z } from 'zod';
 
   let { create }: { create: (feed: NewFeed) => void } = $props();
 
@@ -22,14 +21,24 @@
   let open: boolean = $state(false);
   let link: string = $state('');
 
+  const linkSchema = z.string().url();
+
   async function save() {
     isLoading = true;
-    const feedInfo = await getFeedInfo(link);
+
+    const parsedLink = linkSchema.safeParse(link);
+    if (!parsedLink.success) {
+      hasError = true;
+      isLoading = false;
+      return;
+    }
+
+    const feedInfo = await getFeedInfo(parsedLink.data);
 
     if (feedInfo) {
-      newFeed.name = feedInfo.title;
-      newFeed.description = feedInfo.description;
-      newFeed.link = link;
+      newFeed.name = feedInfo.title.trim();
+      newFeed.description = feedInfo.description?.trim();
+      newFeed.link = parsedLink.data;
 
       open = false;
       isLoading = false;
@@ -44,7 +53,7 @@
     isLoading = false;
   }
 
-  run(() => {
+  $effect.pre(() => {
     if (open === false) {
       newFeed = {
         id: '',
