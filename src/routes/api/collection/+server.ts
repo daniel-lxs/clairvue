@@ -1,13 +1,8 @@
 import type { RequestHandler } from '@sveltejs/kit';
-import {
-  findCollectionBySlug,
-  createCollection,
-  updateCollection,
-  addFeedToCollection,
-  removeFeedFromCollection
-} from '@/server/services/collection.service';
+import collectionService from '@/server/services/collection.service';
 import {
   addFeedToCollectionDto,
+  addFeedsToCollectionDto,
   createCollectionDto,
   deleteFeedFromCollectionDto,
   updateCollectionDto
@@ -32,7 +27,7 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
       return new Response('Unauthorized', { status: 401 });
     }
 
-    const collection = await findCollectionBySlug(authSession.user.id, collectionSlug);
+    const collection = await collectionService.findBySlug(authSession.user.id, collectionSlug);
 
     if (!collection) {
       return new Response('Collection not found', { status: 404 });
@@ -68,7 +63,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
       return new Response(JSON.stringify(validationResult.error), { status: 400 });
     }
 
-    const createdCollection = await createCollection(
+    const createdCollection = await collectionService.create(
       validationResult.data.name,
       authSession.user.id
     );
@@ -107,7 +102,7 @@ export const PATCH: RequestHandler = async ({ request, cookies }) => {
       return new Response(JSON.stringify(validationResult.error), { status: 400 });
     }
 
-    await updateCollection(validationResult.data.id, validationResult.data);
+    await collectionService.update(validationResult.data.id, validationResult.data);
 
     return new Response(null, { status: 200 });
   } catch (error) {
@@ -134,13 +129,26 @@ export const PUT: RequestHandler = async ({ request, cookies }) => {
       return new Response('Unauthorized', { status: 401 });
     }
 
-    const validationResult = addFeedToCollectionDto.safeParse(requestBody);
-    if (!validationResult.success) {
-      return new Response(JSON.stringify(validationResult.error), { status: 400 });
+    // Try to validate as multiple feeds first
+    const multiValidationResult = addFeedsToCollectionDto.safeParse(requestBody);
+    if (multiValidationResult.success) {
+      // Handle multiple feeds
+      for (const feedId of multiValidationResult.data.feedIds) {
+        await collectionService.addFeedToCollection(multiValidationResult.data.id, feedId);
+      }
+      return new Response(null, { status: 200 });
     }
 
-    await addFeedToCollection(validationResult.data.id, validationResult.data.feedId);
+    // Fall back to single feed validation
+    const singleValidationResult = addFeedToCollectionDto.safeParse(requestBody);
+    if (!singleValidationResult.success) {
+      return new Response(JSON.stringify(singleValidationResult.error), { status: 400 });
+    }
 
+    await collectionService.addFeedToCollection(
+      singleValidationResult.data.id,
+      singleValidationResult.data.feedId
+    );
     return new Response(null, { status: 200 });
   } catch (error) {
     console.error('Error occurred on PUT /api/collection', error);
@@ -171,7 +179,10 @@ export const DELETE: RequestHandler = async ({ request, cookies }) => {
       return new Response(JSON.stringify(validationResult.error), { status: 400 });
     }
 
-    await removeFeedFromCollection(validationResult.data.id, validationResult.data.feedId);
+    await collectionService.removeFeedFromCollection(
+      validationResult.data.id,
+      validationResult.data.feedId
+    );
 
     return new Response(null, { status: 200 });
   } catch (error) {
