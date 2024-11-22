@@ -4,8 +4,7 @@ import type { SignupResult } from '@/types/auth/SignupResult';
 import type { ValidationResult } from '@/types/auth/ValidationResult';
 import { findByUsername, create as createUser } from '@/server/data/repositories/user.repository';
 import collectionService from './collection.service';
-import { createFeed } from './feed.service';
-import { generateRandomString } from '@oslojs/crypto/random';
+import feedService from './feed.service';
 import argon2 from 'argon2';
 import { generateId } from '@/utils/generateId';
 
@@ -115,7 +114,7 @@ const signup = async (username: string, password: string): Promise<SignupResult>
   }
 
   // Create a default feed for saved articles
-  const defaultFeed = await createFeed(
+  const defaultFeed = await feedService.createFeed(
     {
       name: 'Saved Articles',
       description: 'Articles you have saved',

@@ -1,5 +1,5 @@
 import type { RequestHandler } from '@sveltejs/kit';
-import * as feedService from '@/server/services/feed.service';
+import feedService from '@/server/services/feed.service';
 import { createFeedDto, updateFeedDto, type CreateFeedDto } from '@/server/dto/feed.dto';
 import type { CreateFeedResult } from '@/types/CreateFeedResult';
 import type { Feed } from '@/server/data/schema';
@@ -74,7 +74,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
           return { result: 'error', reason: result.error.message };
         }
 
-        return await feedService.createFeed(result.data);
+        return await feedService.createFeed(result.data, authSession.user.id);
       })
     );
 
