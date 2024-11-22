@@ -1,14 +1,11 @@
 import collectionRepository from '@/server/data/repositories/collection.repository';
 import type { Collection } from '@/server/data/schema';
 
-export async function findCollectionBySlug(
-  userId: string,
-  slug: string
-): Promise<Collection | undefined> {
+async function findBySlug(userId: string, slug: string): Promise<Collection | undefined> {
   return await collectionRepository.findBySlug(userId, slug);
 }
 
-export async function createCollection(
+async function create(
   name: string,
   userId: string,
   defaultCollection?: boolean
@@ -16,35 +13,44 @@ export async function createCollection(
   return await collectionRepository.create({ name, userId, default: defaultCollection });
 }
 
-export async function updateCollection(id: string, data: Pick<Collection, 'name'>) {
+async function update(id: string, data: Pick<Collection, 'name'>) {
   await collectionRepository.update(id, data);
 }
 
-export async function addFeedToCollection(collectionId: string, feedId: string): Promise<void> {
+async function addFeedToCollection(collectionId: string, feedId: string): Promise<void> {
   await collectionRepository.addFeedsToCollection([{ id: collectionId, feedId }]);
 }
 
-export async function removeFeedFromCollection(
-  collectionId: string,
-  feedId: string
-): Promise<void> {
+async function removeFeedFromCollection(collectionId: string, feedId: string): Promise<void> {
   await collectionRepository.deleteFeedFromCollection(collectionId, feedId);
 }
 
-export async function findCollectionsByUserId(
+async function findByUserId(
   userId: string,
   withRelated: boolean = false
 ): Promise<Collection[] | undefined> {
   return await collectionRepository.findCollectionsByUserId(userId, withRelated);
 }
 
-export async function findCollectionById(
-  id: string,
-  withRelated: boolean = false
-): Promise<Collection | undefined> {
+async function findById(id: string, withRelated: boolean = false): Promise<Collection | undefined> {
   return await collectionRepository.findById(id, withRelated);
 }
 
-/*export async function deleteCollection(id: string): Promise<void> {
+async function findDefault(userId: string): Promise<Collection | undefined> {
+  return await collectionRepository.findDefaultCollection(userId);
+}
+
+/* async function deleteCollection(id: string): Promise<void> {
   await collectionRepository.deleteCollection(id);
 }*/
+
+export default {
+  findBySlug,
+  create,
+  update,
+  addFeedToCollection,
+  removeFeedFromCollection,
+  findByUserId,
+  findById,
+  findDefault
+};

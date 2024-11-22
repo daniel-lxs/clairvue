@@ -3,7 +3,7 @@ import type { LoginResult } from '@/types/auth/LoginResult';
 import type { SignupResult } from '@/types/auth/SignupResult';
 import type { ValidationResult } from '@/types/auth/ValidationResult';
 import { findByUsername, create as createUser } from '@/server/data/repositories/user.repository';
-import { createCollection } from './collection.service';
+import collectionService from './collection.service';
 import { createFeed } from './feed.service';
 import { generateRandomString } from '@oslojs/crypto/random';
 import argon2 from 'argon2';
@@ -102,7 +102,7 @@ const signup = async (username: string, password: string): Promise<SignupResult>
   });
 
   // Create a default collection for the user
-  const defaultCollection = await createCollection('All Feeds', userId, true);
+  const defaultCollection = await collectionService.create('All Feeds', userId, true);
 
   if (!defaultCollection) {
     console.error('Error creating default collection');
@@ -115,12 +115,15 @@ const signup = async (username: string, password: string): Promise<SignupResult>
   }
 
   // Create a default feed for saved articles
-  const defaultFeed = await createFeed({
-    name: 'Saved Articles',
-    description: 'Articles you have saved',
-    link: `default-feed-${userId}`,
-    collectionId: defaultCollection?.id
-  });
+  const defaultFeed = await createFeed(
+    {
+      name: 'Saved Articles',
+      description: 'Articles you have saved',
+      link: `default-feed-${userId}`,
+      collectionId: defaultCollection?.id
+    },
+    userId
+  );
 
   if (!defaultFeed) {
     console.error('Error creating default feed');
