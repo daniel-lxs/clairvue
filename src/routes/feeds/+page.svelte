@@ -1,15 +1,15 @@
 <script lang="ts">
-  import * as Page from '@/components/page';
   import FeedListItem from '@/components/feed/feed-list-item.svelte';
   import CreateFeedDialog from '@/components/feed/create-feed-dialog.svelte';
   import type { PageData } from './$types';
   import { Button } from '@/components/ui/button';
   import { Label } from '@/components/ui/label';
-  import { Folder } from 'lucide-svelte';
+  import { Folder, FolderPlus } from 'lucide-svelte';
   import { createFeeds, deleteFeedFromBoard } from '@/api';
   import showToast from '@/utils/showToast';
   import type { NewFeed } from '@/types/NewFeed';
   import type { Feed } from '@/server/data/schema';
+  import * as Tooltip from '@/components/ui/tooltip';
 
   interface Props {
     data: PageData;
@@ -53,10 +53,24 @@
   }
 </script>
 
-<Page.Container>
-  <div class="flex h-[calc(100vh-4rem)]">
+<div class="flex min-h-screen flex-col items-center justify-center">
+  <div class="flex min-h-screen w-full pt-8">
     <!-- Sidebar -->
-    <div class="w-64 space-y-4 border-r p-4">
+    <div class="w-64 space-y-2 border-r p-4 pt-8 sm:pt-12">
+      <div class="mb-4 flex items-center justify-between">
+        <Label class="text-sm font-medium">Collections</Label>
+        <Tooltip.Root>
+          <Tooltip.Trigger asChild let:builder>
+            <Button builders={[builder]} variant="ghost" size="icon" class="h-8 w-8">
+              <FolderPlus class="h-4 w-4" />
+            </Button>
+          </Tooltip.Trigger>
+          <Tooltip.Content>
+            <p class="text-xs leading-4">Create a new collection</p>
+          </Tooltip.Content>
+        </Tooltip.Root>
+      </div>
+
       <Button
         variant="ghost"
         class="w-full justify-start gap-2"
@@ -68,7 +82,6 @@
 
       {#if data.boards.length > 0}
         <div class="space-y-1">
-          <Label class="px-2 text-sm font-medium">Collections</Label>
           {#each data.boards as board}
             <Button
               variant="ghost"
@@ -84,7 +97,7 @@
     </div>
 
     <!-- Main Content -->
-    <div class="flex-1 p-6">
+    <div class="flex-1 p-6 pt-8 sm:pt-12">
       <div class="space-y-6">
         <div class="flex items-center justify-between">
           <div class="space-y-1">
@@ -101,7 +114,7 @@
         </div>
 
         {#if currentFeeds.length > 0}
-          <div class="grid grid-cols-1 gap-4">
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {#each currentFeeds as feed}
               <FeedListItem {feed} deleteFeed={handleDeleteFeed} />
             {/each}
@@ -125,4 +138,4 @@
       </div>
     </div>
   </div>
-</Page.Container>
+</div>
