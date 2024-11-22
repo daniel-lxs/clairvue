@@ -1,5 +1,5 @@
 {
-  "id": "a9fe15f8-54f4-4d7d-8eb3-030279a79803",
+  "id": "d803307d-3117-4930-8c11-265325782db3",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -107,8 +107,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.boards": {
-      "name": "boards",
+    "public.collections": {
+      "name": "collections",
       "schema": "",
       "columns": {
         "id": {
@@ -152,9 +152,9 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "boards_userId_users_id_fk": {
-          "name": "boards_userId_users_id_fk",
-          "tableFrom": "boards",
+        "collections_userId_users_id_fk": {
+          "name": "collections_userId_users_id_fk",
+          "tableFrom": "collections",
           "tableTo": "users",
           "columnsFrom": [
             "userId"
@@ -172,12 +172,12 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.boardsToFeeds": {
-      "name": "boardsToFeeds",
+    "public.collectionsToFeeds": {
+      "name": "collectionsToFeeds",
       "schema": "",
       "columns": {
-        "boardId": {
-          "name": "boardId",
+        "collectionId": {
+          "name": "collectionId",
           "type": "varchar",
           "primaryKey": false,
           "notNull": true
@@ -192,10 +192,10 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {
-        "boardsToFeeds_boardId_feedId_pk": {
-          "name": "boardsToFeeds_boardId_feedId_pk",
+        "collectionsToFeeds_collectionId_feedId_pk": {
+          "name": "collectionsToFeeds_collectionId_feedId_pk",
           "columns": [
-            "boardId",
+            "collectionId",
             "feedId"
           ]
         }
@@ -315,7 +315,21 @@
         }
       },
       "indexes": {},
-      "foreignKeys": {},
+      "foreignKeys": {
+        "sessions_userId_users_id_fk": {
+          "name": "sessions_userId_users_id_fk",
+          "tableFrom": "sessions",
+          "tableTo": "users",
+          "columnsFrom": [
+            "userId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},

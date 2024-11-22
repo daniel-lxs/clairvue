@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS "articles" (
 	CONSTRAINT "articles_link_unique" UNIQUE("link")
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "boards" (
+CREATE TABLE IF NOT EXISTS "collections" (
 	"id" varchar PRIMARY KEY NOT NULL,
 	"slug" text NOT NULL,
 	"name" text NOT NULL,
@@ -25,10 +25,10 @@ CREATE TABLE IF NOT EXISTS "boards" (
 	"updatedAt" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "boardsToFeeds" (
-	"boardId" varchar NOT NULL,
+CREATE TABLE IF NOT EXISTS "collectionsToFeeds" (
+	"collectionId" varchar NOT NULL,
 	"feedId" varchar NOT NULL,
-	CONSTRAINT "boardsToFeeds_boardId_feedId_pk" PRIMARY KEY("boardId","feedId")
+	CONSTRAINT "collectionsToFeeds_collectionId_feedId_pk" PRIMARY KEY("collectionId","feedId")
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "feeds" (
@@ -61,7 +61,13 @@ CREATE TABLE IF NOT EXISTS "users" (
 );
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "boards" ADD CONSTRAINT "boards_userId_users_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "collections" ADD CONSTRAINT "collections_userId_users_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "sessions" ADD CONSTRAINT "sessions_userId_users_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
