@@ -1,7 +1,7 @@
 import ShortUniqueId from 'short-unique-id';
 import { getClient } from '../db';
 import { collectionSchema, feedSchema, collectionsToFeeds, type Collection } from '../schema';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, like } from 'drizzle-orm';
 import slugify from 'slugify';
 
 async function create(newCollection: Pick<Collection, 'name' | 'userId'> & { default?: boolean }) {
@@ -220,6 +220,21 @@ async function findCollectionsByUserId(
   }
 }
 
+async function findDefaultCollection(userId: string): Promise<Collection | undefined> {
+  try {
+    const db = getClient();
+    const result = await db.query.collectionSchema
+      .findFirst({
+        where: and(eq(collectionSchema.userId, userId), like(collectionSchema.id, 'default-%'))
+      })
+      .execute();
+    return result;
+  } catch (error) {
+    console.error('Error occurred while finding Collection by user id:', error);
+    return undefined;
+  }
+}
+
 async function deleteFeedFromCollection(collectionId: string, feedId: string) {
   try {
     const db = getClient();
@@ -245,5 +260,6 @@ export default {
   findBySlug,
   findCollectionsByUserId,
   addFeedsToCollection,
-  deleteFeedFromCollection
+  deleteFeedFromCollection,
+  findDefaultCollection
 };
