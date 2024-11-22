@@ -4,7 +4,7 @@ export const createFeedDto = z.object({
   name: z.string().min(4).max(255),
   description: z.string().max(1000).optional(),
   link: z.string().url(),
-  collectionId: z.string().length(8, { message: 'Invalid collection ID' }).optional()
+  collectionId: z.string().refine((val) => !val.includes(' '), 'Slug cannot contain spaces')
 });
 
 export type CreateFeedDto = z.infer<typeof createFeedDto>;
@@ -14,7 +14,7 @@ export const updateFeedDto = z.object({
   name: z.string().min(4).max(255),
   description: z.string().max(1000).optional(),
   link: z.string().url(),
-  collectionId: z.string().length(8, { message: 'Invalid collection ID' }).optional()
+  collectionId: z.string().refine((val) => !val.includes(' '), 'Slug cannot contain spaces')
 });
 
 export type UpdateFeedDto = z.infer<typeof updateFeedDto>;
