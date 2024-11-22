@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { run } from 'svelte/legacy';
-
   import * as Card from '@/components/ui/card';
   import type { Article } from '@/server/data/schema';
   import { calculateAge, truncateDescription } from '@/utils';
@@ -22,6 +20,7 @@
   let imageType = $state('wide');
 
   let age = $derived(calculateAge(new Date(article.publishedAt)));
+
   let imageWidth = $state(0);
 
   let imageHeight = $state(0);
@@ -32,7 +31,8 @@
 
   let descriptionLength: number = $state(300);
 
-  const loadImage = () => {
+  $effect(() => {
+    isMobile = window.innerWidth <= 768;
     if (!article.image || imageError) {
       descriptionLength = 500;
       return;
@@ -51,24 +51,9 @@
 
       imageLoaded = true;
     };
-  };
-
-  run(() => {
-    if (imageError) {
-      descriptionLength = 500;
-    }
-  });
-
-  loadImage();
-
-  setTimeout(() => {
-    if (!imageLoaded) {
+    img.onerror = () => {
       imageError = true;
-    }
-  }, 5000);
-
-  onMount(() => {
-    isMobile = window.innerWidth <= 768;
+    };
   });
 </script>
 
