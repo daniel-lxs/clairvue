@@ -11,6 +11,8 @@
   }
 
   let { feed, deleteFeed }: Props = $props();
+
+  let isDefault = feed.link.startsWith('default-');
 </script>
 
 <div
@@ -28,18 +30,24 @@
       Created {calculateAge(feed.createdAt, 'long')} • {feed.articleCount || 0} articles
     </div>
   </div>
-
-  <DropdownMenu.Root>
-    <DropdownMenu.Trigger asChild let:builder>
-      <Button builders={[builder]} variant="ghost" size="sm" class="ml-2 h-8 w-8 flex-shrink-0 p-0">
-        <MoreVertical class="h-4 w-4" />
-      </Button>
-    </DropdownMenu.Trigger>
-    <DropdownMenu.Content>
-      <DropdownMenu.Item on:click={() => deleteFeed(feed)}>
-        <Trash class="mr-2 h-4 w-4" />
-        <span>Delete</span>
-      </DropdownMenu.Item>
-    </DropdownMenu.Content>
-  </DropdownMenu.Root>
+  {#if !isDefault}
+    <DropdownMenu.Root>
+      <DropdownMenu.Trigger asChild let:builder>
+        <Button
+          builders={[builder]}
+          variant="ghost"
+          size="sm"
+          class="ml-2 h-8 w-8 flex-shrink-0 p-0"
+        >
+          <MoreVertical class="h-4 w-4" />
+        </Button>
+      </DropdownMenu.Trigger>
+      <DropdownMenu.Content>
+        <DropdownMenu.Item on:click={() => deleteFeed(feed)}>
+          <Trash class="mr-2 h-4 w-4" />
+          <span>Delete</span>
+        </DropdownMenu.Item>
+      </DropdownMenu.Content>
+    </DropdownMenu.Root>
+  {/if}
 </div>
