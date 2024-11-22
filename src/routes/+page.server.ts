@@ -11,5 +11,5 @@ export const load: PageServerLoad = async ({ cookies }) => {
     };
   }
 
-  redirect(302, '/collections');
+  redirect(302, '/feeds');
 };
