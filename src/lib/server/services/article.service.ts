@@ -78,7 +78,7 @@ async function parseFeed(url: string): Promise<Parser.Output<Parser.Item> | unde
   }
 }
 
-export async function fetchFeedArticles(link: string) {
+async function fetchFeedArticles(link: string) {
   try {
     const feed = await parseFeed(link);
 
@@ -105,7 +105,7 @@ export async function fetchFeedArticles(link: string) {
   }
 }
 
-export async function syncArticles(feed: Feed, jobContext: string = 'None') {
+async function syncArticles(feed: Feed, jobContext: string = 'None') {
   try {
     const orderedArticles = await fetchFeedArticles(feed.link);
 
@@ -326,7 +326,7 @@ async function fetchAndCleanDocument(
   }
 }
 
-export async function parseReadableArticle(
+async function parseReadableArticle(
   link: string,
   ua?: string | null
 ): Promise<ParsedArticle | undefined> {
@@ -361,7 +361,7 @@ export async function parseReadableArticle(
   return undefined;
 }
 
-export async function isArticleReadable(link: string, ua?: string | null): Promise<boolean> {
+async function isArticleReadable(link: string, ua?: string | null): Promise<boolean> {
   const document = await fetchAndCleanDocument(link, ua);
 
   if (!document) {
@@ -483,7 +483,7 @@ function isNewsArticle(
   return false;
 }
 
-export async function findArticlesByCollectionId(
+async function findArticlesByCollectionId(
   collectionId: string,
   beforePublishedAt?: string,
   take: number = 5
@@ -491,7 +491,7 @@ export async function findArticlesByCollectionId(
   return await articleRepository.findByCollectionId(collectionId, beforePublishedAt, take);
 }
 
-export async function findArticlesByFeedId(
+async function findArticlesByFeedId(
   feedId: string,
   beforePublishedAt?: string,
   take: number = 5
@@ -499,14 +499,29 @@ export async function findArticlesByFeedId(
   return await articleRepository.findByFeedId(feedId, beforePublishedAt, take);
 }
 
-export async function findBySlug(slug: string): Promise<Article | undefined> {
+async function findBySlug(slug: string): Promise<Article | undefined> {
   return await articleRepository.findBySlug(slug);
 }
 
-export async function countArticles(
+async function countArticles(
   afterPublishedAt: Date,
   feedId?: string,
   collectionId?: string
 ): Promise<number | undefined> {
   return await articleRepository.countArticles(afterPublishedAt, feedId, collectionId);
 }
+
+export default {
+  findArticlesByFeedId,
+  findArticlesByCollectionId,
+  findBySlug,
+  countArticles,
+  syncArticles,
+  parseReadableArticle,
+  fetchAndCleanDocument,
+  createNewArticle,
+  processArticles,
+  saveArticles,
+  isArticleReadable,
+  extractArticleMetadata
+};

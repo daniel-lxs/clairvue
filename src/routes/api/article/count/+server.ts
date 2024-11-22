@@ -1,5 +1,5 @@
 import type { RequestHandler } from '@sveltejs/kit';
-import { countArticles } from '@/server/services/article.service';
+import articleService from '@/server/services/article.service';
 import { validateAuthSession } from '@/server/services/auth.service';
 
 export const GET: RequestHandler = async ({ url, cookies }) => {
@@ -28,6 +28,6 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
     afterPublishedAtDate = new Date();
   }
 
-  const articles = await countArticles(afterPublishedAtDate, feedId, collectionId);
+  const articles = await articleService.countArticles(afterPublishedAtDate, feedId, collectionId);
   return new Response(JSON.stringify(articles), { status: 200 });
 };

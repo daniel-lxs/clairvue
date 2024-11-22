@@ -3,13 +3,13 @@ import type { Feed } from '@/server/data/schema';
 import type { CreateFeedDto } from '@/server/dto/feed.dto';
 import type { CreateFeedResult } from '@/types/CreateFeedResult';
 import { getArticleQueue } from '@/server/queue/articles';
-import { addFeedToCollection } from './collection.service';
+import collectionService from './collection.service';
 
-export async function findFeedById(id: string): Promise<Feed | undefined> {
+async function findFeedById(id: string): Promise<Feed | undefined> {
   return await feedRepository.findById(id);
 }
 
-export async function createFeed(feedData: CreateFeedDto): Promise<CreateFeedResult> {
+async function createFeed(feedData: CreateFeedDto, userId: string): Promise<CreateFeedResult> {
   try {
     const newFeedData = { ...feedData, description: feedData.description || null };
     const createdFeed = await feedRepository.create(newFeedData);
@@ -19,7 +19,18 @@ export async function createFeed(feedData: CreateFeedDto): Promise<CreateFeedRes
     }
 
     if (feedData.collectionId) {
-      await addFeedToCollection(feedData.collectionId, createdFeed.id);
+      await collectionService.addFeedToCollection(feedData.collectionId, createdFeed.id);
+    }
+
+    // Always add to the default collection
+    if (!feedData.collectionId.includes('default')) {
+      const defaultCollection = await collectionService.findDefault(userId);
+
+      if (!defaultCollection) {
+        return { result: 'error', reason: 'Unable to find default collection' };
+      }
+
+      await collectionService.addFeedToCollection(defaultCollection.id, createdFeed.id);
     }
 
     if (!createdFeed.link.startsWith('default-feed')) {
@@ -41,14 +52,14 @@ export async function createFeed(feedData: CreateFeedDto): Promise<CreateFeedRes
   }
 }
 
-export async function updateFeed(
+async function updateFeed(
   id: string,
   data: Pick<Feed, 'name' | 'link' | 'description'>
 ): Promise<void> {
   await feedRepository.update(id, data);
 }
 
-export async function findBySlug(slug: string): Promise<Feed> {
+async function findBySlug(slug: string): Promise<Feed> {
   const feed = await feedRepository.findBySlug(slug);
 
   if (!feed) {
@@ -57,3 +68,15 @@ export async function findBySlug(slug: string): Promise<Feed> {
 
   return feed;
 }
+
+async function countArticles(id: string): Promise<number> {
+  return (await feedRepository.countArticles(id)) ?? 0;
+}
+
+export default {
+  findFeedById,
+  createFeed,
+  updateFeed,
+  findBySlug,
+  countArticles
+};

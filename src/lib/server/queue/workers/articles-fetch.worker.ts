@@ -1,6 +1,6 @@
 import { Worker, type ConnectionOptions } from 'bullmq';
 import feedRepository from '@/server/data/repositories/feed.repository';
-import { syncArticles } from '@/server/services/article.service';
+import articlesService from '@/server/services/article.service';
 
 export async function startArticlesWorker() {
   const connection: ConnectionOptions = {
@@ -20,7 +20,7 @@ export async function startArticlesWorker() {
           console.error('Feed not found');
           return;
         }
-        const createdArticlesIds = await syncArticles(feed, job.id);
+        const createdArticlesIds = await articlesService.syncArticles(feed, job.id);
         return createdArticlesIds;
       }
     },

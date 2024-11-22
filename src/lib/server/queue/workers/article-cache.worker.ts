@@ -1,5 +1,5 @@
 import { Worker, type ConnectionOptions } from 'bullmq';
-import { parseReadableArticle } from '@/server/services/article.service';
+import articleService from '@/server/services/article.service';
 import { cacheArticle } from '@/server/services/cache.service';
 
 interface CacheArticleJob {
@@ -18,7 +18,7 @@ export function startArticleCacheWorker() {
     async (job) => {
       const { slug, url } = job.data;
       try {
-        const parsedArticle = await parseReadableArticle(url);
+        const parsedArticle = await articleService.parseReadableArticle(url);
         if (parsedArticle) {
           await cacheArticle(slug, parsedArticle);
           console.info(`Cached article ${slug}`);

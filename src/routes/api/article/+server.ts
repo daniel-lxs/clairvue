@@ -1,8 +1,5 @@
 import type { RequestHandler } from '@sveltejs/kit';
-import {
-  findArticlesByCollectionId,
-  findArticlesByFeedId
-} from '@/server/services/article.service';
+import articlesService from '@/server/services/article.service';
 import { validateAuthSession } from '@/server/services/auth.service';
 
 export const GET: RequestHandler = async ({ url, cookies }) => {
@@ -26,12 +23,16 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
       take = 5;
     }
 
-    const articles = await findArticlesByCollectionId(collectionId, beforePublishedAt, take);
+    const articles = await articlesService.findArticlesByCollectionId(
+      collectionId,
+      beforePublishedAt,
+      take
+    );
     return new Response(JSON.stringify(articles), { status: 200 });
   }
 
   if (feedId) {
-    const articles = await findArticlesByFeedId(feedId, beforePublishedAt, take);
+    const articles = await articlesService.findArticlesByFeedId(feedId, beforePublishedAt, take);
     return new Response(JSON.stringify(articles), { status: 200 });
   }
 

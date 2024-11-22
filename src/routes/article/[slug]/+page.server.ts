@@ -1,6 +1,5 @@
-import { findBySlug as findArticleBySlug } from '@/server/services/article.service';
 import { redirect } from '@sveltejs/kit';
-import { parseReadableArticle } from '@/server/services/article.service';
+import articleService from '@/server/services/article.service';
 import { getCachedArticle } from '@/server/services/cache.service';
 import { getArticleCacheQueue } from '@/server/queue/articles';
 import type { PageServerLoad } from './$types';
@@ -10,7 +9,7 @@ export const load: PageServerLoad = async ({ params }) => {
   const userAgent =
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/237.84.2.178 Safari/537.36';
 
-  const article = await findArticleBySlug(slug);
+  const article = await articleService.findBySlug(slug);
 
   if (!article) {
     return {
@@ -43,7 +42,7 @@ export const load: PageServerLoad = async ({ params }) => {
     streamed: {
       parsedArticle: cachedArticle
         ? Promise.resolve(cachedArticle)
-        : parseReadableArticle(article.link, userAgent)
+        : articleService.parseReadableArticle(article.link, userAgent)
     },
     article,
     error: undefined
