@@ -483,12 +483,12 @@ function isNewsArticle(
   return false;
 }
 
-export async function findArticlesByBoardId(
-  boardId: string,
+export async function findArticlesByCollectionId(
+  collectionId: string,
   beforePublishedAt?: string,
   take: number = 5
 ): Promise<PaginatedList<Article> | undefined> {
-  return await articleRepository.findByBoardId(boardId, beforePublishedAt, take);
+  return await articleRepository.findByCollectionId(collectionId, beforePublishedAt, take);
 }
 
 export async function findArticlesByFeedId(
@@ -506,7 +506,7 @@ export async function findBySlug(slug: string): Promise<Article | undefined> {
 export async function countArticles(
   afterPublishedAt: Date,
   feedId?: string,
-  boardId?: string
+  collectionId?: string
 ): Promise<number | undefined> {
-  return await articleRepository.countArticles(afterPublishedAt, feedId, boardId);
+  return await articleRepository.countArticles(afterPublishedAt, feedId, collectionId);
 }

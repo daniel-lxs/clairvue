@@ -1,4 +1,4 @@
-import { findBoardsByUserId } from '@/server/services/board.service';
+import { findCollectionsByUserId } from '@/server/services/collection.service';
 import { validateAuthSession } from '@/server/services/auth.service';
 import type { PageServerLoad } from './$types';
 import { redirect } from '@sveltejs/kit';
@@ -9,13 +9,15 @@ export const load = (async ({ cookies }) => {
     redirect(302, '/auth/login');
   }
 
-  const boards = await findBoardsByUserId(authSession.user.id, true);
-  const defaultBoard = boards?.find(board => board.id.startsWith('default-'));
-  const otherBoards = boards?.filter(board => !board.id.startsWith('default-'));
+  const collections = await findCollectionsByUserId(authSession.user.id, true);
+  const defaultCollection = collections?.find((collection) => collection.id.startsWith('default-'));
+  const otherCollections = collections?.filter(
+    (collection) => !collection.id.startsWith('default-')
+  );
 
   return {
-    boards: otherBoards || [],
-    defaultBoard,
+    collections: otherCollections || [],
+    defaultCollection,
     userId: authSession.user.id
   };
 }) satisfies PageServerLoad;

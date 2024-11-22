@@ -1,4 +1,4 @@
-import boardRepository from '@/server/data/repositories/board.repository';
+import collectionRepository from '@/server/data/repositories/collection.repository';
 import articlesRepository from '@/server/data/repositories/article.repository';
 import { redirect } from '@sveltejs/kit';
 import { validateAuthSession } from '@/server/services/auth.service';
@@ -11,17 +11,17 @@ export const load: PageServerLoad = async ({ params: { slug }, cookies }) => {
     redirect(302, '/auth/login');
   }
 
-  const board = await boardRepository.findBySlug(authSession.user.id, slug, true);
+  const collection = await collectionRepository.findBySlug(authSession.user.id, slug, true);
 
-  if (!board) {
-    throw new Error('Board not found');
+  if (!collection) {
+    throw new Error('Collection not found');
   }
 
   const limitPerPage = 20;
   return {
-    board,
+    collection,
     streamed: {
-      articles: articlesRepository.findByBoardId(board.id, undefined, limitPerPage)
+      articles: articlesRepository.findByCollectionId(collection.id, undefined, limitPerPage)
     }
   };
 };

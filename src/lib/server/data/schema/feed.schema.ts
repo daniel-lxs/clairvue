@@ -1,5 +1,5 @@
 import { pgEnum, pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core';
-import { boardsToFeeds } from './board.schema';
+import { collectionsToFeeds } from './collection.schema';
 import { articleSchema, type Article } from './article.schema';
 import { relations, type InferSelectModel } from 'drizzle-orm';
 
@@ -17,7 +17,7 @@ export const feedSchema = pgTable('feeds', {
 });
 
 export const feedRelations = relations(feedSchema, ({ many }) => ({
-  boardsToFeeds: many(boardsToFeeds),
+  collectionsToFeeds: many(collectionsToFeeds),
   articles: many(articleSchema)
 }));
 

@@ -6,7 +6,7 @@
   import type { PageData } from './$types';
   import type { Article } from '@/server/data/schema';
   import ArticleCardSkeleton from '@/components/article/article-card-skeleton.svelte';
-  import NewArticlesButton from '@/components/board/new-articles-button.svelte';
+  import NewArticlesButton from '@/components/collection/new-articles-button.svelte';
   import { afterNavigate, beforeNavigate } from '$app/navigation';
 
   interface Props {

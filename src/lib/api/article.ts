@@ -1,8 +1,8 @@
 import type { Article } from '@/server/data/schema';
 import type { PaginatedList } from '@/types/PaginatedList';
 
-export async function getArticlesByBoardId(
-  boardId: string,
+export async function getArticlesByCollectionId(
+  collectionId: string,
   beforePublishedAt?: Date | string,
   take = 5
 ): Promise<PaginatedList<Article>> {
@@ -13,7 +13,7 @@ export async function getArticlesByBoardId(
         : beforePublishedAt
       : undefined;
     const response = await fetch(
-      `/api/article?boardId=${boardId}&${beforePublishedAt ? `beforePublishedAt=${beforePublishedAt.toISOString()}` : ''}&take=${take}`
+      `/api/article?collectionId=${collectionId}&${beforePublishedAt ? `beforePublishedAt=${beforePublishedAt.toISOString()}` : ''}&take=${take}`
     );
     if (!response.ok) {
       throw new Error(`Failed to get articles: ${response.statusText}`);
@@ -52,7 +52,7 @@ export async function getArticlesByFeedId(
 export async function countArticles(
   afterDate: Date | string,
   feedId?: string,
-  boardId?: string
+  collectionId?: string
 ): Promise<number | undefined> {
   try {
     let afterPublishedAt: string = '';
@@ -64,7 +64,7 @@ export async function countArticles(
     }
 
     const response = await fetch(
-      `/api/article/count?afterPublishedAt=${afterPublishedAt}${feedId ? `&feedId=${feedId}` : ''}${boardId ? `&boardId=${boardId}` : ''}`
+      `/api/article/count?afterPublishedAt=${afterPublishedAt}${feedId ? `&feedId=${feedId}` : ''}${collectionId ? `&collectionId=${collectionId}` : ''}`
     );
     if (!response.ok) {
       throw new Error(`Failed to get articles: ${response.statusText}`);

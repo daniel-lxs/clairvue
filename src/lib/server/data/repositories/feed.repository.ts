@@ -1,7 +1,7 @@
 import { and, count, desc, eq, sql } from 'drizzle-orm';
 import ShortUniqueId from 'short-unique-id';
 import { getClient } from '../db';
-import { boardsToFeeds, feedSchema, type Feed, articleSchema } from '../schema';
+import { collectionsToFeeds, feedSchema, type Feed, articleSchema } from '../schema';
 import slugify from 'slugify';
 
 async function create(
@@ -199,7 +199,7 @@ async function updateLastSync(id: string) {
 }
 
 //delete is a ts keyword
-async function remove(id: string, boardId: string) {
+async function remove(id: string, collectionId: string) {
   try {
     // Check if it's a default feed
     const feed = await findById(id);
@@ -210,8 +210,10 @@ async function remove(id: string, boardId: string) {
     const db = getClient();
 
     await db
-      .delete(boardsToFeeds)
-      .where(and(eq(boardsToFeeds.boardId, boardId), eq(boardsToFeeds.feedId, id)))
+      .delete(collectionsToFeeds)
+      .where(
+        and(eq(collectionsToFeeds.collectionId, collectionId), eq(collectionsToFeeds.feedId, id))
+      )
       .execute();
   } catch (error) {
     console.error('Error occurred while deleting feed:', error);

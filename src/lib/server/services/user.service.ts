@@ -3,7 +3,7 @@ import type { LoginResult } from '@/types/auth/LoginResult';
 import type { SignupResult } from '@/types/auth/SignupResult';
 import type { ValidationResult } from '@/types/auth/ValidationResult';
 import { findByUsername, create as createUser } from '@/server/data/repositories/user.repository';
-import { createBoard } from './board.service';
+import { createCollection } from './collection.service';
 import { createFeed } from './feed.service';
 import { generateRandomString } from '@oslojs/crypto/random';
 import argon2 from 'argon2';
@@ -101,15 +101,15 @@ const signup = async (username: string, password: string): Promise<SignupResult>
     hashedPassword
   });
 
-  // Create a default board for the user
-  const defaultBoard = await createBoard('All Feeds', userId, true);
+  // Create a default collection for the user
+  const defaultCollection = await createCollection('All Feeds', userId, true);
 
-  if (!defaultBoard) {
-    console.error('Error creating default board');
+  if (!defaultCollection) {
+    console.error('Error creating default collection');
     return {
       success: false,
       errors: {
-        board: ['Failed to create default board']
+        collection: ['Failed to create default collection']
       }
     };
   }
@@ -119,7 +119,7 @@ const signup = async (username: string, password: string): Promise<SignupResult>
     name: 'Saved Articles',
     description: 'Articles you have saved',
     link: `default-feed-${userId}`,
-    boardId: defaultBoard?.id
+    collectionId: defaultCollection?.id
   });
 
   if (!defaultFeed) {

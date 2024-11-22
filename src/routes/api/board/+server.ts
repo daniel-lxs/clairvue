@@ -1,25 +1,25 @@
 import type { RequestHandler } from '@sveltejs/kit';
 import {
-  findBoardBySlug,
-  createBoard,
-  updateBoard,
-  addFeedToBoard,
-  removeFeedFromBoard
-} from '@/server/services/board.service';
+  findCollectionBySlug,
+  createCollection,
+  updateCollection,
+  addFeedToCollection,
+  removeFeedFromCollection
+} from '@/server/services/collection.service';
 import {
-  addFeedToBoardDto,
-  createBoardDto,
-  deleteFeedFromBoardDto,
-  updateBoardDto
-} from '@/server/dto/board.dto';
+  addFeedToCollectionDto,
+  createCollectionDto,
+  deleteFeedFromCollectionDto,
+  updateCollectionDto
+} from '@/server/dto/collection.dto';
 import { validateAuthSession } from '@/server/services/auth.service';
 
 export const GET: RequestHandler = async ({ url, cookies }) => {
   try {
-    const boardSlug = url.searchParams.get('slug');
+    const collectionSlug = url.searchParams.get('slug');
 
-    if (!boardSlug) {
-      return new Response('Invalid board slug', { status: 400 });
+    if (!collectionSlug) {
+      return new Response('Invalid collection slug', { status: 400 });
     }
 
     const authSession = await validateAuthSession(cookies);
@@ -32,15 +32,15 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
       return new Response('Unauthorized', { status: 401 });
     }
 
-    const board = await findBoardBySlug(authSession.user.id, boardSlug);
+    const collection = await findCollectionBySlug(authSession.user.id, collectionSlug);
 
-    if (!board) {
-      return new Response('Board not found', { status: 404 });
+    if (!collection) {
+      return new Response('Collection not found', { status: 404 });
     }
 
-    return new Response(JSON.stringify(board), { status: 200 });
+    return new Response(JSON.stringify(collection), { status: 200 });
   } catch (error) {
-    console.error('Error occurred on GET /api/board', error);
+    console.error('Error occurred on GET /api/collection', error);
     return new Response('Internal server error', { status: 500 });
   }
 };
@@ -63,20 +63,23 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
       return new Response('Unauthorized', { status: 401 });
     }
 
-    const validationResult = createBoardDto.safeParse(requestBody);
+    const validationResult = createCollectionDto.safeParse(requestBody);
     if (!validationResult.success) {
       return new Response(JSON.stringify(validationResult.error), { status: 400 });
     }
 
-    const createdBoard = await createBoard(validationResult.data.name, authSession.user.id);
+    const createdCollection = await createCollection(
+      validationResult.data.name,
+      authSession.user.id
+    );
 
-    if (!createdBoard) {
-      return new Response('Failed to create board', { status: 500 });
+    if (!createdCollection) {
+      return new Response('Failed to create collection', { status: 500 });
     }
 
-    return new Response(JSON.stringify(createdBoard), { status: 200 });
+    return new Response(JSON.stringify(createdCollection), { status: 200 });
   } catch (error) {
-    console.error('Error occurred on POST /api/board', error);
+    console.error('Error occurred on POST /api/collection', error);
     return new Response('Internal server error', { status: 500 });
   }
 };
@@ -99,16 +102,16 @@ export const PATCH: RequestHandler = async ({ request, cookies }) => {
       return new Response('Unauthorized', { status: 401 });
     }
 
-    const validationResult = updateBoardDto.safeParse(requestBody);
+    const validationResult = updateCollectionDto.safeParse(requestBody);
     if (!validationResult.success) {
       return new Response(JSON.stringify(validationResult.error), { status: 400 });
     }
 
-    await updateBoard(validationResult.data.id, validationResult.data);
+    await updateCollection(validationResult.data.id, validationResult.data);
 
     return new Response(null, { status: 200 });
   } catch (error) {
-    console.error('Error occurred on PATCH /api/board', error);
+    console.error('Error occurred on PATCH /api/collection', error);
     return new Response('Internal server error', { status: 500 });
   }
 };
@@ -131,16 +134,16 @@ export const PUT: RequestHandler = async ({ request, cookies }) => {
       return new Response('Unauthorized', { status: 401 });
     }
 
-    const validationResult = addFeedToBoardDto.safeParse(requestBody);
+    const validationResult = addFeedToCollectionDto.safeParse(requestBody);
     if (!validationResult.success) {
       return new Response(JSON.stringify(validationResult.error), { status: 400 });
     }
 
-    await addFeedToBoard(validationResult.data.id, validationResult.data.feedId);
+    await addFeedToCollection(validationResult.data.id, validationResult.data.feedId);
 
     return new Response(null, { status: 200 });
   } catch (error) {
-    console.error('Error occurred on PUT /api/board', error);
+    console.error('Error occurred on PUT /api/collection', error);
     return new Response('Internal server error', { status: 500 });
   }
 };
@@ -163,16 +166,16 @@ export const DELETE: RequestHandler = async ({ request, cookies }) => {
       return new Response('Unauthorized', { status: 401 });
     }
 
-    const validationResult = deleteFeedFromBoardDto.safeParse(requestBody);
+    const validationResult = deleteFeedFromCollectionDto.safeParse(requestBody);
     if (!validationResult.success) {
       return new Response(JSON.stringify(validationResult.error), { status: 400 });
     }
 
-    await removeFeedFromBoard(validationResult.data.id, validationResult.data.feedId);
+    await removeFeedFromCollection(validationResult.data.id, validationResult.data.feedId);
 
     return new Response(null, { status: 200 });
   } catch (error) {
-    console.error('Error occurred on DELETE /api/board', error);
+    console.error('Error occurred on DELETE /api/collection', error);
     return new Response('Internal server error', { status: 500 });
   }
 };

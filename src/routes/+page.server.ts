@@ -11,5 +11,5 @@ export const load: PageServerLoad = async ({ cookies }) => {
     };
   }
 
-  redirect(302, '/boards');
+  redirect(302, '/collections');
 };

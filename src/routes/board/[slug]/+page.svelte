@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { countArticles, getArticlesByBoardId } from '@/api/article';
+  import { countArticles, getArticlesByCollectionId } from '@/api/article';
   import ArticleCard from '@/components/article/article-card.svelte';
   import * as Page from '@/components/page';
   import { onMount } from 'svelte';
   import type { PageData } from './$types';
   import type { Article } from '@/server/data/schema';
   import ArticleCardSkeleton from '@/components/article/article-card-skeleton.svelte';
-  import NewArticlesButton from '@/components/board/new-articles-button.svelte';
+  import NewArticlesButton from '@/components/collection/new-articles-button.svelte';
   import { beforeNavigate, afterNavigate } from '$app/navigation';
   import Button from '@/components/ui/button/button.svelte';
   import MoreHorizontal from 'lucide-svelte/icons/more-horizontal';
@@ -31,18 +31,26 @@
   beforeNavigate(({ to }) => {
     if (to?.url.pathname.includes('/article/')) {
       savedScrollPosition = window.scrollY;
-      sessionStorage.setItem('board_articles_' + data.board.id, JSON.stringify(articles));
-      sessionStorage.setItem('board_scroll_' + data.board.id, savedScrollPosition.toString());
-      sessionStorage.setItem('board_reached_end_' + data.board.id, hasReachedEnd.toString());
+      sessionStorage.setItem('collection_articles_' + data.collection.id, JSON.stringify(articles));
+      sessionStorage.setItem(
+        'collection_scroll_' + data.collection.id,
+        savedScrollPosition.toString()
+      );
+      sessionStorage.setItem(
+        'collection_reached_end_' + data.collection.id,
+        hasReachedEnd.toString()
+      );
     }
   });
 
   // Restore the state when navigating back
   afterNavigate(({ type }) => {
     if (type === 'popstate') {
-      const savedArticles = sessionStorage.getItem('board_articles_' + data.board.id);
-      const savedScroll = sessionStorage.getItem('board_scroll_' + data.board.id);
-      const savedReachedEnd = sessionStorage.getItem('board_reached_end_' + data.board.id);
+      const savedArticles = sessionStorage.getItem('collection_articles_' + data.collection.id);
+      const savedScroll = sessionStorage.getItem('collection_scroll_' + data.collection.id);
+      const savedReachedEnd = sessionStorage.getItem(
+        'collection_reached_end_' + data.collection.id
+      );
 
       if (savedArticles) {
         articles = JSON.parse(savedArticles);
@@ -60,9 +68,9 @@
       }
     } else if (type === 'enter') {
       getArticles();
-      sessionStorage.removeItem('board_articles_' + data.board.id);
-      sessionStorage.removeItem('board_scroll_' + data.board.id);
-      sessionStorage.removeItem('board_reached_end_' + data.board.id);
+      sessionStorage.removeItem('collection_articles_' + data.collection.id);
+      sessionStorage.removeItem('collection_scroll_' + data.collection.id);
+      sessionStorage.removeItem('collection_reached_end_' + data.collection.id);
     }
   });
 
@@ -77,8 +85,8 @@
   };
 
   const fetchArticles = async (limit: number, beforePublishedAt: Date | string = new Date()) => {
-    const { items: fetchedArticles } = await getArticlesByBoardId(
-      data.board.id,
+    const { items: fetchedArticles } = await getArticlesByCollectionId(
+      data.collection.id,
       beforePublishedAt,
       limit
     );
@@ -132,11 +140,11 @@
 
   const checkNewArticles = async () => {
     newArticlesCount =
-      (await countArticles(articles[0].publishedAt, undefined, data.board.id)) ?? 0;
+      (await countArticles(articles[0].publishedAt, undefined, data.collection.id)) ?? 0;
   };
 
   onMount(() => {
-    const savedArticles = sessionStorage.getItem('board_articles_' + data.board.id);
+    const savedArticles = sessionStorage.getItem('collection_articles_' + data.collection.id);
     if (savedArticles) {
       articles = JSON.parse(savedArticles);
       isLoading = false;
@@ -160,16 +168,18 @@
 </script>
 
 <svelte:head>
-  <title>{newArticlesCount > 0 ? `(${newArticlesCount}) ` : ''}{data.board?.name} - Clairvue</title>
+  <title
+    >{newArticlesCount > 0 ? `(${newArticlesCount}) ` : ''}{data.collection?.name} - Clairvue</title
+  >
 </svelte:head>
 
 {#snippet title()}
   <div class="flex w-full justify-between">
-    <h1 class="text-xl font-bold sm:text-3xl">{data.board?.name}</h1>
+    <h1 class="text-xl font-bold sm:text-3xl">{data.collection?.name}</h1>
     <Tooltip.Root>
       <Button
         title="Edit feed collection"
-        href="/boards/edit/{data.board.slug}"
+        href="/collections/edit/{data.collection.slug}"
         variant="ghost"
         size="icon"
       >
@@ -188,8 +198,8 @@
   {/if}
   <Page.Header
     {title}
-    subtitle={data.board.feeds
-      ? `Showing articles from ${data.board.feeds.length} feeds`
+    subtitle={data.collection.feeds
+      ? `Showing articles from ${data.collection.feeds.length} feeds`
       : undefined}
   />
   <div class="w-full space-y-4 sm:space-y-6 sm:px-0">

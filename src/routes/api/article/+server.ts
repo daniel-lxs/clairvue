@@ -1,9 +1,12 @@
 import type { RequestHandler } from '@sveltejs/kit';
-import { findArticlesByBoardId, findArticlesByFeedId } from '@/server/services/article.service';
+import {
+  findArticlesByCollectionId,
+  findArticlesByFeedId
+} from '@/server/services/article.service';
 import { validateAuthSession } from '@/server/services/auth.service';
 
 export const GET: RequestHandler = async ({ url, cookies }) => {
-  const boardId = url.searchParams.get('boardId');
+  const collectionId = url.searchParams.get('collectionId');
   let take = Number(url.searchParams.get('take'));
   const beforePublishedAt = url.searchParams.get('beforePublishedAt') || undefined;
   const feedId = url.searchParams.get('feedId');
@@ -18,12 +21,12 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
     return new Response('Unauthorized', { status: 401 });
   }
 
-  if (boardId) {
+  if (collectionId) {
     if (isNaN(take)) {
       take = 5;
     }
 
-    const articles = await findArticlesByBoardId(boardId, beforePublishedAt, take);
+    const articles = await findArticlesByCollectionId(collectionId, beforePublishedAt, take);
     return new Response(JSON.stringify(articles), { status: 200 });
   }
 

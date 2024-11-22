@@ -8,10 +8,10 @@ import { validateAuthSession } from '@/server/services/auth.service';
 export const GET: RequestHandler = async ({ url, cookies }) => {
   try {
     const feedSlug = url.searchParams.get('slug');
-    const boardSlug = url.searchParams.get('boardSlug');
+    const collectionSlug = url.searchParams.get('collectionSlug');
 
-    if (!feedSlug || !boardSlug) {
-      return new Response('Invalid feed or board slug', { status: 400 });
+    if (!feedSlug || !collectionSlug) {
+      return new Response('Invalid feed or collection slug', { status: 400 });
     }
 
     const authSession = await validateAuthSession(cookies);

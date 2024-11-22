@@ -35,7 +35,7 @@
         </DropdownMenu.Trigger>
         <DropdownMenu.Content>
           <DropdownMenu.Item>
-            <a href="/boards" class="flex w-full">Boards</a>
+            <a href="/collections" class="flex w-full">Collections</a>
           </DropdownMenu.Item>
         </DropdownMenu.Content>
       </DropdownMenu.Root>

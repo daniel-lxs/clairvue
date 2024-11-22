@@ -5,7 +5,7 @@
   import { Button } from '@/components/ui/button';
   import { Label } from '@/components/ui/label';
   import { Folder, FolderPlus } from 'lucide-svelte';
-  import { createFeeds, deleteFeedFromBoard } from '@/api';
+  import { createFeeds, deleteFeedFromCollection } from '@/api';
   import showToast from '@/utils/showToast';
   import type { NewFeed } from '@/types/NewFeed';
   import type { Feed } from '@/server/data/schema';
@@ -16,20 +16,20 @@
   }
   let { data }: Props = $props();
 
-  let selectedBoard = $state(data.defaultBoard);
-  let currentFeeds = $state<Feed[]>(data.defaultBoard?.feeds || []);
+  let selectedCollection = $state(data.defaultCollection);
+  let currentFeeds = $state<Feed[]>(data.defaultCollection?.feeds || []);
   let pageTitle = $state('All Feeds');
 
   $effect(() => {
-    currentFeeds = selectedBoard?.feeds || [];
-    pageTitle = selectedBoard?.id.startsWith('default-')
+    currentFeeds = selectedCollection?.feeds || [];
+    pageTitle = selectedCollection?.id.startsWith('default-')
       ? 'All Feeds'
-      : selectedBoard?.name || 'All Feeds';
+      : selectedCollection?.name || 'All Feeds';
   });
 
   async function handleDeleteFeed(feed: Feed) {
-    if (selectedBoard) {
-      await deleteFeedFromBoard(selectedBoard.id, feed.id);
+    if (selectedCollection) {
+      await deleteFeedFromCollection(selectedCollection.id, feed.id);
       // Refresh the page to update the feed list
       currentFeeds = currentFeeds.filter((f) => f.id !== feed.id);
       showToast('Feed deleted', `Feed "${feed.name}" has been deleted.`);
@@ -37,7 +37,7 @@
   }
 
   async function saveFeed(newFeed: NewFeed) {
-    if (!selectedBoard) return;
+    if (!selectedCollection) return;
 
     const createFeedResult = (
       await createFeeds([{ ...newFeed, description: newFeed.description || undefined }])
@@ -74,22 +74,22 @@
       <Button
         variant="ghost"
         class="w-full justify-start gap-2"
-        on:click={() => (selectedBoard = data.defaultBoard)}
+        on:click={() => (selectedCollection = data.defaultCollection)}
       >
         <Folder class="h-4 w-4" />
         <span>All Feeds</span>
       </Button>
 
-      {#if data.boards.length > 0}
+      {#if data.collections.length > 0}
         <div class="space-y-1">
-          {#each data.boards as board}
+          {#each data.collections as collection}
             <Button
               variant="ghost"
               class="w-full justify-start gap-2"
-              on:click={() => (selectedBoard = board)}
+              on:click={() => (selectedCollection = collection)}
             >
               <Folder class="h-4 w-4" />
-              <span>{board.name}</span>
+              <span>{collection.name}</span>
             </Button>
           {/each}
         </div>
@@ -103,10 +103,10 @@
           <div class="space-y-1">
             <Label class="text-lg font-medium">{pageTitle}</Label>
             <p class="text-sm text-muted-foreground">
-              {#if selectedBoard?.id.startsWith('default-')}
+              {#if selectedCollection?.id.startsWith('default-')}
                 View and manage all your RSS feeds
               {:else}
-                Feeds in {selectedBoard?.name}
+                Feeds in {selectedCollection?.name}
               {/if}
             </p>
           </div>
@@ -126,7 +126,7 @@
             <div class="space-y-2 text-center">
               <p class="font-medium text-muted-foreground">No feeds yet</p>
               <p class="text-sm text-muted-foreground">
-                {#if selectedBoard?.id.startsWith('default-')}
+                {#if selectedCollection?.id.startsWith('default-')}
                   Add your first RSS feed to start reading
                 {:else}
                   Add feeds to this collection to start organizing

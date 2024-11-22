@@ -1,6 +1,12 @@
 import ShortUniqueId from 'short-unique-id';
 import { getClient } from '../db';
-import { articleSchema, type Article, feedSchema, boardSchema, boardsToFeeds } from '../schema';
+import {
+  articleSchema,
+  type Article,
+  feedSchema,
+  collectionSchema,
+  collectionsToFeeds
+} from '../schema';
 import { count, desc, eq, lt, sql, and, gt } from 'drizzle-orm';
 import type { NewArticle } from '@/types/NewArticle';
 import type { PaginatedList } from '@/types/PaginatedList';
@@ -93,22 +99,22 @@ async function findByFeedId(
   }
 }
 
-async function findByBoardId(
-  boardId: string,
+async function findByCollectionId(
+  collectionId: string,
   beforePublishedAt: string = new Date().toISOString(),
   take = 5
 ): Promise<PaginatedList<Article> | undefined> {
   try {
     const db = getClient();
 
-    // Check if the boardId exists
-    const boardExists = await db
+    // Check if the collectionId exists
+    const collectionExists = await db
       .select()
-      .from(boardSchema)
-      .where(eq(boardSchema.id, boardId))
+      .from(collectionSchema)
+      .where(eq(collectionSchema.id, collectionId))
       .execute();
 
-    if (!boardExists || boardExists.length === 0) {
+    if (!collectionExists || collectionExists.length === 0) {
       return undefined;
     }
 
@@ -141,10 +147,10 @@ async function findByBoardId(
       })
       .from(articleSchema)
       .leftJoin(feedSchema, eq(articleSchema.feedId, feedSchema.id))
-      .leftJoin(boardsToFeeds, eq(feedSchema.id, boardsToFeeds.feedId))
+      .leftJoin(collectionsToFeeds, eq(feedSchema.id, collectionsToFeeds.feedId))
       .where(
         and(
-          eq(boardsToFeeds.boardId, boardId),
+          eq(collectionsToFeeds.collectionId, collectionId),
           lt(articleSchema.publishedAt, new Date(beforePublishedAt))
         )
       )
@@ -157,14 +163,14 @@ async function findByBoardId(
       totalCount: queryResult.length
     };
   } catch (error) {
-    console.log('Error occurred while finding Articles by boardId:', error);
+    console.log('Error occurred while finding Articles by collectionId:', error);
   }
 }
 
 async function countArticles(
   afterPublishedAt: Date,
   feedId?: string,
-  boardId?: string
+  collectionId?: string
 ): Promise<number | undefined> {
   const db = getClient();
 
@@ -172,11 +178,11 @@ async function countArticles(
     .select({ count: sql<number>`cast(${count(articleSchema.id)} as int)` })
     .from(articleSchema)
     .leftJoin(feedSchema, eq(articleSchema.feedId, feedSchema.id))
-    .leftJoin(boardsToFeeds, eq(feedSchema.id, boardsToFeeds.feedId))
+    .leftJoin(collectionsToFeeds, eq(feedSchema.id, collectionsToFeeds.feedId))
     .where(
       and(
-        boardId ? eq(boardsToFeeds.boardId, boardId) : undefined,
-        feedId ? eq(boardsToFeeds.feedId, feedId) : undefined,
+        collectionId ? eq(collectionsToFeeds.collectionId, collectionId) : undefined,
+        feedId ? eq(collectionsToFeeds.feedId, feedId) : undefined,
         gt(articleSchema.publishedAt, afterPublishedAt)
       )
     )
@@ -190,6 +196,6 @@ export default {
   findBySlug,
   existsWithLink,
   findByFeedId,
-  findByBoardId,
+  findByCollectionId,
   countArticles
 };

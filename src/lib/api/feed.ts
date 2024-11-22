@@ -2,9 +2,7 @@ import type { CreateFeedDto } from '@/server/dto/feed.dto';
 import type { CreateFeedResult } from '@/types/CreateFeedResult';
 import type { Feed } from '@/server/data/schema';
 
-export async function createFeeds(
-  feeds: CreateFeedDto[],
-): Promise<CreateFeedResult[]> {
+export async function createFeeds(feeds: CreateFeedDto[]): Promise<CreateFeedResult[]> {
   try {
     const response = await fetch('/api/feed', {
       method: 'POST',
@@ -67,7 +65,7 @@ export async function updateFeed(
   name: string,
   description: string,
   link: string,
-  boardId: string
+  collectionId: string
 ) {
   try {
     const response = await fetch('/api/feed', {
@@ -80,7 +78,7 @@ export async function updateFeed(
         name: name,
         description: description,
         link: link,
-        boardId
+        collectionId
       })
     });
     if (response.status === 400) {

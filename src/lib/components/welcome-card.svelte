@@ -7,11 +7,11 @@
   import { goto } from '$app/navigation';
 
   let isInputVisible = $state(false);
-  let boardCode = $state('');
+  let collectionCode = $state('');
 
-  function onBoardCodeSubmit() {
-    if (boardCode) {
-      window.location.href = `/board/${boardCode}`;
+  function onCollectionCodeSubmit() {
+    if (collectionCode) {
+      window.location.href = `/collection/${collectionCode}`;
     }
   }
 
@@ -31,7 +31,7 @@
     <Card.Title tag="h1" class="text-4xl font-bold">Welcome to ReadableSS</Card.Title>
     <Card.Description class="text-md">A minimalistic and light feed reader</Card.Description>
   </Card.Header>
-  <Card.Content class="space-y-6 w-full">
+  <Card.Content class="w-full space-y-6">
     <div class="flex flex-col items-center gap-4">
       <div class="flex gap-4">
         <Button variant="outline" on:click={navigateToLogin}>Login</Button>
@@ -42,18 +42,25 @@
 
     {#if isInputVisible}
       <form
-        onsubmit={preventDefault(onBoardCodeSubmit)}
-        class="flex w-full max-w-sm items-center space-x-2 mx-auto"
+        onsubmit={preventDefault(onCollectionCodeSubmit)}
+        class="mx-auto flex w-full max-w-sm items-center space-x-2"
       >
-        <Input type="text" autofocus placeholder="Enter your board code" bind:value={boardCode} />
+        <Input
+          type="text"
+          autofocus
+          placeholder="Enter your collection code"
+          bind:value={collectionCode}
+        />
         <Button type="submit">Submit</Button>
       </form>
     {:else}
-      <Button variant="outline" on:click={() => (isInputVisible = true)}>Enter board code</Button>
+      <Button variant="outline" on:click={() => (isInputVisible = true)}
+        >Enter collection code</Button
+      >
     {/if}
     <div class="flex flex-col items-center gap-4">
       <span class="text-muted-foreground">or</span>
-      <Button>Create a new board</Button>
+      <Button>Create a new collection</Button>
     </div>
   </Card.Content>
   <Card.Footer>

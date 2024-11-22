@@ -3,7 +3,7 @@ import type { Feed } from '@/server/data/schema';
 import type { CreateFeedDto } from '@/server/dto/feed.dto';
 import type { CreateFeedResult } from '@/types/CreateFeedResult';
 import { getArticleQueue } from '@/server/queue/articles';
-import { addFeedToBoard } from './board.service';
+import { addFeedToCollection } from './collection.service';
 
 export async function findFeedById(id: string): Promise<Feed | undefined> {
   return await feedRepository.findById(id);
@@ -18,8 +18,8 @@ export async function createFeed(feedData: CreateFeedDto): Promise<CreateFeedRes
       return { result: 'error', reason: 'Unable to create' };
     }
 
-    if (feedData.boardId) {
-      await addFeedToBoard(feedData.boardId, createdFeed.id);
+    if (feedData.collectionId) {
+      await addFeedToCollection(feedData.collectionId, createdFeed.id);
     }
 
     if (!createdFeed.link.startsWith('default-feed')) {
