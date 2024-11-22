@@ -7,12 +7,11 @@
 
   interface Props {
     feed: Feed;
+    allowRemove?: boolean;
     deleteFeed: (feed: Feed) => void;
   }
 
-  let { feed, deleteFeed }: Props = $props();
-
-  let isDefault = feed.link.startsWith('default-');
+  let { feed, deleteFeed, allowRemove }: Props = $props();
 </script>
 
 <div
@@ -30,7 +29,7 @@
       Created {calculateAge(feed.createdAt, 'long')} • {feed.articleCount || 0} articles
     </div>
   </div>
-  {#if !isDefault}
+  {#if allowRemove}
     <DropdownMenu.Root>
       <DropdownMenu.Trigger asChild let:builder>
         <Button
