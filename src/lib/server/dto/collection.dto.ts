@@ -26,3 +26,10 @@ export const addFeedToCollectionDto = z.object({
 });
 
 export type AddFeedToCollectionDto = z.infer<typeof addFeedToCollectionDto>;
+
+export const addFeedsToCollectionDto = z.object({
+  id: z.string().length(8, { message: 'Invalid collection ID' }),
+  feedIds: z.array(z.string().length(8, { message: 'Invalid Feed ID' }))
+});
+
+export type AddFeedsToCollectionDto = z.infer<typeof addFeedsToCollectionDto>;
