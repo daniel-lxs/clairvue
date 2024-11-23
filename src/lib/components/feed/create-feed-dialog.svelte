@@ -69,7 +69,7 @@
 </script>
 
 <Dialog.Root bind:open>
-  <Dialog.Trigger class={buttonVariants({ variant: 'outline' })}
+  <Dialog.Trigger class={buttonVariants({ variant: 'default' })}
     ><PlusCircle class="mr-2 h-4 w-4" />Add new feed</Dialog.Trigger
   >
 
