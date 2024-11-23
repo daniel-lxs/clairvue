@@ -8,7 +8,7 @@
   import type { NewFeed } from '@/types/NewFeed';
   import { z } from 'zod';
 
-  let { create }: { create: (feed: NewFeed) => void } = $props();
+  let { onSave }: { onSave: (feed: NewFeed) => void } = $props();
 
   let isLoading = $state(false);
   let hasError = $state(false);
@@ -45,7 +45,7 @@
       hasError = false;
       link = '';
 
-      create(newFeed);
+      onSave(newFeed);
       return;
     }
 

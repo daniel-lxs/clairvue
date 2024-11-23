@@ -8,10 +8,10 @@
   interface Props {
     feed: Feed;
     allowRemove?: boolean;
-    deleteFeed: (feed: Feed) => void;
+    onRemove: (feed: Feed) => void;
   }
 
-  let { feed, deleteFeed, allowRemove }: Props = $props();
+  let { feed, onRemove, allowRemove }: Props = $props();
 </script>
 
 <div
@@ -42,7 +42,7 @@
         </Button>
       </DropdownMenu.Trigger>
       <DropdownMenu.Content>
-        <DropdownMenu.Item on:click={() => deleteFeed(feed)}>
+        <DropdownMenu.Item on:click={() => onRemove(feed)}>
           <Trash class="mr-2 h-4 w-4" />
           <span>Delete</span>
         </DropdownMenu.Item>

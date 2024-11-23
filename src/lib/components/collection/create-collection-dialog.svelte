@@ -10,11 +10,11 @@
 
   let {
     feeds,
-    onCollectionCreated,
+    onSave,
     children
   }: {
     feeds: Feed[];
-    onCollectionCreated: (collection: Collection) => void;
+    onSave: (collection: Collection) => void;
     children?: import('svelte').Snippet;
   } = $props();
 
@@ -69,7 +69,7 @@
         }
       }
 
-      onCollectionCreated(collection);
+      onSave(collection);
       open = false;
       isLoading = false;
       hasError = false;
