@@ -22,7 +22,7 @@ const USER_AGENT =
 
 async function parseFeed(url: string): Promise<Parser.Output<Parser.Item> | undefined> {
   const parser = new Parser({
-    timeout: 10000, // 10 seconds
+    timeout: 40000, // 40 seconds
     headers: {
       'User-Agent': USER_AGENT
     }
