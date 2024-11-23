@@ -34,7 +34,7 @@
   async function handleDeleteFeed(feed: Feed) {
     if (selectedCollection) {
       await deleteFeedFromCollection(selectedCollection.id, feed.id);
-      await invalidate('app:feeds');
+      await invalidate('feeds');
       showToast('Feed deleted', `Feed "${feed.name}" has been deleted.`);
     }
   }
@@ -57,7 +57,7 @@
       throw new Error('Failed to create new feed');
     }
 
-    await invalidate('app:feeds');
+    await invalidate('feeds');
     showToast('Feed created', `Feed "${newFeed.name}" has been created.`);
   }
 
@@ -84,7 +84,7 @@
 
       <Button
         variant="ghost"
-        class="w-full justify-start gap-2"
+        class={`w-full justify-start gap-2 ${isDefaultSelected ? 'bg-muted' : ''}`}
         on:click={() => (selectedCollection = data.defaultCollection)}
       >
         <Folder class="h-4 w-4" />
@@ -96,7 +96,9 @@
           {#each data.collections as collection}
             <Button
               variant="ghost"
-              class="w-full justify-start gap-2"
+              class={`w-full justify-start gap-2 ${
+                collection.id === selectedCollection?.id ? 'bg-muted' : ''
+              }`}
               on:click={() => (selectedCollection = collection)}
             >
               <Folder class="h-4 w-4" />

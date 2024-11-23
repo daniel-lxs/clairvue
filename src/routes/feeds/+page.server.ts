@@ -6,7 +6,7 @@ import feedService from '@/server/services/feed.service';
 
 export const load = (async ({ cookies, depends }) => {
   // Add dependency on feeds data
-  depends('app:feeds');
+  depends('feeds');
 
   const authSession = await validateAuthSession(cookies);
   if (!authSession) {
