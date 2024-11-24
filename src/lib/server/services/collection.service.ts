@@ -26,7 +26,7 @@ async function removeFeedFromCollection(collectionId: string, feedId: string): P
 }
 
 async function addFeedsToCollection(collectionId: string, feedIds: string[]): Promise<void> {
-  const assignments = feedIds.map(feedId => ({ id: collectionId, feedId }));
+  const assignments = feedIds.map((feedId) => ({ id: collectionId, feedId }));
   await collectionRepository.addFeedsToCollection(assignments);
 }
 

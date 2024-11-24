@@ -1,6 +1,7 @@
 import type { RequestHandler } from '@sveltejs/kit';
 import collectionService from '@/server/services/collection.service';
 import {
+  addFeedsToCollectionDto,
   addFeedToCollectionDto,
   createCollectionDto,
   deleteFeedFromCollectionDto,
@@ -125,24 +126,22 @@ export const PUT: RequestHandler = async ({ url, request, cookies }) => {
       return new Response('Unauthorized', { status: 401 });
     }
 
-    const { feedsToAdd, feedsToRemove } = requestBody;
+    const { feedsToAdd, feedsToRemove }: { feedsToAdd?: string[]; feedsToRemove?: string[] } = requestBody;
 
     if (feedsToAdd && feedsToAdd.length > 0) {
-      for (const feedId of feedsToAdd) {
-        const validationResult = addFeedToCollectionDto.safeParse({
-          id: collectionId,
-          feedId
-        });
+      const validationResult = addFeedsToCollectionDto.safeParse({
+        id: collectionId,
+        feeds: feedsToAdd
+      });
 
-        if (!validationResult.success) {
-          return new Response(JSON.stringify(validationResult.error), { status: 400 });
-        }
-
-        await collectionService.addFeedToCollection(
-          validationResult.data.id,
-          validationResult.data.feedId
-        );
+      if (!validationResult.success) {
+        return new Response(JSON.stringify(validationResult.error), { status: 400 });
       }
+
+      await collectionService.addFeedsToCollection(
+        validationResult.data.id,
+        feedsToAdd
+      );
     }
 
     if (feedsToRemove && feedsToRemove.length > 0) {
