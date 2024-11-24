@@ -6,6 +6,8 @@ WORKDIR /app
 
 COPY package.json pnpm-lock.yaml ./
 
+COPY .env .
+
 RUN pnpm install
 
 COPY . .
