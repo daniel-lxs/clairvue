@@ -32,7 +32,7 @@
 
   async function handleRemoveFeed(feed: Feed) {
     if (data.collection) {
-      await collectionApi.deleteFeedFromCollection(data.collection.id, feed.id);
+      await collectionApi.removeFeedFromCollection(data.collection.id, feed.id);
       await invalidate('feeds');
       showToast('Feed deleted', `Feed "${feed.name}" has been deleted.`);
     }

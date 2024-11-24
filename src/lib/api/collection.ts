@@ -28,9 +28,9 @@ async function getCollectionBySlug(slug: string): Promise<Collection> {
 
 async function updateCollection(
   id: string,
-  data: { name: string; feeds: string[] }
+  data: { name: string; feedsToAdd?: string[]; feedsToRemove?: string[] }
 ): Promise<Collection> {
-  const response = await fetch(`/api/collection/${id}`, {
+  const response = await fetch(`/api/collection?id=${id}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json'
@@ -45,8 +45,8 @@ async function updateCollection(
   return response.json();
 }
 
-async function deleteFeedFromCollection(collectionId: string, feedId: string): Promise<void> {
-  const response = await fetch(`/api/collection/${collectionId}/feed/${feedId}`, {
+async function removeFeedFromCollection(collectionId: string, feedId: string): Promise<void> {
+  const response = await fetch(`/api/collection?collectionId=${collectionId}&feedId=${feedId}`, {
     method: 'DELETE'
   });
 
@@ -56,7 +56,7 @@ async function deleteFeedFromCollection(collectionId: string, feedId: string): P
 }
 
 async function addFeedToCollection(collectionId: string, feedId: string): Promise<void> {
-  const response = await fetch(`/api/collection/${collectionId}/feed/${feedId}`, {
+  const response = await fetch(`/api/collection?collectionId=${collectionId}&feedId=${feedId}`, {
     method: 'PUT'
   });
 
@@ -69,6 +69,6 @@ export default {
   createCollection,
   getCollectionBySlug,
   updateCollection,
-  deleteFeedFromCollection,
+  removeFeedFromCollection,
   addFeedToCollection
 };

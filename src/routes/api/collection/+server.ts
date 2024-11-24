@@ -2,7 +2,6 @@ import type { RequestHandler } from '@sveltejs/kit';
 import collectionService from '@/server/services/collection.service';
 import {
   addFeedToCollectionDto,
-  addFeedsToCollectionDto,
   createCollectionDto,
   deleteFeedFromCollectionDto,
   updateCollectionDto
@@ -111,13 +110,10 @@ export const PATCH: RequestHandler = async ({ request, cookies }) => {
   }
 };
 
-export const PUT: RequestHandler = async ({ request, cookies }) => {
+export const PUT: RequestHandler = async ({ url, request, cookies }) => {
   try {
+    const collectionId = url.searchParams.get('id');
     const requestBody = await request.json();
-
-    if (!requestBody) {
-      return new Response('Missing body', { status: 400 });
-    }
 
     const authSession = await validateAuthSession(cookies);
     if (
@@ -129,39 +125,61 @@ export const PUT: RequestHandler = async ({ request, cookies }) => {
       return new Response('Unauthorized', { status: 401 });
     }
 
-    // Try to validate as multiple feeds first
-    const multiValidationResult = addFeedsToCollectionDto.safeParse(requestBody);
-    if (multiValidationResult.success) {
-      // Handle multiple feeds
-      for (const feedId of multiValidationResult.data.feedIds) {
-        await collectionService.addFeedToCollection(multiValidationResult.data.id, feedId);
+    const { feedsToAdd, feedsToRemove } = requestBody;
+
+    if (feedsToAdd && feedsToAdd.length > 0) {
+      for (const feedId of feedsToAdd) {
+        const validationResult = addFeedToCollectionDto.safeParse({
+          id: collectionId,
+          feedId
+        });
+
+        if (!validationResult.success) {
+          return new Response(JSON.stringify(validationResult.error), { status: 400 });
+        }
+
+        await collectionService.addFeedToCollection(
+          validationResult.data.id,
+          validationResult.data.feedId
+        );
       }
-      return new Response(null, { status: 200 });
     }
 
-    // Fall back to single feed validation
-    const singleValidationResult = addFeedToCollectionDto.safeParse(requestBody);
-    if (!singleValidationResult.success) {
-      return new Response(JSON.stringify(singleValidationResult.error), { status: 400 });
+    if (feedsToRemove && feedsToRemove.length > 0) {
+      for (const feedId of feedsToRemove) {
+        const validationResult = deleteFeedFromCollectionDto.safeParse({
+          id: collectionId,
+          feedId
+        });
+
+        if (!validationResult.success) {
+          return new Response(JSON.stringify(validationResult.error), { status: 400 });
+        }
+
+        await collectionService.removeFeedFromCollection(
+          validationResult.data.id,
+          validationResult.data.feedId
+        );
+      }
     }
 
-    await collectionService.addFeedToCollection(
-      singleValidationResult.data.id,
-      singleValidationResult.data.feedId
+    return new Response(
+      JSON.stringify({ id: collectionId, addedFeeds: feedsToAdd, removedFeeds: feedsToRemove }),
+      { status: 200 }
     );
-    return new Response(null, { status: 200 });
   } catch (error) {
     console.error('Error occurred on PUT /api/collection', error);
     return new Response('Internal server error', { status: 500 });
   }
 };
 
-export const DELETE: RequestHandler = async ({ request, cookies }) => {
+export const DELETE: RequestHandler = async ({ url, cookies }) => {
   try {
-    const requestBody = await request.json();
+    const collectionId = url.searchParams.get('collectionId');
+    const feedId = url.searchParams.get('feedId');
 
-    if (!requestBody) {
-      return new Response('Missing body', { status: 400 });
+    if (!collectionId || !feedId) {
+      return new Response('Missing required parameters', { status: 400 });
     }
 
     const authSession = await validateAuthSession(cookies);
@@ -174,7 +192,11 @@ export const DELETE: RequestHandler = async ({ request, cookies }) => {
       return new Response('Unauthorized', { status: 401 });
     }
 
-    const validationResult = deleteFeedFromCollectionDto.safeParse(requestBody);
+    const validationResult = deleteFeedFromCollectionDto.safeParse({
+      collectionId,
+      feedId
+    });
+
     if (!validationResult.success) {
       return new Response(JSON.stringify(validationResult.error), { status: 400 });
     }

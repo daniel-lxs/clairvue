@@ -25,6 +25,17 @@ async function removeFeedFromCollection(collectionId: string, feedId: string): P
   await collectionRepository.deleteFeedFromCollection(collectionId, feedId);
 }
 
+async function addFeedsToCollection(collectionId: string, feedIds: string[]): Promise<void> {
+  const assignments = feedIds.map(feedId => ({ id: collectionId, feedId }));
+  await collectionRepository.addFeedsToCollection(assignments);
+}
+
+async function removeFeedsFromCollection(collectionId: string, feedIds: string[]): Promise<void> {
+  for (const feedId of feedIds) {
+    await collectionRepository.deleteFeedFromCollection(collectionId, feedId);
+  }
+}
+
 async function findByUserId(
   userId: string,
   withRelated: boolean = false
@@ -50,6 +61,8 @@ export default {
   update,
   addFeedToCollection,
   removeFeedFromCollection,
+  addFeedsToCollection,
+  removeFeedsFromCollection,
   findByUserId,
   findById,
   findDefault

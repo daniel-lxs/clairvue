@@ -44,35 +44,25 @@
       let savedCollection: Collection;
 
       if (isEditing) {
+        const currentFeeds = collection.feeds.map((feed) => feed.id);
+        const feedsToAdd = selectedFeeds.filter((feedId) => !currentFeeds.includes(feedId));
+        const feedsToRemove = currentFeeds.filter((feedId) => !selectedFeeds.includes(feedId));
+
         savedCollection = await collectionApi.updateCollection(collection.id, {
           name,
-          feeds: selectedFeeds
+          feedsToAdd,
+          feedsToRemove
         });
       } else {
         savedCollection = await collectionApi.createCollection(name);
-
-        // Add selected feeds one by one after creation
-        if (selectedFeeds.length > 0) {
-          await Promise.all(
-            selectedFeeds.map((feedId) =>
-              collectionApi.addFeedToCollection(savedCollection.id, feedId)
-            )
-          );
-
-          // Refetch the collection to get the updated feeds
-          savedCollection = await collectionApi.getCollectionBySlug(savedCollection.slug);
-        }
       }
 
-      onSave(savedCollection);
+      onSave(collection ?? savedCollection);
       open = false;
-      isLoading = false;
-      hasError = false;
-      name = '';
-      selectedFeeds = [];
     } catch (error) {
       hasError = true;
-      errorMessage = error instanceof Error ? error.message : 'An error occurred';
+      errorMessage = error instanceof Error ? error.message : 'Failed to save collection';
+    } finally {
       isLoading = false;
     }
   }
