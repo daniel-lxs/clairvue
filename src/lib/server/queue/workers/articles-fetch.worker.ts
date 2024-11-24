@@ -1,12 +1,13 @@
 import { Worker, type ConnectionOptions } from 'bullmq';
 import feedRepository from '@/server/data/repositories/feed.repository';
 import articlesService from '@/server/services/article.service';
+import config from '@/config';
 
 export async function startArticlesWorker() {
   const connection: ConnectionOptions = {
-    host: process.env.PRIVATE_REDIS_HOST,
-    port: Number(process.env.PRIVATE_REDIS_PORT),
-    password: process.env.REDIS_PASSWORD
+    host: config.redis.host,
+    port: config.redis.port,
+    password: config.redis.password
   };
 
   const worker = new Worker(

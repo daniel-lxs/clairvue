@@ -6,7 +6,7 @@ import { findByUsername, create as createUser } from '@/server/data/repositories
 import collectionService from './collection.service';
 import feedService from './feed.service';
 import argon2 from 'argon2';
-import { generateId } from '@/utils/generateId';
+import { generateId } from '@/utils';
 
 const validateUserForm = z.object({
   username: z

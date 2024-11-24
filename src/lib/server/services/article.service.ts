@@ -11,20 +11,18 @@ import { z } from 'zod';
 import type { ArticleMetadata } from '@/types/ArticleMetadata';
 import type { NewArticle } from '@/types/NewArticle';
 import type { PaginatedList } from '@/types/PaginatedList';
+import config from '@/config';
 
 interface ProcessArticlesOptions {
   chunkSize?: number;
   parallelDelay?: number;
 }
 
-const USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/237.84.2.178 Safari/537.36';
-
 async function parseFeed(url: string): Promise<Parser.Output<Parser.Item> | undefined> {
   const parser = new Parser({
     timeout: 40000, // 40 seconds
     headers: {
-      'User-Agent': USER_AGENT
+      'User-Agent': config.app.userAgent
     }
   });
 
@@ -156,7 +154,7 @@ async function getMimeType(url: string, ua: string): Promise<string | undefined>
 
 async function fetchArticleMetadata(link: string): Promise<ArticleMetadata | undefined> {
   try {
-    const ua = USER_AGENT;
+    const ua = config.app.userAgent;
 
     const mimeType = await getMimeType(link, ua);
     if (!mimeType || !mimeType.startsWith('text/html')) {
@@ -281,7 +279,7 @@ async function fetchAndCleanDocument(
   link: string,
   ua?: string | null
 ): Promise<Document | undefined> {
-  const userAgent = ua || USER_AGENT;
+  const userAgent = ua || config.app.userAgent;
   const timeout = 20000; // 20 seconds
 
   try {

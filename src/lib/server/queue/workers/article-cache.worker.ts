@@ -1,6 +1,7 @@
 import { Worker, type ConnectionOptions } from 'bullmq';
 import articleService from '@/server/services/article.service';
 import { cacheArticle } from '@/server/services/cache.service';
+import config from '@/config';
 
 interface CacheArticleJob {
   slug: string;
@@ -8,9 +9,9 @@ interface CacheArticleJob {
 }
 export function startArticleCacheWorker() {
   const connection: ConnectionOptions = {
-    host: process.env.PRIVATE_REDIS_HOST,
-    port: Number(process.env.PRIVATE_REDIS_PORT),
-    password: process.env.REDIS_PASSWORD
+    host: config.redis.host,
+    port: config.redis.port,
+    password: config.redis.password
   };
 
   const worker = new Worker<CacheArticleJob>(

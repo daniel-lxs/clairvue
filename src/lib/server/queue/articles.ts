@@ -1,10 +1,11 @@
 import { Queue, type ConnectionOptions } from 'bullmq';
+import config from '@/config';
 
 export const getArticleQueue = () => {
   const connection: ConnectionOptions = {
-    host: process.env.PRIVATE_REDIS_HOST,
-    port: Number(process.env.PRIVATE_REDIS_PORT),
-    password: process.env.REDIS_PASSWORD
+    host: config.redis.host,
+    port: config.redis.port,
+    password: config.redis.password
   };
 
   return new Queue('articles', { connection });
@@ -12,9 +13,9 @@ export const getArticleQueue = () => {
 
 export const getArticleCacheQueue = () => {
   const connection: ConnectionOptions = {
-    host: process.env.PRIVATE_REDIS_HOST,
-    port: Number(process.env.PRIVATE_REDIS_PORT),
-    password: process.env.REDIS_PASSWORD
+    host: config.redis.host,
+    port: config.redis.port,
+    password: config.redis.password
   };
 
   return new Queue('article-cache', { connection });

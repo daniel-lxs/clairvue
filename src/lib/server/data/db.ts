@@ -1,9 +1,9 @@
 import postgres from 'postgres';
 import * as schema from './schema';
 import { drizzle } from 'drizzle-orm/postgres-js';
-import { DrizzlePostgreSQLAdapter } from '@lucia-auth/adapter-drizzle';
+import config from '@/config';
 
-const queryClient = postgres(process.env.PRIVATE_DB_URL, {
+const queryClient = postgres(config.db.url, {
   keep_alive: 30000
 });
 

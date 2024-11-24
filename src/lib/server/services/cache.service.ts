@@ -1,10 +1,9 @@
 import { Redis } from 'ioredis';
 import type { ParsedArticle } from '@/types/ParsedArticle';
+import config from '@/config';
 
 // Check if we're in a server environment
-const isServer = typeof process !== 'undefined' && 
-  process.env.PRIVATE_REDIS_HOST && 
-  process.env.PRIVATE_REDIS_PORT;
+const isServer = typeof process !== 'undefined' && config.redis.host && config.redis.port;
 
 let redisClient: Redis | null = null;
 
@@ -15,16 +14,16 @@ function getRedisClient(): Redis | null {
 
   if (!redisClient) {
     redisClient = new Redis({
-      host: process.env.PRIVATE_REDIS_HOST,
-      port: Number(process.env.PRIVATE_REDIS_PORT),
-      password: process.env.REDIS_PASSWORD
+      host: config.redis.host,
+      port: config.redis.port,
+      password: config.redis.password
     });
   }
 
   return redisClient;
 }
 
-const CACHE_TTL = Number(process.env.ARTICLE_CACHE_TTL || 3600); // Default 1 hour
+const CACHE_TTL = Number(config.app.articleCacheTTL || 3600); // Default 1 hour
 
 export async function getCachedArticle(slug: string): Promise<ParsedArticle | null> {
   const redis = getRedisClient();
@@ -41,12 +40,7 @@ export async function cacheArticle(slug: string, article: ParsedArticle): Promis
   const redis = getRedisClient();
   if (!redis) return;
 
-  await redis.set(
-    `article:${slug}`,
-    JSON.stringify(article),
-    'EX',
-    CACHE_TTL
-  );
+  await redis.set(`article:${slug}`, JSON.stringify(article), 'EX', CACHE_TTL);
 }
 
 export async function invalidateArticleCache(slug: string): Promise<void> {
