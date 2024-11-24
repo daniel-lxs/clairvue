@@ -44,9 +44,9 @@
       let savedCollection: Collection;
 
       if (isEditing) {
-        const currentFeeds = collection.feeds.map((feed) => feed.id);
-        const feedsToAdd = selectedFeeds.filter((feedId) => !currentFeeds.includes(feedId));
-        const feedsToRemove = currentFeeds.filter((feedId) => !selectedFeeds.includes(feedId));
+        const currentFeeds = collection.feeds?.map((feed) => feed.id);
+        const feedsToAdd = selectedFeeds.filter((feedId) => !currentFeeds?.includes(feedId));
+        const feedsToRemove = currentFeeds?.filter((feedId) => !selectedFeeds.includes(feedId));
 
         savedCollection = await collectionApi.updateCollection(collection.id, {
           name,

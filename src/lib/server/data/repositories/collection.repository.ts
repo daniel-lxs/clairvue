@@ -159,7 +159,7 @@ async function findBySlug(
 
     if (!result) return undefined;
 
-    return result;
+    return result as Collection;
   } catch (error) {
     console.error('Error occurred while finding Collection by id:', error);
     return undefined;
@@ -228,7 +228,7 @@ async function findDefaultCollection(userId: string): Promise<Collection | undef
         where: and(eq(collectionSchema.userId, userId), like(collectionSchema.id, 'default-%'))
       })
       .execute();
-    return result;
+    return result as Collection;
   } catch (error) {
     console.error('Error occurred while finding Collection by user id:', error);
     return undefined;

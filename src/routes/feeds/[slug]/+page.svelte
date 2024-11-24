@@ -75,7 +75,7 @@
 <main class="flex min-h-screen flex-col items-center justify-center">
   <CreateFeedDialog onSave={handleSaveFeed} bind:open={openFeedDialog} showButton={false} />
   <CollectionDialog
-    feeds={data.defaultCollection.feeds}
+    feeds={data.defaultCollection.feeds ?? []}
     collection={selectedCollection}
     onSave={handleSaveCollection}
     bind:open={openEditCollectionDialog}
@@ -86,7 +86,7 @@
     <CollectionsSidebar
       collections={data.collections}
       {selectedCollection}
-      feeds={data.defaultCollection.feeds}
+      feeds={data.defaultCollection.feeds ?? []}
       bind:openCollectionDialog
     />
 
