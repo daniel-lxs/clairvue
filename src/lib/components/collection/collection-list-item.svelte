@@ -1,14 +1,14 @@
 <script lang="ts">
-  import type { Collection } from '@/server/data/schema';
+  import type { CollectionWithFeeds } from '@/server/data/schema';
   import { Button } from '../ui/button';
   import { calculateAge } from '@/utils';
 
   interface Props {
-    collection: Collection;
+    collection: CollectionWithFeeds;
   }
 
   let { collection }: Props = $props();
-  let feedsCount = collection.feeds?.length || 0;
+  let feedsCount = collection.feeds.length || 0;
 
   const feedText = feedsCount === 1 ? 'feed' : 'feeds';
   const timeAgo = calculateAge(collection.createdAt, 'long');

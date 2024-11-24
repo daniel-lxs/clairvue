@@ -13,7 +13,7 @@ export const load = (async ({ cookies, params, depends }) => {
     throw redirect(302, '/auth/login');
   }
 
-  const collections = await collectionService.findByUserId(authSession.user.id, true);
+  const collections = await collectionService.findByUserIdWithFeeds(authSession.user.id);
 
   if (!collections) {
     throw error(404, 'Collections not found');

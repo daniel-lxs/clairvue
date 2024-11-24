@@ -29,7 +29,11 @@ async function getCollectionBySlug(slug: string): Promise<Collection> {
 async function updateCollection(
   id: string,
   data: { name: string; feedsToAdd?: string[]; feedsToRemove?: string[] }
-): Promise<Collection> {
+): Promise<{
+  id: string;
+  feedsAdded: string[];
+  feedsRemoved: string[];
+}> {
   const response = await fetch(`/api/collection?id=${id}`, {
     method: 'PUT',
     headers: {
@@ -42,7 +46,11 @@ async function updateCollection(
     throw new Error('Failed to update collection');
   }
 
-  return response.json();
+  return (await response.json()) as {
+    id: string;
+    feedsAdded: string[];
+    feedsRemoved: string[];
+  };
 }
 
 async function removeFeedFromCollection(collectionId: string, feedId: string): Promise<void> {

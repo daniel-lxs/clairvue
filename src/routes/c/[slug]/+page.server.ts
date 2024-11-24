@@ -11,7 +11,7 @@ export const load: PageServerLoad = async ({ params: { slug }, cookies }) => {
     redirect(302, '/auth/login');
   }
 
-  const collection = await collectionRepository.findBySlug(authSession.user.id, slug, true);
+  const collection = await collectionRepository.findBySlugWithFeeds(slug, authSession.user.id);
 
   if (!collection) {
     throw new Error('Collection not found');

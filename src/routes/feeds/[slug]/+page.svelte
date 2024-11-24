@@ -24,7 +24,7 @@
 
   let isDefaultSelected = $derived(data.collection.id === data.defaultCollection.id);
   let selectedCollection = $derived(data.collection);
-  let pageTitle = $derived(isDefaultSelected ? 'All Feeds' : data.collection?.name || 'All Feeds');
+  let pageTitle = $derived(isDefaultSelected ? 'All Feeds' : data.collection.name || 'All Feeds');
 
   let openFeedDialog = $state(false);
   let openCollectionDialog = $state(false);
@@ -75,7 +75,7 @@
 <main class="flex min-h-screen flex-col items-center justify-center">
   <CreateFeedDialog onSave={handleSaveFeed} bind:open={openFeedDialog} showButton={false} />
   <CollectionDialog
-    feeds={data.defaultCollection.feeds ?? []}
+    feeds={data.defaultCollection.feeds}
     collection={selectedCollection}
     onSave={handleSaveCollection}
     bind:open={openEditCollectionDialog}
@@ -159,7 +159,7 @@
         </div>
 
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {#if data.collection?.feeds?.length}
+          {#if data.collection.feeds.length}
             {#each data.collection.feeds as feed}
               <FeedListItem
                 {feed}

@@ -6,7 +6,7 @@
   import { Checkbox } from '@/components/ui/checkbox';
   import { ScrollArea } from '@/components/ui/scroll-area';
   import { Loader2, PlusCircle } from 'lucide-svelte';
-  import type { Feed, Collection } from '@/server/data/schema';
+  import type { Feed, CollectionWithFeeds, Collection } from '@/server/data/schema';
   import collectionApi from '@/api/collection';
 
   let {
@@ -18,10 +18,10 @@
     showButton = true
   }: {
     feeds: Feed[];
-    onSave: (collection: Collection) => void;
+    onSave: (collection: Collection | CollectionWithFeeds) => void;
     children?: import('svelte').Snippet;
     open?: boolean;
-    collection?: Collection;
+    collection?: CollectionWithFeeds;
     showButton?: boolean;
   } = $props();
 
@@ -41,24 +41,25 @@
     isLoading = true;
     try {
       const isEditing = !!collection;
-      let savedCollection: Collection;
 
       if (isEditing) {
         const currentFeeds = collection.feeds?.map((feed) => feed.id);
         const feedsToAdd = selectedFeeds.filter((feedId) => !currentFeeds?.includes(feedId));
         const feedsToRemove = currentFeeds?.filter((feedId) => !selectedFeeds.includes(feedId));
 
-        savedCollection = await collectionApi.updateCollection(collection.id, {
+        await collectionApi.updateCollection(collection.id, {
           name,
           feedsToAdd,
           feedsToRemove
         });
+        onSave(collection);
+        open = false;
+        return;
       } else {
-        savedCollection = await collectionApi.createCollection(name);
+        const result = await collectionApi.createCollection(name);
+        onSave(result);
+        open = false;
       }
-
-      onSave(collection ?? savedCollection);
-      open = false;
     } catch (error) {
       hasError = true;
       errorMessage = error instanceof Error ? error.message : 'Failed to save collection';

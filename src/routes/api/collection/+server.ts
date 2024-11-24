@@ -2,7 +2,6 @@ import type { RequestHandler } from '@sveltejs/kit';
 import collectionService from '@/server/services/collection.service';
 import {
   addFeedsToCollectionDto,
-  addFeedToCollectionDto,
   createCollectionDto,
   deleteFeedFromCollectionDto,
   updateCollectionDto
