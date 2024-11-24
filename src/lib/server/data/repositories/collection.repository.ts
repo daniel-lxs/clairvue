@@ -5,7 +5,8 @@ import {
   feedSchema,
   collectionsToFeeds,
   type Collection,
-  type Feed
+  type Feed,
+  type CollectionWithFeeds
 } from '../schema';
 import { and, eq, like } from 'drizzle-orm';
 import slugify from 'slugify';
@@ -96,28 +97,9 @@ async function addFeedsToCollection(assignments: { id: string; feedId: string }[
   }
 }
 
-async function findById(id: string, withRelated: boolean = false): Promise<Collection | undefined> {
+async function findById(id: string): Promise<Collection | undefined> {
   try {
     const db = getClient();
-
-    if (withRelated) {
-      const result = await db
-        .select()
-        .from(collectionSchema)
-        .leftJoin(collectionsToFeeds, eq(collectionsToFeeds.collectionId, collectionSchema.id))
-        .leftJoin(feedSchema, eq(collectionsToFeeds.feedId, feedSchema.id))
-        .where(eq(collectionSchema.id, id))
-        .execute();
-
-      if (!result || result.length === 0) return undefined;
-
-      const feeds = result.map((r) => (r.feeds ? [r.feeds] : []));
-
-      return {
-        ...result[0].collections,
-        feeds: feeds.flat()
-      };
-    }
 
     const result = await db.query.collectionSchema
       .findFirst({
@@ -134,33 +116,34 @@ async function findById(id: string, withRelated: boolean = false): Promise<Colle
   }
 }
 
-async function findBySlug(
-  userId: string,
-  slug: string,
-  withRelated: boolean = false
-): Promise<Collection | undefined> {
+async function findByIdWithFeeds(id: string): Promise<CollectionWithFeeds | undefined> {
   try {
     const db = getClient();
+    const result = await db
+      .select()
+      .from(collectionSchema)
+      .leftJoin(collectionsToFeeds, eq(collectionsToFeeds.collectionId, collectionSchema.id))
+      .leftJoin(feedSchema, eq(collectionsToFeeds.feedId, feedSchema.id))
+      .where(eq(collectionSchema.id, id))
+      .execute();
 
-    if (withRelated) {
-      const result = await db
-        .select()
-        .from(collectionSchema)
-        .leftJoin(collectionsToFeeds, eq(collectionsToFeeds.collectionId, collectionSchema.id))
-        .leftJoin(feedSchema, eq(collectionsToFeeds.feedId, feedSchema.id))
-        .where(and(eq(collectionSchema.userId, userId), eq(collectionSchema.slug, slug)))
-        .execute();
+    if (!result || result.length === 0) return undefined;
 
-      if (!result || result.length === 0) return undefined;
+    const feeds = result.map((r) => (r.feeds ? [r.feeds] : []));
 
-      const feeds = result.map((r) => (r.feeds ? [r.feeds] : []));
+    return {
+      ...result[0].collections,
+      feeds: feeds.flat()
+    };
+  } catch (error) {
+    console.error('Error occurred while finding Collection by slug:', error);
+    return undefined;
+  }
+}
 
-      return {
-        ...result[0].collections,
-        feeds: feeds.flat()
-      };
-    }
-
+async function findBySlug(slug: string, userId: string): Promise<Collection | undefined> {
+  try {
+    const db = getClient();
     const result = await db.query.collectionSchema
       .findFirst({
         where: and(eq(collectionSchema.userId, userId), eq(collectionSchema.slug, slug))
@@ -176,47 +159,37 @@ async function findBySlug(
   }
 }
 
-async function findCollectionsByUserId(
-  userId: string,
-  withRelated: boolean = false
-): Promise<Collection[] | undefined> {
+async function findBySlugWithFeeds(
+  slug: string,
+  userId: string
+): Promise<CollectionWithFeeds | undefined> {
   try {
     const db = getClient();
+    const result = await db
+      .select()
+      .from(collectionSchema)
+      .leftJoin(collectionsToFeeds, eq(collectionsToFeeds.collectionId, collectionSchema.id))
+      .leftJoin(feedSchema, eq(collectionsToFeeds.feedId, feedSchema.id))
+      .where(and(eq(collectionSchema.userId, userId), eq(collectionSchema.slug, slug)))
+      .execute();
 
-    if (withRelated) {
-      const result = await db.query.collectionSchema.findMany({
-        where: eq(collectionSchema.userId, userId),
-        with: {
-          collectionsToFeeds: {
-            columns: {},
-            with: {
-              feed: true
-            }
-          }
-        }
-      });
+    if (!result || result.length === 0) return undefined;
 
-      if (!result || result.length === 0) return undefined;
+    const feeds = result.map((r) => (r.feeds ? [r.feeds] : []));
 
-      const processedCollections = await Promise.all(
-        result.map(async (collection) => {
-          const feeds = await Promise.all(
-            collection.collectionsToFeeds?.map(async (b) => b.feed) || []
-          );
-          return {
-            id: collection.id,
-            slug: collection.slug,
-            name: collection.name,
-            createdAt: collection.createdAt,
-            updatedAt: collection.updatedAt,
-            userId: collection.userId,
-            feeds
-          };
-        })
-      );
+    return {
+      ...result[0].collections,
+      feeds: feeds.flat()
+    };
+  } catch (error) {
+    console.error('Error occurred while finding Collections by userId:', error);
+    return undefined;
+  }
+}
 
-      return processedCollections;
-    }
+async function findByUserId(userId: string): Promise<Collection[] | undefined> {
+  try {
+    const db = getClient();
     const result = await db
       .select()
       .from(collectionSchema)
@@ -230,7 +203,41 @@ async function findCollectionsByUserId(
   }
 }
 
-async function findDefaultCollection(userId: string): Promise<Collection | undefined> {
+async function findByUserIdWithFeeds(userId: string): Promise<CollectionWithFeeds[] | undefined> {
+  const db = getClient();
+  const result = await db.query.collectionSchema.findMany({
+    where: eq(collectionSchema.userId, userId),
+    with: {
+      collectionsToFeeds: {
+        columns: {},
+        with: {
+          feed: true
+        }
+      }
+    }
+  });
+
+  if (!result || result.length === 0) return undefined;
+
+  const processedCollections = await Promise.all(
+    result.map(async (collection) => {
+      const feeds = await Promise.all(collection.collectionsToFeeds?.map(async (e) => e.feed));
+      return {
+        id: collection.id,
+        slug: collection.slug,
+        name: collection.name,
+        createdAt: collection.createdAt,
+        updatedAt: collection.updatedAt,
+        userId: collection.userId,
+        feeds: feeds ?? []
+      };
+    })
+  );
+
+  return processedCollections;
+}
+
+async function findDefaultByUserId(userId: string): Promise<Collection | undefined> {
   try {
     const db = getClient();
     const result = await db.query.collectionSchema
@@ -239,6 +246,42 @@ async function findDefaultCollection(userId: string): Promise<Collection | undef
       })
       .execute();
     return result as Collection;
+  } catch (error) {
+    console.error('Error occurred while finding Collection by user id:', error);
+    return undefined;
+  }
+}
+
+async function findDefaultByUserIdWithFeeds(
+  userId: string
+): Promise<CollectionWithFeeds | undefined> {
+  try {
+    const db = getClient();
+    const result = await db.query.collectionSchema.findFirst({
+      where: and(eq(collectionSchema.userId, userId), like(collectionSchema.id, 'default-%')),
+      with: {
+        collectionsToFeeds: {
+          columns: {},
+          with: {
+            feed: true
+          }
+        }
+      }
+    });
+
+    if (!result) return undefined;
+
+    const feeds = result.collectionsToFeeds?.map((b) => b.feed) || [];
+
+    return {
+      id: result.id,
+      slug: result.slug,
+      name: result.name,
+      createdAt: result.createdAt,
+      updatedAt: result.updatedAt,
+      userId: result.userId,
+      feeds
+    };
   } catch (error) {
     console.error('Error occurred while finding Collection by user id:', error);
     return undefined;
@@ -267,9 +310,13 @@ export default {
   create,
   update,
   findById,
+  findByIdWithFeeds,
   findBySlug,
-  findCollectionsByUserId,
+  findBySlugWithFeeds,
+  findByUserId,
+  findByUserIdWithFeeds,
   addFeedsToCollection,
   deleteFeedFromCollection,
-  findDefaultCollection
+  findDefaultByUserId,
+  findDefaultByUserIdWithFeeds
 };

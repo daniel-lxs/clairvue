@@ -1,5 +1,5 @@
 import collectionRepository from '@/server/data/repositories/collection.repository';
-import type { Collection } from '@/server/data/schema';
+import type { Collection, CollectionWithFeeds } from '@/server/data/schema';
 
 async function findBySlug(userId: string, slug: string): Promise<Collection | undefined> {
   return await collectionRepository.findBySlug(userId, slug);
@@ -36,19 +36,28 @@ async function removeFeedsFromCollection(collectionId: string, feedIds: string[]
   }
 }
 
-async function findByUserId(
-  userId: string,
-  withRelated: boolean = false
-): Promise<Collection[] | undefined> {
-  return await collectionRepository.findCollectionsByUserId(userId, withRelated);
+async function findByUserId(userId: string): Promise<Collection[] | undefined> {
+  return await collectionRepository.findByUserId(userId);
 }
 
-async function findById(id: string, withRelated: boolean = false): Promise<Collection | undefined> {
-  return await collectionRepository.findById(id, withRelated);
+async function findByUserIdWithFeeds(userId: string): Promise<CollectionWithFeeds[] | undefined> {
+  return await collectionRepository.findByUserIdWithFeeds(userId);
+}
+
+async function findById(id: string): Promise<Collection | undefined> {
+  return await collectionRepository.findById(id);
+}
+
+async function findByIdWithFeeds(id: string): Promise<CollectionWithFeeds | undefined> {
+  return await collectionRepository.findByIdWithFeeds(id);
 }
 
 async function findDefault(userId: string): Promise<Collection | undefined> {
-  return await collectionRepository.findDefaultCollection(userId);
+  return await collectionRepository.findDefaultByUserId(userId);
+}
+
+async function findDefaultWithFeeds(userId: string): Promise<CollectionWithFeeds | undefined> {
+  return await collectionRepository.findDefaultByUserIdWithFeeds(userId);
 }
 
 /* async function deleteCollection(id: string): Promise<void> {
@@ -64,6 +73,9 @@ export default {
   addFeedsToCollection,
   removeFeedsFromCollection,
   findByUserId,
+  findByUserIdWithFeeds,
   findById,
-  findDefault
+  findByIdWithFeeds,
+  findDefault,
+  findDefaultWithFeeds
 };
