@@ -1,6 +1,12 @@
 import ShortUniqueId from 'short-unique-id';
 import { getClient } from '../db';
-import { collectionSchema, feedSchema, collectionsToFeeds, type Collection } from '../schema';
+import {
+  collectionSchema,
+  feedSchema,
+  collectionsToFeeds,
+  type Collection,
+  type Feed
+} from '../schema';
 import { and, eq, like } from 'drizzle-orm';
 import slugify from 'slugify';
 
@@ -55,31 +61,35 @@ async function addFeedsToCollection(assignments: { id: string; feedId: string }[
   try {
     const db = getClient();
 
-    for (const { id, feedId } of assignments) {
-      const feedExists = await db.query.feedSchema
-        .findFirst({ where: eq(feedSchema.id, feedId) })
-        .execute();
+    const validAssignments = await Promise.all(
+      assignments.map(async ({ id, feedId }) => {
+        const feedExists = await db.query.feedSchema
+          .findFirst({ where: eq(feedSchema.id, feedId) })
+          .execute();
 
-      if (!feedExists) {
-        throw new Error('Feed does not exist');
-      }
+        if (!feedExists) return undefined;
 
-      const isAlreadyRelated = await db.query.collectionsToFeeds
-        .findFirst({
-          where: and(eq(collectionsToFeeds.collectionId, id), eq(collectionsToFeeds.feedId, feedId))
-        })
-        .execute();
-
-      if (!isAlreadyRelated) {
-        await db
-          .insert(collectionsToFeeds)
-          .values({
-            collectionId: id,
-            feedId
+        const isAlreadyRelated = await db.query.collectionsToFeeds
+          .findFirst({
+            where: and(
+              eq(collectionsToFeeds.collectionId, id),
+              eq(collectionsToFeeds.feedId, feedId)
+            )
           })
           .execute();
-      }
-    }
+
+        if (isAlreadyRelated) return undefined;
+
+        return {
+          collectionId: id,
+          feedId
+        };
+      })
+    );
+
+    const filteredAssignments = validAssignments.filter((as) => !!as);
+
+    await db.insert(collectionsToFeeds).values(filteredAssignments).execute();
   } catch (error) {
     console.error('Error occurred while adding feeds to collection:', error);
     throw error;
