@@ -7,24 +7,29 @@
   import { ScrollArea } from '@/components/ui/scroll-area';
   import { Loader2, PlusCircle } from 'lucide-svelte';
   import type { Feed, Collection } from '@/server/data/schema';
+  import collectionApi from '@/api/collection';
 
   let {
     feeds,
     onSave,
     children,
-    open = $bindable(false)
+    open = $bindable(false),
+    collection,
+    showButton = true
   }: {
     feeds: Feed[];
     onSave: (collection: Collection) => void;
     children?: import('svelte').Snippet;
     open?: boolean;
+    collection?: Collection;
+    showButton?: boolean;
   } = $props();
 
   let isLoading = $state(false);
   let hasError = $state(false);
   let errorMessage = $state('');
-  let name = $state('');
-  let selectedFeeds = $state<string[]>([]);
+  let name = $state(collection?.name ?? '');
+  let selectedFeeds = $state<string[]>(collection?.feeds?.map((feed) => feed.id) ?? []);
 
   async function save() {
     if (!name.trim()) {
@@ -35,42 +40,31 @@
 
     isLoading = true;
     try {
-      const response = await fetch('/api/collection', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
+      const isEditing = !!collection;
+      let savedCollection: Collection;
+
+      if (isEditing) {
+        savedCollection = await collectionApi.updateCollection(collection.id, {
           name,
-          slug: name.toLowerCase().replace(/\s+/g, '-')
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create collection');
-      }
-
-      const collection = await response.json();
-
-      // Assign selected feeds to the collection
-      if (selectedFeeds.length > 0) {
-        const assignResponse = await fetch('/api/collection', {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            id: collection.id,
-            feedIds: selectedFeeds
-          })
+          feeds: selectedFeeds
         });
+      } else {
+        savedCollection = await collectionApi.createCollection(name);
 
-        if (!assignResponse.ok) {
-          throw new Error('Failed to assign feeds to collection');
+        // Add selected feeds one by one after creation
+        if (selectedFeeds.length > 0) {
+          await Promise.all(
+            selectedFeeds.map((feedId) =>
+              collectionApi.addFeedToCollection(savedCollection.id, feedId)
+            )
+          );
+
+          // Refetch the collection to get the updated feeds
+          savedCollection = await collectionApi.getCollectionBySlug(savedCollection.slug);
         }
       }
 
-      onSave(collection);
+      onSave(savedCollection);
       open = false;
       isLoading = false;
       hasError = false;
@@ -91,10 +85,10 @@
 
   $effect.pre(() => {
     if (open === false) {
-      selectedFeeds = [];
+      selectedFeeds = collection?.feeds?.map((feed) => feed.id) ?? [];
       hasError = false;
       errorMessage = '';
-      name = '';
+      name = collection?.name ?? '';
       isLoading = false;
     }
   });
@@ -103,17 +97,24 @@
 <Dialog.Root bind:open>
   {#if children}
     {@render children?.()}
-  {:else}
+  {:else if showButton}
     <Dialog.Trigger class={buttonVariants({ variant: 'outline' })}>
-      <PlusCircle class="mr-2 h-4 w-4" />Create new collection
+      {#if collection}
+        <PlusCircle class="mr-2 h-4 w-4" />Edit collection
+      {:else}
+        <PlusCircle class="mr-2 h-4 w-4" />Create new collection
+      {/if}
     </Dialog.Trigger>
   {/if}
 
   <Dialog.Content class="sm:max-w-[425px]">
     <Dialog.Header>
-      <Dialog.Title>Create new collection</Dialog.Title>
-      <Dialog.Description>Create a new collection and select feeds to add to it.</Dialog.Description
-      >
+      <Dialog.Title>{collection ? 'Edit collection' : 'Create new collection'}</Dialog.Title>
+      <Dialog.Description>
+        {collection
+          ? 'Edit your collection and manage its feeds.'
+          : 'Create a new collection and select feeds to add to it.'}
+      </Dialog.Description>
     </Dialog.Header>
 
     <div class="grid gap-6 py-4">
@@ -158,7 +159,7 @@
           <Loader2 class="mr-2 h-4 w-4 animate-spin" />
           Saving...
         {:else}
-          Save
+          {collection ? 'Save changes' : 'Save'}
         {/if}
       </Button>
     </Dialog.Footer>

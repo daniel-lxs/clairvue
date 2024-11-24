@@ -98,3 +98,10 @@ export async function updateFeed(
     throw error;
   }
 }
+
+export default {
+  createFeeds,
+  getFeedInfo,
+  getFeed,
+  updateFeed
+};

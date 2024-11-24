@@ -3,17 +3,19 @@
   import CreateFeedDialog from '@/components/feed/create-feed-dialog.svelte';
   import type { PageData } from './$types';
   import { Label } from '@/components/ui/label';
-  import { createFeeds, deleteFeedFromCollection } from '@/api';
+  import collectionApi from '@/api/collection';
+  import feedApi from '@/api/feed';
   import showToast from '@/utils/showToast';
   import type { NewFeed } from '@/types/NewFeed';
-  import type { Feed } from '@/server/data/schema';
+  import type { Collection, Feed } from '@/server/data/schema';
   import * as Breadcrumb from '@/components/ui/breadcrumb';
   import * as Select from '@/components/ui/select';
   import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
   import { goto, invalidate } from '$app/navigation';
   import CollectionsSidebar from '@/components/collection/collections-sidebar.svelte';
+  import CollectionDialog from '@/components/collection/collection-dialog.svelte';
   import type { Selected } from 'bits-ui';
-  import { FolderPlus, MoreHorizontal, Plus } from 'lucide-svelte';
+  import { FolderPlus, MoreHorizontal, Plus, Pencil } from 'lucide-svelte';
 
   interface Props {
     data: PageData;
@@ -26,10 +28,11 @@
 
   let openFeedDialog = $state(false);
   let openCollectionDialog = $state(false);
+  let openEditCollectionDialog = $state(false);
 
   async function handleRemoveFeed(feed: Feed) {
     if (data.collection) {
-      await deleteFeedFromCollection(data.collection.id, feed.id);
+      await collectionApi.deleteFeedFromCollection(data.collection.id, feed.id);
       await invalidate('feeds');
       showToast('Feed deleted', `Feed "${feed.name}" has been deleted.`);
     }
@@ -39,7 +42,7 @@
     if (!data.collection) return;
 
     const createFeedResult = (
-      await createFeeds([
+      await feedApi.createFeeds([
         {
           ...newFeed,
           collectionId: data.collection.id,
@@ -56,6 +59,11 @@
     }
   }
 
+  async function handleSaveCollection(collection: Collection) {
+    await invalidate('feeds');
+    showToast('Collection updated', `Collection "${collection.name}" has been updated.`);
+  }
+
   function handleCollectionChange(selected: Selected<unknown> | undefined) {
     if (!selected) return;
     const value = selected.value;
@@ -64,7 +72,15 @@
   }
 </script>
 
-<div class="flex min-h-screen flex-col items-center justify-center">
+<main class="flex min-h-screen flex-col items-center justify-center">
+  <CreateFeedDialog onSave={handleSaveFeed} bind:open={openFeedDialog} showButton={false} />
+  <CollectionDialog
+    feeds={data.defaultCollection.feeds}
+    collection={selectedCollection}
+    onSave={handleSaveCollection}
+    bind:open={openEditCollectionDialog}
+    showButton={false}
+  />
   <div class="flex min-h-screen w-full pt-20">
     <!-- Sidebar -->
     <CollectionsSidebar
@@ -100,10 +116,8 @@
               {/if}
             </p>
           </div>
-          <div class="hidden sm:block">
-            <CreateFeedDialog onSave={handleSaveFeed} bind:open={openFeedDialog} />
-          </div>
-          <div class="sm:hidden">
+
+          <div>
             <DropdownMenu.Root disableFocusFirstItem={true}>
               <DropdownMenu.Trigger>
                 <MoreHorizontal class="h-6 w-6" />
@@ -114,10 +128,16 @@
                     <FolderPlus class="mr-2 h-4 w-4" />
                     New collection
                   </DropdownMenu.Item>
+                  {#if !isDefaultSelected}
+                    <DropdownMenu.Item on:click={() => (openEditCollectionDialog = true)}>
+                      <Pencil class="mr-2 h-4 w-4" />
+                      Edit collection
+                    </DropdownMenu.Item>
+                  {/if}
                   <DropdownMenu.Item on:click={() => (openFeedDialog = true)}>
                     <Plus class="mr-2 h-4 w-4" />
-                    Add Feed</DropdownMenu.Item
-                  >
+                    Add Feed
+                  </DropdownMenu.Item>
                 </DropdownMenu.Group>
               </DropdownMenu.Content>
             </DropdownMenu.Root>
@@ -159,4 +179,4 @@
       </div>
     </div>
   </div>
-</div>
+</main>

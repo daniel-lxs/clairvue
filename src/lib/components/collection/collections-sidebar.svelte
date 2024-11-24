@@ -4,7 +4,7 @@
   import { Label } from '../ui/label';
   import type { Collection, Feed } from '@/server/data/schema';
   import { Trigger } from '@/components/ui/dialog';
-  import CreateCollectionDialog from './create-collection-dialog.svelte';
+  import CollectionDialog from './collection-dialog.svelte';
   import { goto } from '$app/navigation';
 
   let {
@@ -27,7 +27,7 @@
 <aside class="hidden w-64 space-y-2 px-4 sm:block">
   <div class="flex items-center justify-between">
     <Label>Collections</Label>
-    <CreateCollectionDialog
+    <CollectionDialog
       {feeds}
       onSave={handleCreateCollection}
       bind:open={openCollectionDialog}
@@ -35,7 +35,7 @@
       <Trigger class={buttonVariants({ variant: 'ghost', size: 'sm' })}>
         <FolderPlus class="h-4 w-4" color="hsl(var(--primary))" />
       </Trigger>
-    </CreateCollectionDialog>
+    </CollectionDialog>
   </div>
   <div class="space-y-1">
     {#each collections as collection}

@@ -1,91 +1,74 @@
-import type { Collection } from '../server/data/schema';
+import type { Collection } from '@/server/data/schema';
 
-export async function createCollection(name: string): Promise<Collection | undefined> {
-  try {
-    const response = await fetch('/api/collection', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        name: name
-      })
-    });
-    if (response.status === 400) {
-      throw new Error(`Invalid collection: ${response.statusText}`);
-    }
+async function createCollection(name: string): Promise<Collection> {
+  const response = await fetch('/api/collection', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ name })
+  });
 
-    if (!response.ok) {
-      throw new Error(`Failed to create collection: ${response.statusText}`);
-    }
+  if (!response.ok) {
+    throw new Error('Failed to create collection');
+  }
 
-    return await response.json();
-  } catch (error) {
-    console.error('Error occurred while creating collection:', error);
-    return undefined;
+  return response.json();
+}
+
+async function getCollectionBySlug(slug: string): Promise<Collection> {
+  const response = await fetch(`/api/collection?slug=${slug}`);
+
+  if (!response.ok) {
+    throw new Error('Failed to get collection');
+  }
+
+  return response.json();
+}
+
+async function updateCollection(
+  id: string,
+  data: { name: string; feeds: string[] }
+): Promise<Collection> {
+  const response = await fetch(`/api/collection/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(data)
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to update collection');
+  }
+
+  return response.json();
+}
+
+async function deleteFeedFromCollection(collectionId: string, feedId: string): Promise<void> {
+  const response = await fetch(`/api/collection/${collectionId}/feed/${feedId}`, {
+    method: 'DELETE'
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to remove feed from collection');
   }
 }
 
-export async function getCollectionBySlug(slug: string): Promise<Collection | undefined> {
-  try {
-    const response = await fetch(`/api/collection?slug=${slug}`);
-    if (!response.ok) {
-      throw new Error(`Failed to get collections: ${response.statusText}`);
-    }
-    return await response.json();
-  } catch (error) {
-    console.error('Error occurred while getting collections:', error);
-    return undefined;
+async function addFeedToCollection(collectionId: string, feedId: string): Promise<void> {
+  const response = await fetch(`/api/collection/${collectionId}/feed/${feedId}`, {
+    method: 'PUT'
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to add feed to collection');
   }
 }
 
-export async function updateCollection(id: string, name: string): Promise<Collection | undefined> {
-  try {
-    const response = await fetch('/api/collection', {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        id: id,
-        name: name
-      })
-    });
-    if (response.status === 400) {
-      console.error(`Invalid collection: ${response.statusText}`);
-      throw new Error('Invalid collection');
-    }
-
-    if (!response.ok) {
-      console.error(`Failed to update collection: ${response.statusText}`);
-      throw new Error('Failed to update collection');
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Error occurred while updating collection:', error);
-    return undefined;
-  }
-}
-
-export async function deleteFeedFromCollection(id: string, feedId: string) {
-  try {
-    const response = await fetch('/api/collection', {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        id,
-        feedId
-      })
-    });
-    if (!response.ok) {
-      console.error(`Failed to delete feed: ${response.statusText}`);
-      throw new Error('Failed to delete feed');
-    }
-  } catch (error) {
-    console.error('Error occurred while deleting feed:', error);
-    throw error;
-  }
-}
+export default {
+  createCollection,
+  getCollectionBySlug,
+  updateCollection,
+  deleteFeedFromCollection,
+  addFeedToCollection
+};

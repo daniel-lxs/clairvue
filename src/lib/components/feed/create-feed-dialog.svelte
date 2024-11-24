@@ -3,7 +3,7 @@
   import * as Dialog from '@/components/ui/dialog';
   import { Input } from '@/components/ui/input';
   import { Label } from '@/components/ui/label';
-  import { getFeedInfo } from '@/api';
+  import feedApi from '@/api/feed';
   import { Loader2, PlusCircle } from 'lucide-svelte';
   import type { NewFeed } from '@/types/NewFeed';
   import { z } from 'zod';
@@ -42,7 +42,7 @@
       return;
     }
 
-    const feedInfo = await getFeedInfo(parsedLink.data);
+    const feedInfo = await feedApi.getFeedInfo(parsedLink.data);
 
     if (feedInfo) {
       newFeed.name = feedInfo.title.trim();
