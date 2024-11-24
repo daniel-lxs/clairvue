@@ -5,7 +5,7 @@
   import { Label } from '@/components/ui/label';
   import collectionApi from '@/api/collection';
   import feedApi from '@/api/feed';
-  import showToast from '@/utils/showToast';
+  import showToast from '@/utils';
   import type { NewFeed } from '@/types/NewFeed';
   import type { Collection, Feed } from '@/server/data/schema';
   import * as Breadcrumb from '@/components/ui/breadcrumb';
