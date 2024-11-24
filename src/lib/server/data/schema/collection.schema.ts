@@ -43,5 +43,5 @@ export const collectionsToFeedsRelations = relations(collectionsToFeeds, ({ one 
 }));
 
 export type Collection = InferSelectModel<typeof collectionSchema> & {
-  feeds?: Feed[];
+  feeds: Feed[];
 };
