@@ -8,7 +8,17 @@
   import type { NewFeed } from '@/types/NewFeed';
   import { z } from 'zod';
 
-  let { onSave }: { onSave: (feed: NewFeed) => void } = $props();
+  let {
+    onSave,
+    showButton,
+    open = $bindable(false),
+    children
+  }: {
+    onSave: (feed: NewFeed) => void;
+    showButton?: boolean;
+    children?: import('svelte').Snippet;
+    open?: boolean;
+  } = $props();
 
   let isLoading = $state(false);
   let hasError = $state(false);
@@ -18,7 +28,6 @@
     description: '',
     link: ''
   });
-  let open: boolean = $state(false);
   let link: string = $state('');
 
   const linkSchema = z.string().url();
@@ -69,9 +78,14 @@
 </script>
 
 <Dialog.Root bind:open>
-  <Dialog.Trigger class={buttonVariants({ variant: 'default' })}
-    ><PlusCircle class="mr-2 h-4 w-4" />Add new feed</Dialog.Trigger
-  >
+  {#if children}
+    {@render children?.()}
+  {:else if showButton}
+    <Dialog.Trigger class={buttonVariants({ variant: 'default' })}>
+      <PlusCircle class="h-4 w-4 sm:mr-2" />
+      <span class="hidden sm:inline">Add new feed</span>
+    </Dialog.Trigger>
+  {/if}
 
   <Dialog.Content class="sm:max-w-[425px]">
     <Dialog.Header>

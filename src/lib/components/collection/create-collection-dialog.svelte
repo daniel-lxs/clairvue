@@ -11,17 +11,18 @@
   let {
     feeds,
     onSave,
-    children
+    children,
+    open = $bindable(false)
   }: {
     feeds: Feed[];
     onSave: (collection: Collection) => void;
     children?: import('svelte').Snippet;
+    open?: boolean;
   } = $props();
 
   let isLoading = $state(false);
   let hasError = $state(false);
   let errorMessage = $state('');
-  let open = $state(false);
   let name = $state('');
   let selectedFeeds = $state<string[]>([]);
 
