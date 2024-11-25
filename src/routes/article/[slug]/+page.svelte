@@ -54,12 +54,12 @@
   <title>{data.article?.title}</title>
 </svelte:head>
 
-<main class="px-4 pt-16 sm:px-0">
+<main class="flex w-full max-w-full flex-col items-center overflow-x-hidden px-4 py-16 sm:px-0">
   {#await data.streamed.parsedArticle}
     <ArticlePageSkeleton />
   {:then parsedArticle}
     <article
-      class="prose dark:prose-invert sm:pt-4"
+      class="prose w-full max-w-full dark:prose-invert sm:max-w-prose sm:pt-4"
       class:prose-sm={$fontSize === 'sm'}
       class:prose-base={$fontSize === 'base'}
       class:prose-lg={$fontSize === 'lg'}
