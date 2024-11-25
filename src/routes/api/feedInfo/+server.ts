@@ -1,3 +1,4 @@
+import feedService from '@/server/services/feed.service';
 import type { RequestHandler } from '@sveltejs/kit';
 import Parser from 'rss-parser';
 
@@ -10,29 +11,52 @@ export const GET: RequestHandler = async ({ url }) => {
 
   const feedLink = atob(encodedFeedLink);
 
+  if (!feedLink) {
+    return new Response('Invalid feed link', { status: 400 });
+  }
+
   try {
-    const response = await fetch(feedLink);
-
-    if (!response.ok) {
-      return new Response('Could not fetch feed', { status: 404 });
-    }
-
-    const feedData = await response.text();
-    const parsedData = await new Parser().parseString(feedData);
-
-    if (!parsedData) {
-      return new Response('Could not parse feed', { status: 404 });
-    }
-
-    const { title, description } = parsedData;
-
-    if (!title) {
-      return new Response('Invalid feed', { status: 404 });
-    }
-
-    return new Response(JSON.stringify({ title, description }), { status: 200 });
+    const feedInfo = await fetchAndParseFeed(feedLink);
+    return new Response(JSON.stringify(feedInfo), {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
   } catch (error) {
-    console.error('Error occurred while fetching feed:', error);
-    return new Response('Error occurred while fetching feed', { status: 500 });
+    const alternativeLink = await feedService.tryGetFeedLink(feedLink);
+    if (!alternativeLink) {
+      return new Response('Could not find alternative feed link', { status: 404 });
+    }
+
+    const feedInfo = await fetchAndParseFeed(alternativeLink);
+    return new Response(JSON.stringify(feedInfo), {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
   }
 };
+
+async function fetchAndParseFeed(
+  url: string
+): Promise<{ title: string; description: string | undefined }> {
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  const feedData = await response.text();
+  const parsedData = await new Parser().parseString(feedData);
+
+  if (!parsedData || !parsedData.title) {
+    throw new Error('Invalid feed');
+  }
+
+  const { title, description } = parsedData;
+
+  return {
+    title,
+    description
+  };
+}

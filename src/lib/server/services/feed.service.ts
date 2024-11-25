@@ -4,6 +4,8 @@ import type { CreateFeedDto } from '@/server/dto/feed.dto';
 import type { CreateFeedResult } from '@/types/CreateFeedResult';
 import { getArticleQueue } from '@/server/queue/articles';
 import collectionService from './collection.service';
+import config from '@/config';
+import { JSDOM } from 'jsdom';
 
 async function findFeedById(id: string): Promise<Feed | undefined> {
   return await feedRepository.findById(id);
@@ -73,10 +75,41 @@ async function countArticles(id: string): Promise<number> {
   return (await feedRepository.countArticles(id)) ?? 0;
 }
 
+async function tryGetFeedLink(url: string): Promise<string | undefined> {
+  const response = await fetch(url, {
+    method: 'HEAD',
+    headers: {
+      'User-Agent': config.app.userAgent
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  const html = await response.text();
+
+  const { document } = new JSDOM(html).window;
+
+  const rssLink = document.querySelector('link[rel="alternate"][type="application/rss+xml"]');
+  const atomLink = document.querySelector('link[rel="alternate"][type="application/atom+xml"]');
+
+  if (rssLink) {
+    return rssLink.getAttribute('href') ?? undefined;
+  }
+
+  if (atomLink) {
+    return atomLink.getAttribute('href') ?? undefined;
+  }
+
+  return undefined;
+}
+
 export default {
   findFeedById,
   createFeed,
   updateFeed,
   findBySlug,
-  countArticles
+  countArticles,
+  tryGetFeedLink
 };

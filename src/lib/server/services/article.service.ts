@@ -12,6 +12,7 @@ import type { ArticleMetadata } from '@/types/ArticleMetadata';
 import type { NewArticle } from '@/types/NewArticle';
 import type { PaginatedList } from '@/types/PaginatedList';
 import config from '@/config';
+import feedService from './feed.service';
 
 interface ProcessArticlesOptions {
   chunkSize?: number;
@@ -35,44 +36,13 @@ async function parseFeed(url: string): Promise<Parser.Output<Parser.Item> | unde
       error
     );
 
-    // Check for RSS or Atom feed links
-    const response = await fetch(url);
-    const html = await response.text();
+    const feedLink = await feedService.tryGetFeedLink(url);
 
-    const cleanHtml = DOMPurify.sanitize(html, {
-      ALLOWED_TAGS: ['head', 'link'],
-      ALLOWED_ATTR: ['href', 'rel', 'type'],
-      WHOLE_DOCUMENT: true
-    });
-
-    const { document } = new JSDOM(cleanHtml).window;
-
-    const rssLink = document.querySelector('link[rel="alternate"][type="application/rss+xml"]');
-    const atomLink = document.querySelector('link[rel="alternate"][type="application/atom+xml"]');
-
-    if (rssLink) {
-      let rssUrl = rssLink.getAttribute('href');
-      if (rssUrl && !rssUrl.startsWith('http')) {
-        const baseUrl = new URL(url).origin;
-        rssUrl = new URL(rssUrl, baseUrl).href;
-      }
-      if (!rssUrl) {
-        throw new Error('No RSS feed found');
-      }
-      return parseFeed(rssUrl);
-    } else if (atomLink) {
-      let atomUrl = atomLink.getAttribute('href');
-      if (atomUrl && !atomUrl.startsWith('http')) {
-        const baseUrl = new URL(url).origin;
-        atomUrl = new URL(atomUrl, baseUrl).href;
-      }
-      if (!atomUrl) {
-        throw new Error('No Atom feed found');
-      }
-      return parseFeed(atomUrl);
-    } else {
+    if (!feedLink) {
       throw new Error('No valid feed found');
     }
+
+    return parseFeed(feedLink);
   }
 }
 
