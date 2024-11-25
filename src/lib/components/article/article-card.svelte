@@ -75,7 +75,7 @@
             <div class="space-y-2">
               <Card.Header class="p-0">
                 <a
-                  href="/feed/{article.feedId}"
+                  href="/f/{article.feedId}"
                   class="text-xs font-bold transition-colors hover:text-primary sm:text-sm"
                   >{article.feed?.name}</a
                 >

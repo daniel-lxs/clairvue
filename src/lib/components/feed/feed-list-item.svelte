@@ -21,7 +21,7 @@
 >
   <div class="flex flex-col">
     <a
-      href="/feed/{feed.id}"
+      href="/f/{feed.id}"
       class="item-title truncate text-sm font-medium text-primary decoration-primary/30 underline-offset-4 transition-colors hover:text-primary/80 hover:underline"
       >{feed.name}</a
     >
