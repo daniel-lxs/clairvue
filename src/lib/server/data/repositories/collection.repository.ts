@@ -10,6 +10,7 @@ import {
 } from '../schema';
 import { and, eq, like } from 'drizzle-orm';
 import slugify from 'slugify';
+import feedRepository from './feed.repository';
 
 async function create(newCollection: Pick<Collection, 'name' | 'userId'> & { default?: boolean }) {
   //TODO: Limit the number of collections per user to 5
@@ -62,6 +63,12 @@ async function addFeedsToCollection(assignments: { id: string; feedId: string }[
   try {
     const db = getClient();
 
+    const collection = await db.query.collectionSchema
+      .findFirst({ where: eq(collectionSchema.id, assignments[0].id) })
+      .execute();
+
+    if (!collection) throw new Error('Collection does not exist');
+
     const validAssignments = await Promise.all(
       assignments.map(async ({ id, feedId }) => {
         const feedExists = await db.query.feedSchema
@@ -83,7 +90,8 @@ async function addFeedsToCollection(assignments: { id: string; feedId: string }[
 
         return {
           collectionId: id,
-          feedId
+          feedId,
+          userId: collection.userId
         };
       })
     );
@@ -306,6 +314,27 @@ async function deleteFeedFromCollection(collectionId: string, feedId: string) {
   }
 }
 
+//delete is a ts keyword
+async function removeFeedFromCollection(id: string, feedId: string) {
+  try {
+    // Check if it's a default feed
+    const feed = await feedRepository.findById(feedId);
+    if (feed?.link.startsWith('default-feed-') && id.includes('default-')) {
+      throw 'Cannot remove default feed from default collection';
+    }
+
+    const db = getClient();
+
+    await db
+      .delete(collectionsToFeeds)
+      .where(and(eq(collectionsToFeeds.collectionId, id), eq(collectionsToFeeds.feedId, feedId)))
+      .execute();
+  } catch (error) {
+    console.error('Error occurred while deleting feed:', error);
+    throw new Error('Failed to delete feed', { cause: error });
+  }
+}
+
 export default {
   create,
   update,
@@ -318,5 +347,6 @@ export default {
   addFeedsToCollection,
   deleteFeedFromCollection,
   findDefaultByUserId,
-  findDefaultByUserIdWithFeeds
+  findDefaultByUserIdWithFeeds,
+  removeFeedFromCollection
 };

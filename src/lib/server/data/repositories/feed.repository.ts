@@ -198,29 +198,6 @@ async function updateLastSync(id: string) {
   }
 }
 
-//delete is a ts keyword
-async function remove(id: string, collectionId: string) {
-  try {
-    // Check if it's a default feed
-    const feed = await findById(id);
-    if (feed?.link.startsWith('default-feed-')) {
-      throw 'Cannot delete default feed';
-    }
-
-    const db = getClient();
-
-    await db
-      .delete(collectionsToFeeds)
-      .where(
-        and(eq(collectionsToFeeds.collectionId, collectionId), eq(collectionsToFeeds.feedId, id))
-      )
-      .execute();
-  } catch (error) {
-    console.error('Error occurred while deleting feed:', error);
-    throw new Error('Failed to delete feed', { cause: error });
-  }
-}
-
 export default {
   create,
   findById,
@@ -230,6 +207,5 @@ export default {
   findOutdated,
   countArticles,
   update,
-  updateLastSync,
-  remove
+  updateLastSync
 };

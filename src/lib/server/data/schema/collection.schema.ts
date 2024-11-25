@@ -24,7 +24,10 @@ export const collectionsToFeeds = pgTable(
   'collectionsToFeeds',
   {
     collectionId: varchar('collectionId').notNull(),
-    feedId: varchar('feedId').notNull()
+    feedId: varchar('feedId').notNull(),
+    userId: varchar('userId')
+      .notNull()
+      .references(() => userSchema.id)
   },
   (t) => ({
     pk: primaryKey({ columns: [t.collectionId, t.feedId] })
@@ -39,6 +42,10 @@ export const collectionsToFeedsRelations = relations(collectionsToFeeds, ({ one 
   feed: one(feedSchema, {
     fields: [collectionsToFeeds.feedId],
     references: [feedSchema.id]
+  }),
+  user: one(userSchema, {
+    fields: [collectionsToFeeds.userId],
+    references: [userSchema.id]
   })
 }));
 
@@ -46,3 +53,4 @@ export type Collection = InferSelectModel<typeof collectionSchema>;
 export type CollectionWithFeeds = InferSelectModel<typeof collectionSchema> & {
   feeds: Feed[];
 };
+export type CollectionToFeeds = InferSelectModel<typeof collectionsToFeeds>;
