@@ -47,7 +47,7 @@
     if (feedInfo) {
       newFeed.name = feedInfo.title.trim();
       newFeed.description = feedInfo.description?.trim();
-      newFeed.link = parsedLink.data;
+      newFeed.link = feedInfo.link;
 
       open = false;
       isLoading = false;

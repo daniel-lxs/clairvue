@@ -2,7 +2,7 @@ import type { CreateFeedDto } from '@/server/dto/feed.dto';
 import type { CreateFeedResult } from '@/types/CreateFeedResult';
 import type { Feed } from '@/server/data/schema';
 
-export async function createFeeds(feeds: CreateFeedDto[]): Promise<CreateFeedResult[]> {
+async function createFeeds(feeds: CreateFeedDto[]): Promise<CreateFeedResult[]> {
   try {
     const response = await fetch('/api/feed', {
       method: 'POST',
@@ -31,9 +31,9 @@ export async function createFeeds(feeds: CreateFeedDto[]): Promise<CreateFeedRes
   }
 }
 
-export async function getFeedInfo(
+async function getFeedInfo(
   link: string
-): Promise<{ title: string; description: string } | undefined> {
+): Promise<{ title: string; description: string; link: string } | undefined> {
   try {
     const response = await fetch(`/api/feedInfo?link=${btoa(link)}`);
     if (!response.ok) {
@@ -47,7 +47,7 @@ export async function getFeedInfo(
   }
 }
 
-export async function getFeed(id: string): Promise<Feed | undefined> {
+async function getFeed(id: string): Promise<Feed | undefined> {
   try {
     const response = await fetch(`/api/feed?id=${id}`);
     if (!response.ok) {
@@ -60,7 +60,7 @@ export async function getFeed(id: string): Promise<Feed | undefined> {
   }
 }
 
-export async function updateFeed(
+async function updateFeed(
   id: string,
   name: string,
   description: string,

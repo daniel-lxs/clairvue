@@ -17,7 +17,7 @@ export const GET: RequestHandler = async ({ url }) => {
 
   try {
     const feedInfo = await fetchAndParseFeed(feedLink);
-    return new Response(JSON.stringify(feedInfo), {
+    return new Response(JSON.stringify({ ...feedInfo, link: feedLink }), {
       headers: {
         'Content-Type': 'application/json'
       }
@@ -29,7 +29,7 @@ export const GET: RequestHandler = async ({ url }) => {
     }
 
     const feedInfo = await fetchAndParseFeed(alternativeLink);
-    return new Response(JSON.stringify(feedInfo), {
+    return new Response(JSON.stringify({ ...feedInfo, link: alternativeLink }), {
       headers: {
         'Content-Type': 'application/json'
       }

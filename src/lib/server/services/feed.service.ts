@@ -1,5 +1,6 @@
 import feedRepository from '@/server/data/repositories/feed.repository';
 import type { Feed } from '@/server/data/schema';
+import DOMPurify from 'isomorphic-dompurify';
 import type { CreateFeedDto } from '@/server/dto/feed.dto';
 import type { CreateFeedResult } from '@/types/CreateFeedResult';
 import { getArticleQueue } from '@/server/queue/articles';
@@ -76,33 +77,59 @@ async function countArticles(id: string): Promise<number> {
 }
 
 async function tryGetFeedLink(url: string): Promise<string | undefined> {
-  const response = await fetch(url, {
-    method: 'HEAD',
-    headers: {
-      'User-Agent': config.app.userAgent
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'User-Agent': config.app.userAgent
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
-  });
 
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
+    const html = await response.text();
+
+    const cleanHtml = DOMPurify.sanitize(html, {
+      WHOLE_DOCUMENT: true,
+      ALLOWED_TAGS: ['head', 'link']
+    });
+
+
+    const { document } = new JSDOM(cleanHtml).window;
+
+    const rssLinkElement = document.querySelector(
+      'link[rel="alternate"][type="application/rss+xml"]'
+    );
+    const atomLinkElement = document.querySelector(
+      'link[rel="alternate"][type="application/atom+xml"]'
+    );
+
+    if (rssLinkElement) {
+      const rssLink = rssLinkElement.getAttribute('href');
+      if (rssLink && !rssLink.startsWith('http')) {
+        //Assume relative URL
+        return new URL(rssLink, url).toString();
+      } else {
+        return rssLink ?? undefined;
+      }
+    }
+
+    if (atomLinkElement) {
+      const atomLink = atomLinkElement.getAttribute('href');
+      if (atomLink && !atomLink.startsWith('http')) {
+        return new URL(atomLink, url).toString();
+      } else {
+        return atomLink ?? undefined;
+      }
+    }
+
+    return undefined;
+  } catch (error) {
+    console.error('Could not parse link: ', error);
+    return undefined;
   }
-
-  const html = await response.text();
-
-  const { document } = new JSDOM(html).window;
-
-  const rssLink = document.querySelector('link[rel="alternate"][type="application/rss+xml"]');
-  const atomLink = document.querySelector('link[rel="alternate"][type="application/atom+xml"]');
-
-  if (rssLink) {
-    return rssLink.getAttribute('href') ?? undefined;
-  }
-
-  if (atomLink) {
-    return atomLink.getAttribute('href') ?? undefined;
-  }
-
-  return undefined;
 }
 
 export default {
