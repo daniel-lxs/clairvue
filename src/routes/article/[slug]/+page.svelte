@@ -60,7 +60,7 @@
     <ArticlePageSkeleton />
   {:then parsedArticle}
     <article
-      class="prose dark:prose-invert sm:pt-4"
+      class="prose break-words dark:prose-invert sm:pt-4"
       class:prose-sm={$fontSize === 'sm'}
       class:prose-base={$fontSize === 'base'}
       class:prose-lg={$fontSize === 'lg'}
