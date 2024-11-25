@@ -1,7 +1,6 @@
 <script lang="ts">
   import { Separator } from '@/components/ui/separator';
   import type { PageData } from './$types';
-  import * as Page from '@/components/page';
   import { onMount } from 'svelte';
   import ArticlePageSkeleton from '@/components/article/article-page-skeleton.svelte';
   import { BookOpen } from 'lucide-svelte';
@@ -55,12 +54,12 @@
   <title>{data.article?.title}</title>
 </svelte:head>
 
-<Page.Container>
+<main class="px-4 pt-16 sm:px-0">
   {#await data.streamed.parsedArticle}
     <ArticlePageSkeleton />
   {:then parsedArticle}
     <article
-      class="prose break-words dark:prose-invert sm:pt-4"
+      class="prose dark:prose-invert sm:pt-4"
       class:prose-sm={$fontSize === 'sm'}
       class:prose-base={$fontSize === 'base'}
       class:prose-lg={$fontSize === 'lg'}
@@ -88,4 +87,4 @@
       {@html parsedArticle?.content}
     </article>
   {/await}
-</Page.Container>
+</main>
