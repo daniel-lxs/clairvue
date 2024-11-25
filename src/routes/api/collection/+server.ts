@@ -130,7 +130,7 @@ export const PUT: RequestHandler = async ({ url, request, cookies }) => {
     if (feedsToAdd && feedsToAdd.length > 0) {
       const validationResult = addFeedsToCollectionDto.safeParse({
         id: collectionId,
-        feeds: feedsToAdd
+        feedIds: feedsToAdd
       });
 
       if (!validationResult.success) {
