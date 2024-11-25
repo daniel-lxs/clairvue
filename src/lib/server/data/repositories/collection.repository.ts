@@ -296,24 +296,6 @@ async function findDefaultByUserIdWithFeeds(
   }
 }
 
-async function deleteFeedFromCollection(collectionId: string, feedId: string) {
-  try {
-    const db = getClient();
-    await db
-      .delete(collectionsToFeeds)
-      .where(
-        and(
-          eq(collectionsToFeeds.collectionId, collectionId),
-          eq(collectionsToFeeds.feedId, feedId)
-        )
-      )
-      .execute();
-  } catch (error) {
-    console.error('Error occurred while deleting feed:', error);
-    throw error;
-  }
-}
-
 //delete is a ts keyword
 async function removeFeedFromCollection(id: string, feedId: string) {
   try {
@@ -330,8 +312,8 @@ async function removeFeedFromCollection(id: string, feedId: string) {
       .where(and(eq(collectionsToFeeds.collectionId, id), eq(collectionsToFeeds.feedId, feedId)))
       .execute();
   } catch (error) {
-    console.error('Error occurred while deleting feed:', error);
-    throw new Error('Failed to delete feed', { cause: error });
+    console.error('Error occurred while removing feed:', error);
+    throw error;
   }
 }
 
@@ -345,7 +327,6 @@ export default {
   findByUserId,
   findByUserIdWithFeeds,
   addFeedsToCollection,
-  deleteFeedFromCollection,
   findDefaultByUserId,
   findDefaultByUserIdWithFeeds,
   removeFeedFromCollection

@@ -22,7 +22,7 @@ async function addFeedToCollection(collectionId: string, feedId: string): Promis
 }
 
 async function removeFeedFromCollection(collectionId: string, feedId: string): Promise<void> {
-  await collectionRepository.deleteFeedFromCollection(collectionId, feedId);
+  await collectionRepository.removeFeedFromCollection(collectionId, feedId);
 }
 
 async function addFeedsToCollection(collectionId: string, feedIds: string[]): Promise<void> {
@@ -32,7 +32,7 @@ async function addFeedsToCollection(collectionId: string, feedIds: string[]): Pr
 
 async function removeFeedsFromCollection(collectionId: string, feedIds: string[]): Promise<void> {
   for (const feedId of feedIds) {
-    await collectionRepository.deleteFeedFromCollection(collectionId, feedId);
+    await collectionRepository.removeFeedFromCollection(collectionId, feedId);
   }
 }
 
