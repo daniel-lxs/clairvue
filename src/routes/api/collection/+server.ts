@@ -57,21 +57,22 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
       return new Response('Unauthorized', { status: 401 });
     }
 
-    const validationResult = createCollectionDto.safeParse(requestBody);
-    if (!validationResult.success) {
-      return new Response(JSON.stringify(validationResult.error), { status: 400 });
+    const result = createCollectionDto.safeParse(requestBody);
+    if (!result.success) {
+      return new Response(JSON.stringify(result.error), { status: 400 });
     }
 
-    const createdCollection = await collectionService.create(
-      validationResult.data.name,
-      authSession.user.id
-    );
+    const collection = await collectionService.create(result.data.name, authSession.user.id);
 
-    if (!createdCollection) {
+    if (!collection) {
       return new Response('Failed to create collection', { status: 500 });
     }
 
-    return new Response(JSON.stringify(createdCollection), { status: 200 });
+    if (result.data.feedIds && result.data.feedIds.length > 0) {
+      await collectionService.addFeedsToCollection(collection.id, result.data.feedIds);
+    }
+
+    return new Response(JSON.stringify(collection), { status: 200 });
   } catch (error) {
     console.error('Error occurred on POST /api/collection', error);
     return new Response('Internal server error', { status: 500 });
@@ -125,7 +126,8 @@ export const PUT: RequestHandler = async ({ url, request, cookies }) => {
       return new Response('Unauthorized', { status: 401 });
     }
 
-    const { feedsToAdd, feedsToRemove }: { feedsToAdd?: string[]; feedsToRemove?: string[] } = requestBody;
+    const { feedsToAdd, feedsToRemove }: { feedsToAdd?: string[]; feedsToRemove?: string[] } =
+      requestBody;
 
     if (feedsToAdd && feedsToAdd.length > 0) {
       const validationResult = addFeedsToCollectionDto.safeParse({
@@ -137,10 +139,7 @@ export const PUT: RequestHandler = async ({ url, request, cookies }) => {
         return new Response(JSON.stringify(validationResult.error), { status: 400 });
       }
 
-      await collectionService.addFeedsToCollection(
-        validationResult.data.id,
-        feedsToAdd
-      );
+      await collectionService.addFeedsToCollection(validationResult.data.id, feedsToAdd);
     }
 
     if (feedsToRemove && feedsToRemove.length > 0) {

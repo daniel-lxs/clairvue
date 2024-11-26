@@ -15,7 +15,7 @@ import feedRepository from './feed.repository';
 async function insert(name: string, userId: string, id?: string) {
   //TODO: Limit the number of collections per user to 5
 
-  const hasDefaultCollection = await findDefaultByUserId(userId);
+  const hasDefaultCollection = id?.includes('default-') && await findDefaultByUserId(userId);
 
   if (hasDefaultCollection) {
     throw new Error('Default collection already exists');

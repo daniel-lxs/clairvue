@@ -1,7 +1,8 @@
 import { z } from 'zod';
 
 export const createCollectionDto = z.object({
-  name: z.string().min(4).max(255)
+  name: z.string().min(4).max(255),
+  feedIds: z.array(z.string()).optional()
 });
 
 export type CreateCollectionDto = z.infer<typeof createCollectionDto>;

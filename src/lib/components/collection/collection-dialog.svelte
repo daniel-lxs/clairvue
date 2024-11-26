@@ -56,7 +56,7 @@
         open = false;
         return;
       } else {
-        const result = await collectionApi.createCollection(name);
+        const result = await collectionApi.createCollection(name, selectedFeeds);
         onSave(result);
         open = false;
       }

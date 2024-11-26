@@ -1,12 +1,12 @@
 import type { Collection } from '@/server/data/schema';
 
-async function createCollection(name: string): Promise<Collection> {
+async function createCollection(name: string, feedIds: string[]): Promise<Collection> {
   const response = await fetch('/api/collection', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({ name })
+    body: JSON.stringify({ name, feedIds })
   });
 
   if (!response.ok) {
