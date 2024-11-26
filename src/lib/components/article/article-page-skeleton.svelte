@@ -3,7 +3,7 @@
   import { Skeleton } from '../ui/skeleton';
 </script>
 
-<div class="w-full sm:pt-4">
+<div class="w-full sm:max-w-prose sm:pt-4">
   <div class="space-y-6">
     <Skeleton class="h-6 w-48 rounded-md" />
     <Skeleton class="h-12 w-full rounded-md" />
