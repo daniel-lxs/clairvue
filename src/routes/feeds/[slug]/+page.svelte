@@ -81,7 +81,7 @@
     bind:open={openEditCollectionDialog}
     showButton={false}
   />
-  <div class="flex min-h-screen w-full pt-20">
+  <div class="flex min-h-screen w-full pt-16 sm:pt-20">
     <!-- Sidebar -->
     <CollectionsSidebar
       collections={data.collections}
