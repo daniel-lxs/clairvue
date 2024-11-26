@@ -12,97 +12,109 @@ import { and, eq, like } from 'drizzle-orm';
 import slugify from 'slugify';
 import feedRepository from './feed.repository';
 
-async function create(newCollection: Pick<Collection, 'name' | 'userId'> & { default?: boolean }) {
+async function insert(name: string, userId: string, id?: string) {
   //TODO: Limit the number of collections per user to 5
-  try {
-    const db = getClient();
-    const { randomUUID } = new ShortUniqueId({ length: 8 });
 
-    const id = (newCollection.default ? 'default-' : '') + randomUUID();
-    const slug = slugify(newCollection.name, {
-      lower: true,
-      remove: /[*+~.()'"!:@]/g
-    });
+  const hasDefaultCollection = await findDefaultByUserId(userId);
 
-    await db
-      .insert(collectionSchema)
-      .values({
-        ...newCollection,
-        id,
-        slug
-      })
-      .execute();
-    return {
-      id,
-      name: newCollection.name,
-      slug
-    };
-  } catch (error) {
-    console.error('Error occurred while creating new Collection:', error);
-    return undefined;
+  if (hasDefaultCollection) {
+    throw new Error('Default collection already exists');
   }
+
+  const db = getClient();
+  const { randomUUID } = new ShortUniqueId({ length: 8 });
+
+  const gotId = id ?? randomUUID();
+
+  const slug = slugify(name, {
+    lower: true,
+    remove: /[*+~.()'"!:@]/g
+  });
+
+  const result = await db
+    .insert(collectionSchema)
+    .values({
+      name,
+      userId,
+      id: gotId,
+      slug
+    })
+    .returning({
+      id: collectionSchema.id,
+      name: collectionSchema.name,
+      slug: collectionSchema.slug,
+      createdAt: collectionSchema.createdAt,
+      updatedAt: collectionSchema.updatedAt
+    })
+    .execute();
+
+  if (result && result.length > 0) {
+    return result[0] as Collection;
+  }
+
+  throw new Error('Unknown error occurred while creating new collection');
+}
+
+async function create({ name, userId }: Pick<Collection, 'name' | 'userId'>) {
+  if (!name || !userId) throw new Error('Invalid name or userId');
+  return await insert(name, userId);
+}
+
+async function createDefault({ name, userId }: Pick<Collection, 'name' | 'userId'>) {
+  if (!name || !userId) throw new Error('Invalid name or userId');
+  const { randomUUID } = new ShortUniqueId({ length: 8 });
+
+  const id = 'default-' + randomUUID();
+  return await insert(name, userId, id);
 }
 
 async function update(id: string, newCollection: Pick<Collection, 'name'>) {
-  try {
-    const db = getClient();
-    await db
-      .update(collectionSchema)
-      .set({
-        ...newCollection
-      })
-      .where(eq(collectionSchema.id, id))
-      .execute();
-  } catch (error) {
-    console.error('Error occurred while updating Collection:', error);
-    throw error;
-  }
+  const db = getClient();
+  await db
+    .update(collectionSchema)
+    .set({
+      ...newCollection
+    })
+    .where(eq(collectionSchema.id, id))
+    .execute();
 }
 
 async function addFeedsToCollection(assignments: { id: string; feedId: string }[]) {
-  try {
-    const db = getClient();
+  const db = getClient();
 
-    const collection = await db.query.collectionSchema
-      .findFirst({ where: eq(collectionSchema.id, assignments[0].id) })
-      .execute();
+  const collection = await db.query.collectionSchema
+    .findFirst({ where: eq(collectionSchema.id, assignments[0].id) })
+    .execute();
 
-    if (!collection) throw new Error('Collection does not exist');
+  if (!collection) throw new Error('Collection does not exist');
 
-    const validAssignments = await Promise.all(
-      assignments.map(async ({ id, feedId }) => {
-        const feedExists = await db.query.feedSchema
-          .findFirst({ where: eq(feedSchema.id, feedId) })
-          .execute();
+  const validAssignments = await Promise.all(
+    assignments.map(async ({ id, feedId }) => {
+      const feedExists = await db.query.feedSchema
+        .findFirst({ where: eq(feedSchema.id, feedId) })
+        .execute();
 
-        if (!feedExists) return undefined;
+      if (!feedExists) return undefined;
 
-        const isAlreadyRelated = await db.query.collectionsToFeeds
-          .findFirst({
-            where: and(
-              eq(collectionsToFeeds.collectionId, id),
-              eq(collectionsToFeeds.feedId, feedId)
-            )
-          })
-          .execute();
+      const isAlreadyRelated = await db.query.collectionsToFeeds
+        .findFirst({
+          where: and(eq(collectionsToFeeds.collectionId, id), eq(collectionsToFeeds.feedId, feedId))
+        })
+        .execute();
 
-        if (isAlreadyRelated) return undefined;
+      if (isAlreadyRelated) return undefined;
 
-        return {
-          collectionId: id,
-          feedId,
-          userId: collection.userId
-        };
-      })
-    );
+      return {
+        collectionId: id,
+        feedId,
+        userId: collection.userId
+      };
+    })
+  );
 
-    const filteredAssignments = validAssignments.filter((as) => !!as);
+  const filteredAssignments = validAssignments.filter((as) => !!as);
 
-    await db.insert(collectionsToFeeds).values(filteredAssignments).execute();
-  } catch (error) {
-    console.error('Error occurred while adding feeds to collection:', error);
-    throw error;
-  }
+  await db.insert(collectionsToFeeds).values(filteredAssignments).execute();
 }
 
 async function findById(id: string): Promise<Collection | undefined> {
@@ -207,7 +219,7 @@ async function findByUserId(userId: string): Promise<Collection[] | undefined> {
     if (!result || result.length === 0) return undefined;
   } catch (error) {
     console.error('Error occurred while finding Collection by user id:', error);
-    return [];
+    return undefined;
   }
 }
 
@@ -298,27 +310,22 @@ async function findDefaultByUserIdWithFeeds(
 
 //delete is a ts keyword
 async function removeFeedFromCollection(id: string, feedId: string) {
-  try {
-    // Check if it's a default feed
-    const feed = await feedRepository.findById(feedId);
-    if (feed?.link.startsWith('default-feed-') && id.includes('default-')) {
-      throw 'Cannot remove default feed from default collection';
-    }
-
-    const db = getClient();
-
-    await db
-      .delete(collectionsToFeeds)
-      .where(and(eq(collectionsToFeeds.collectionId, id), eq(collectionsToFeeds.feedId, feedId)))
-      .execute();
-  } catch (error) {
-    console.error('Error occurred while removing feed:', error);
-    throw error;
+  const feed = await feedRepository.findById(feedId);
+  if (feed?.link.startsWith('default-feed-') && id.includes('default-')) {
+    throw 'Cannot remove default feed from default collection';
   }
+
+  const db = getClient();
+
+  await db
+    .delete(collectionsToFeeds)
+    .where(and(eq(collectionsToFeeds.collectionId, id), eq(collectionsToFeeds.feedId, feedId)))
+    .execute();
 }
 
 export default {
   create,
+  createDefault,
   update,
   findById,
   findByIdWithFeeds,

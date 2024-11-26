@@ -72,72 +72,82 @@ const login = async (username: string, password: string): Promise<LoginResult> =
 };
 
 const signup = async (username: string, password: string): Promise<SignupResult> => {
-  const validation = await validateUser(username, password);
-  if (!validation.success) {
+  try {
+    const validation = await validateUser(username, password);
+    if (!validation.success) {
+      return {
+        success: false,
+        errors: validation.errors
+      };
+    }
+
+    const existingUser = await findByUsername(username);
+
+    if (existingUser) {
+      return {
+        success: false,
+        errors: {
+          username: ['Username already taken']
+        }
+      };
+    }
+
+    const hashedPassword = await argon2.hash(password);
+    const userId = generateId(15);
+
+    await createUser({
+      id: userId,
+      username,
+      hashedPassword
+    });
+
+    // Create a default collection for the user
+    const defaultCollection = await collectionService.createDefault('All Feeds', userId);
+
+    if (!defaultCollection) {
+      console.error('Error creating default collection');
+      return {
+        success: false,
+        errors: {
+          collection: ['Failed to create default collection']
+        }
+      };
+    }
+
+    // Create a default feed for saved articles
+    const defaultFeed = await feedService.createFeed(
+      {
+        name: 'Saved Articles',
+        description: 'Articles you have saved',
+        link: `default-feed-${userId}`,
+        collectionId: defaultCollection?.id
+      },
+      userId
+    );
+
+    if (!defaultFeed) {
+      console.error('Error creating default feed');
+      return {
+        success: false,
+        errors: {
+          feed: ['Failed to create default feed']
+        }
+      };
+    }
+
     return {
-      success: false,
-      errors: validation.errors
+      success: true,
+      userId
     };
-  }
-
-  const existingUser = await findByUsername(username);
-
-  if (existingUser) {
+  } catch (error) {
+    console.error(JSON.stringify(error));
     return {
       success: false,
       errors: {
-        username: ['Username already taken']
+        unknown: ['Cannot sign you up']
       }
     };
   }
-
-  const hashedPassword = await argon2.hash(password);
-  const userId = generateId(15);
-
-  await createUser({
-    id: userId,
-    username,
-    hashedPassword
-  });
-
-  // Create a default collection for the user
-  const defaultCollection = await collectionService.create('All Feeds', userId, true);
-
-  if (!defaultCollection) {
-    console.error('Error creating default collection');
-    return {
-      success: false,
-      errors: {
-        collection: ['Failed to create default collection']
-      }
-    };
-  }
-
-  // Create a default feed for saved articles
-  const defaultFeed = await feedService.createFeed(
-    {
-      name: 'Saved Articles',
-      description: 'Articles you have saved',
-      link: `default-feed-${userId}`,
-      collectionId: defaultCollection?.id
-    },
-    userId
-  );
-
-  if (!defaultFeed) {
-    console.error('Error creating default feed');
-    return {
-      success: false,
-      errors: {
-        feed: ['Failed to create default feed']
-      }
-    };
-  }
-
-  return {
-    success: true,
-    userId
-  };
 };
 
 export default {

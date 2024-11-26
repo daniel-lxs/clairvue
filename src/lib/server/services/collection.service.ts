@@ -5,12 +5,12 @@ async function findBySlug(userId: string, slug: string): Promise<Collection | un
   return await collectionRepository.findBySlug(userId, slug);
 }
 
-async function create(
-  name: string,
-  userId: string,
-  defaultCollection?: boolean
-): Promise<Pick<Collection, 'id' | 'name' | 'slug'> | undefined> {
-  return await collectionRepository.create({ name, userId, default: defaultCollection });
+async function create(name: string, userId: string): Promise<Collection | undefined> {
+  return await collectionRepository.create({ name, userId });
+}
+
+async function createDefault(name: string, userId: string): Promise<Collection | undefined> {
+  return await collectionRepository.createDefault({ name, userId });
 }
 
 async function update(id: string, data: Pick<Collection, 'name'>) {
@@ -67,6 +67,7 @@ async function findDefaultWithFeeds(userId: string): Promise<CollectionWithFeeds
 export default {
   findBySlug,
   create,
+  createDefault,
   update,
   addFeedToCollection,
   removeFeedFromCollection,
