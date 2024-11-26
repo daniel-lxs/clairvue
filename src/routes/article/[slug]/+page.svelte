@@ -45,9 +45,6 @@
   onMount(() => {
     formatArticleDate();
   });
-
-  //TODO: add a speed reading option in the future
-  //TODO: add size control to allow users to resize the whole article
 </script>
 
 <svelte:head>
