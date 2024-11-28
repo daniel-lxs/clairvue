@@ -14,6 +14,7 @@ async function createFromJobResult(feedId: string, jobResult: any): Promise<stri
   if (!feed) {
     throw new Error('Feed not found');
   }
+  feedService.updateLastSyncedAt(feed.id);
   const validationResult = createArticlesDto.safeParse(jobResult);
   if (!validationResult.success) {
     throw new Error('Failed to create articles: ' + validationResult.error.message);
@@ -27,7 +28,7 @@ async function createFromJobResult(feedId: string, jobResult: any): Promise<stri
   for (const article of articles) {
     (article as NewArticle).feedId = feed.id;
   }
-  feedService.updateLastSyncedAt(feed.id);
+
   return await create(articles as NewArticle[]);
 }
 
