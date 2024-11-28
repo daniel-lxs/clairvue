@@ -27,6 +27,7 @@ async function createFromJobResult(feedId: string, jobResult: any): Promise<stri
   for (const article of articles) {
     (article as NewArticle).feedId = feed.id;
   }
+  feedService.updateLastSyncedAt(feed.id);
   return await create(articles as NewArticle[]);
 }
 

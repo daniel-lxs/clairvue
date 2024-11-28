@@ -131,11 +131,16 @@ async function tryGetFeedLink(url: string): Promise<string | undefined> {
   }
 }
 
+async function updateLastSyncedAt(id: string): Promise<void> {
+  await feedRepository.updateLastSync(id);
+}
+
 export default {
   findFeedById,
   createFeed,
   updateFeed,
   findBySlug,
   countArticles,
-  tryGetFeedLink
+  tryGetFeedLink,
+  updateLastSyncedAt
 };
