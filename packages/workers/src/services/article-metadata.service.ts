@@ -80,10 +80,11 @@ async function fetchFeedArticles(link: string) {
   }
 }
 
-async function fetchAndProcessArticles(
+async function fetchAndProcessArticleChunks(
   articles: Parser.Item[],
   options: ProcessArticlesOptions = { chunkSize: 10, parallelDelay: 1000 }
 ): Promise<ArticleMetadata[]> {
+  if (articles.length === 0) return [];
   const { chunkSize, parallelDelay } = options;
   const articleMetadata: ArticleMetadata[] = [];
 
@@ -119,7 +120,7 @@ async function getArticlesMetadata(
 
     console.info(`[${jobContext}] Syncing ${orderedArticles.length} articles from ${feed.name}...`);
 
-    const articles = await fetchAndProcessArticles(orderedArticles);
+    const articles = await fetchAndProcessArticleChunks(orderedArticles);
 
     if (!articles || articles.length === 0) {
       console.info(`[${jobContext}] No new articles found.`);
