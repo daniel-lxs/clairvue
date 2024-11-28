@@ -16,9 +16,14 @@ async function createFromJobResult(feedId: string, jobResult: any): Promise<stri
   }
   const validationResult = createArticlesDto.safeParse(jobResult);
   if (!validationResult.success) {
-    throw new Error('Failed to create articles');
+    throw new Error('Failed to create articles: ' + validationResult.error.message);
   }
-  const { articles } = validationResult.data;
+  const articles = validationResult.data;
+  if (!articles || articles.length === 0) {
+    console.info('No new articles found');
+    return [];
+  }
+  console.info(`${articles.length} new articles found`);
   for (const article of articles) {
     (article as NewArticle).feedId = feed.id;
   }
