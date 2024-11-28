@@ -31,7 +31,6 @@ function getRedisClient(): Redis | null {
 }
 
 async function getCachedReadableArticle(
-  slug: string,
   link: string
 ): Promise<ReadableArticle | undefined> {
   const redis = getRedisClient();
@@ -40,11 +39,6 @@ async function getCachedReadableArticle(
   const cached = await redis.get(`readable-article:${hashLink(link)}`);
   if (cached) {
     return JSON.parse(cached);
-  }
-
-  const updatedReadableArticle = await getUpdatedReadableArticle(slug, link);
-  if (typeof updatedReadableArticle !== 'string') {
-    return updatedReadableArticle;
   }
 
   return undefined;

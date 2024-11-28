@@ -24,7 +24,7 @@ export const load: PageServerLoad = async ({ params }) => {
   // Try to get the article from cache first
   let cachedReadableArticle = undefined;
   if (article.readable) {
-    cachedReadableArticle = await cacheService.getCachedReadableArticle(article.slug, article.link);
+    cachedReadableArticle = await cacheService.getCachedReadableArticle(article.link);
   }
 
   return {
