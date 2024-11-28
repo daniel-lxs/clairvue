@@ -7,7 +7,7 @@ import { JSDOM } from 'jsdom';
 import config from '../config';
 import feedService from './feed.service';
 import { ArticleMetadata, Feed, ReadableArticle, ProcessArticlesOptions } from '@clairvue/types';
-import cacheService from './cache.service';
+import cacheService from './readable-article.service';
 import { createHash } from 'crypto';
 
 async function parseFeed(url: string): Promise<Parser.Output<Parser.Item> | undefined> {
@@ -78,7 +78,6 @@ async function fetchAndProcessArticles(
   for (const chunk of chunks) {
     const chunkResults = await Promise.all(
       chunk.map(async (article) => {
-        await getReadableArticle(article.link);
         return await getArticleMetadata(article);
       })
     );
@@ -141,20 +140,21 @@ async function getArticleMetadata(article: Parser.Item): Promise<ArticleMetadata
 
   const existingArticleMetadata = await cacheService.getCachedArticleMetadata(link);
 
-  if (existingArticleMetadata) return;
+  if (existingArticleMetadata) {
+    if (existingArticleMetadata.readable) {
+      await createReadableArticleCache(existingArticleMetadata.link);
+    }
+    return existingArticleMetadata;
+  }
 
   console.info(`Processing article: ${link}`);
 
-  const partialMetadata = await fetchArticleMetadata(link);
-
-  if (!partialMetadata) {
-    return undefined;
-  }
+  const partialMetadata = await fetchArticleMetadata(link, title);
 
   const articleMetadata = {
     ...partialMetadata,
-    title: title ?? partialMetadata.title ?? 'Untitled',
-    readable: partialMetadata.readable ?? false,
+    title: title ?? partialMetadata?.title ?? 'Untitled',
+    readable: partialMetadata?.readable ?? false,
     publishedAt: pubDate ? new Date(pubDate) : new Date(),
     link,
     siteName
@@ -226,14 +226,21 @@ async function getMimeType(url: string, ua: string): Promise<string | undefined>
   }
 }
 
-async function fetchArticleMetadata(link: string): Promise<Partial<ArticleMetadata> | undefined> {
+async function fetchArticleMetadata(
+  link: string,
+  title?: string
+): Promise<Partial<ArticleMetadata> | undefined> {
   try {
     const ua = config.app.userAgent;
 
     const mimeType = await getMimeType(link, ua);
     if (!mimeType || !mimeType.startsWith('text/html')) {
       console.error(`File with link ${link} is not an HTML file or could not be fetched`);
-      return undefined;
+      return {
+        title,
+        link,
+        readable: false
+      };
     }
 
     const isReadablePromise = isArticleReadable(link, ua);
@@ -396,14 +403,14 @@ function isNewsArticle(
   return false;
 }
 
-async function getReadableArticle(link: string | undefined): Promise<ReadableArticle | undefined> {
+async function createReadableArticleCache(link: string | undefined) {
   if (!validateLink(link)) {
-    return undefined;
+    return;
   }
 
-  const existingReadableArticle = await cacheService.getCachedReadableArticle(link);
-  if (existingReadableArticle) {
-    return existingReadableArticle;
+  const doesArticleExists = await cacheService.doesReadableArticleExist(link);
+  if (doesArticleExists) {
+    return;
   }
 
   const readableArticle = await fetchReadableArticle(link);
@@ -412,7 +419,7 @@ async function getReadableArticle(link: string | undefined): Promise<ReadableArt
     await cacheService.cacheReadableArticle(link, readableArticle);
   }
 
-  return readableArticle;
+  return;
 }
 
 async function fetchReadableArticle(link: string): Promise<ReadableArticle | undefined> {
@@ -485,6 +492,5 @@ export default {
   extractArticleMetadata,
   isArticleReadable,
   isNewsArticle,
-  getReadableArticle,
   getUpdatedReadableArticle
 };

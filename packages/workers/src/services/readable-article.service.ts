@@ -43,7 +43,13 @@ async function cacheArticleMetadata(link: string, article: ArticleMetadata): Pro
     throw new Error('Link is required');
   }
 
-  await redis.set(`article-metadata:${hashLink(link)}`, JSON.stringify(article), 'NX');
+  await redis.set(
+    `article-metadata:${hashLink(link)}`,
+    JSON.stringify(article),
+    'EXAT',
+    new Date().getTime() + 24 * 60 * 60,
+    'NX'
+  ); // 1 day
 }
 
 async function deleteArticleMetadataCache(link: string): Promise<void> {
@@ -67,7 +73,18 @@ async function cacheReadableArticle(link: string, article: ReadableArticle): Pro
     throw new Error('Link is required');
   }
 
-  await redis.set(`readable-article:${hashLink(link)}`, JSON.stringify(article));
+  await redis.set(`readable-article:${hashLink(link)}`, JSON.stringify(article), 'NX');
+}
+
+async function doesReadableArticleExist(link: string): Promise<boolean> {
+  const redis = getRedisClient();
+  if (!redis) throw new Error('Redis client not initialized');
+
+  if (!link) {
+    throw new Error('Link is required');
+  }
+
+  return (await redis.exists(`readable-article:${hashLink(link)}`)) > 0;
 }
 
 async function getCachedReadableArticle(link: string): Promise<ReadableArticle | null> {
@@ -102,5 +119,6 @@ export default {
   deleteArticleMetadataCache,
   cacheReadableArticle,
   getCachedReadableArticle,
+  doesReadableArticleExist,
   deleteReadableArticleCache
 };
