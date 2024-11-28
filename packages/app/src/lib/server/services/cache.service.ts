@@ -30,9 +30,7 @@ function getRedisClient(): Redis | null {
   return redisClient;
 }
 
-async function getCachedReadableArticle(
-  link: string
-): Promise<ReadableArticle | undefined> {
+async function getCachedReadableArticle(link: string): Promise<ReadableArticle | undefined> {
   const redis = getRedisClient();
   if (!redis) return undefined;
 
@@ -66,15 +64,10 @@ async function getUpdatedReadableArticle(
 
   const ttl = 1000 * 60 * 1; // 1 minute
 
-  const updatedReadableArticle: ReadableArticle | string = await job.waitUntilFinished(
-    getQueueEvents(queueName),
-    ttl
-  );
-
-  if (typeof updatedReadableArticle === 'string') {
+  try {
+    return await job.waitUntilFinished(getQueueEvents(queueName), ttl);
+  } catch (error) {
     return undefined;
-  } else {
-    return updatedReadableArticle;
   }
 }
 
