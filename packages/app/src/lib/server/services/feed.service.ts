@@ -40,11 +40,11 @@ async function createFeed(feedData: CreateFeedDto, userId: string): Promise<Crea
       const articleQueue = getArticlesQueue();
       articleQueue?.add(
         'sync',
-        { feedId: createdFeed.id },
+        { feed: createdFeed },
         {
-          jobId: createdFeed.id,
-          removeOnComplete: true,
-          removeOnFail: true
+          deduplication: {
+            id: createdFeed.id
+          }
         }
       );
     }
@@ -95,7 +95,6 @@ async function tryGetFeedLink(url: string): Promise<string | undefined> {
       WHOLE_DOCUMENT: true,
       ALLOWED_TAGS: ['head', 'link']
     });
-
 
     const { document } = new JSDOM(cleanHtml).window;
 
