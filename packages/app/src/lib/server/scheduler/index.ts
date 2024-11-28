@@ -1,6 +1,6 @@
 import { CronJob } from 'cron';
 import feedRepository from '@/server/data/repositories/feed.repository';
-import { getArticlesQueue } from '@/server/queue/articles';
+import { getArticlesQueue, listenArticlesQueue } from '@/server/queue/articles';
 
 export function startScheduler() {
   console.log(`[Scheduler] Started at ${new Date().toLocaleString()}`);
@@ -31,7 +31,11 @@ export function startScheduler() {
               return {
                 name: 'sync',
                 data: { feed },
-                opts: { jobId: feed.id, removeOnComplete: true, removeOnFail: true }
+                opts: {
+                  deduplication: {
+                    id: feed.id
+                  }
+                }
               };
             })();
           })
@@ -49,4 +53,5 @@ export function startScheduler() {
     }
   });
   cronJob.start();
+  listenArticlesQueue();
 }
