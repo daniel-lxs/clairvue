@@ -29,7 +29,9 @@ export const listenArticlesQueue = () => {
       return;
     }
 
-    articleService.createFromJobResult(job.data.feed.id, job.returnvalue);
+    await articleService.createFromJobResult(job.data.feed.id, job.returnvalue);
+    // Clean up
+    await articleQueue.remove(jobId);
   });
 };
 

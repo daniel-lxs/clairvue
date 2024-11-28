@@ -56,19 +56,32 @@ async function getUpdatedReadableArticle(
 ): Promise<ReadableArticle | undefined> {
   const queueName = 'get-updated-article';
 
-  const job = await getUpdatedArticleQueue().add(queueName, { slug, url: link }, {
-    deduplication: {
-      id: slug
+  const job = await getUpdatedArticleQueue().add(
+    queueName,
+    { slug, url: link },
+    {
+      deduplication: {
+        id: slug
+      }
     }
-  });
+  );
+
+  if (!job || !job.id) {
+    return undefined;
+  }
 
   const ttl = 1000 * 60 * 1; // 1 minute
 
-  const updatedReadableArticle: ReadableArticle | string = await job.waitUntilFinished(getQueueEvents(queueName), ttl);
+  const updatedReadableArticle: ReadableArticle | string = await job.waitUntilFinished(
+    getQueueEvents(queueName),
+    ttl
+  );
 
-  if(typeof updatedReadableArticle === 'string') {
+  if (typeof updatedReadableArticle === 'string') {
     return undefined;
-  }else {
+  } else {
+    //Clean up
+    await getUpdatedArticleQueue().remove(job.id);
     return updatedReadableArticle;
   }
 }
