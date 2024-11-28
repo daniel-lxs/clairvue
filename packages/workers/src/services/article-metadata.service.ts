@@ -13,7 +13,7 @@ import Redis from 'ioredis';
 
 let redisClient: Redis | null = null;
 
-function getRedisClient(): Redis | null {
+function initializeRedisClient(): Redis | null {
   if (!redisClient) {
     redisClient = new Redis(config.redis);
   }
@@ -21,12 +21,12 @@ function getRedisClient(): Redis | null {
   return redisClient;
 }
 
-function hashLink(link: string): string {
+function generateLinkHash(link: string): string {
   const hash = createHash('sha256').update(link).digest('hex');
   return hash.substring(0, 16);
 }
 
-async function parseFeed(url: string): Promise<Parser.Output<Parser.Item> | undefined> {
+async function retrieveFeedData(url: string): Promise<Parser.Output<Parser.Item> | undefined> {
   const parser = new Parser({
     timeout: 40000, // 40 seconds
     headers: {
@@ -35,8 +35,7 @@ async function parseFeed(url: string): Promise<Parser.Output<Parser.Item> | unde
   });
 
   try {
-    const feed = await parser.parseURL(url);
-    return feed;
+    return await parser.parseURL(url);
   } catch (error) {
     console.error(
       `Feed with url: ${url} could not be parsed, trying to find RSS or Atom feed link`,
@@ -49,13 +48,13 @@ async function parseFeed(url: string): Promise<Parser.Output<Parser.Item> | unde
       throw new Error('No valid feed found');
     }
 
-    return parseFeed(feedLink);
+    return await parser.parseURL(feedLink);
   }
 }
 
-async function fetchFeedArticles(link: string) {
+async function retrieveArticlesFromFeed(link: string) {
   try {
-    const feed = await parseFeed(link);
+    const feed = await retrieveFeedData(link);
 
     if (!feed || !feed.items || feed.items.length === 0) {
       throw new Error('No feed items found');
@@ -80,7 +79,7 @@ async function fetchFeedArticles(link: string) {
   }
 }
 
-async function fetchAndProcessArticleChunks(
+async function processArticleChunks(
   articles: Parser.Item[],
   options: ProcessArticlesOptions = { chunkSize: 10, parallelDelay: 1000 }
 ): Promise<ArticleMetadata[]> {
@@ -95,7 +94,7 @@ async function fetchAndProcessArticleChunks(
   for (const chunk of chunks) {
     const chunkResults = await Promise.all(
       chunk.map(async (article) => {
-        return await getArticleMetadata(article);
+        return await retrieveArticleMetadata(article);
       })
     );
 
@@ -109,18 +108,18 @@ async function fetchAndProcessArticleChunks(
   return articleMetadata;
 }
 
-async function getArticlesMetadata(
+async function retrieveArticlesMetadata(
   feed: Feed,
   jobContext: string = 'None'
 ): Promise<ArticleMetadata[]> {
   try {
-    const orderedArticles = await fetchFeedArticles(feed.link);
+    const orderedArticles = await retrieveArticlesFromFeed(feed.link);
 
     if (!orderedArticles) return [];
 
     console.info(`[${jobContext}] Syncing ${orderedArticles.length} articles from ${feed.name}...`);
 
-    const articles = await fetchAndProcessArticleChunks(orderedArticles);
+    const articles = await processArticleChunks(orderedArticles);
 
     if (!articles || articles.length === 0) {
       console.info(`[${jobContext}] No new articles found.`);
@@ -139,23 +138,23 @@ async function getArticlesMetadata(
   }
 }
 
-function validateLink(link: string | undefined): link is string {
+function isValidLink(link: string | undefined): link is string {
   if (!link) return false;
   if (!z.string().url().safeParse(link).success) return false;
   return true;
 }
 
-async function getArticleMetadata(article: Parser.Item): Promise<ArticleMetadata | undefined> {
+async function retrieveArticleMetadata(article: Parser.Item): Promise<ArticleMetadata | undefined> {
   const { link, title } = article;
   const pubDate = article.pubDate ?? article.isoDate;
 
-  if (!validateLink(link)) {
+  if (!isValidLink(link)) {
     return undefined;
   }
 
   const siteName = new URL(link).hostname.replace('www.', '');
 
-  const existingArticleMetadata = await getCachedArticleMetadata(link);
+  const existingArticleMetadata = await retrieveCachedArticleMetadata(link);
 
   if (existingArticleMetadata) {
     return undefined;
@@ -163,7 +162,7 @@ async function getArticleMetadata(article: Parser.Item): Promise<ArticleMetadata
 
   console.info(`Processing article: ${link}`);
 
-  const partialMetadata = await fetchArticleMetadata(link, title);
+  const partialMetadata = await retrieveArticleMetadataDetails(link, title);
 
   const articleMetadata = {
     ...partialMetadata,
@@ -173,11 +172,11 @@ async function getArticleMetadata(article: Parser.Item): Promise<ArticleMetadata
     link,
     siteName
   };
-  cacheArticleMetadata(link, articleMetadata);
+  await storeArticleMetadataInCache(link, articleMetadata);
   return articleMetadata;
 }
 
-async function fetchAndCleanDocument(
+async function retrieveAndSanitizeDocument(
   link: string,
   ua?: string | null
 ): Promise<Document | undefined> {
@@ -240,7 +239,7 @@ async function getMimeType(url: string, ua: string): Promise<string | undefined>
   }
 }
 
-async function fetchArticleMetadata(
+async function retrieveArticleMetadataDetails(
   link: string,
   title?: string
 ): Promise<Partial<ArticleMetadata> | undefined> {
@@ -257,7 +256,7 @@ async function fetchArticleMetadata(
       };
     }
 
-    const readableArticle = await fetchReadableArticle(link);
+    const readableArticle = await retrieveReadableArticle(link);
     const readable = !!readableArticle;
 
     const metadata = await urlMetadata(link, {
@@ -268,10 +267,10 @@ async function fetchArticleMetadata(
     });
 
     if (readable) {
-      createReadableArticleCache(link, readableArticle);
+      await cacheService.cacheReadableArticle(link, readableArticle);
     }
 
-    const articleMetadata = extractArticleMetadata(metadata, new URL(link).hostname);
+    const articleMetadata = deriveArticleMetadata(metadata, new URL(link).hostname);
 
     if (!articleMetadata) {
       return undefined;
@@ -294,7 +293,7 @@ async function fetchArticleMetadata(
   }
 }
 
-function extractArticleMetadata(
+function deriveArticleMetadata(
   metadata: urlMetadata.Result | undefined,
   domain: string
 ): Partial<ArticleMetadata> | undefined {
@@ -309,9 +308,9 @@ function extractArticleMetadata(
       metadata['twitter:title'] ||
       (Array.isArray(metadata.jsonld) &&
         metadata.jsonld.length > 0 &&
-        (isNewsArticle(metadata.jsonld[0])
+        (checkIfNewsArticle(metadata.jsonld[0])
           ? metadata.jsonld[0].headline
-          : metadata.jsonld.find(isNewsArticle)?.headline)) ||
+          : metadata.jsonld.find(checkIfNewsArticle)?.headline)) ||
       (metadata.headings &&
         metadata.headings.find((h: { level: string }) => h.level === 'h1')?.text) ||
       undefined;
@@ -396,7 +395,7 @@ function extractArticleMetadata(
 }
 
 // Helper function to check if the given data is a NewsArticle JSON-LD object
-function isNewsArticle(
+function checkIfNewsArticle(
   jsonldData: unknown
 ): jsonldData is { '@type': 'NewsArticle'; headline: string } {
   if (typeof jsonldData === 'object' && jsonldData !== null) {
@@ -406,23 +405,12 @@ function isNewsArticle(
   return false;
 }
 
-async function createReadableArticleCache(
-  link: string,
-  readableArticle: ReadableArticle
-): Promise<void> {
-  if (readableArticle) {
-    await cacheService.cacheReadableArticle(link, readableArticle);
-  }
-
-  return;
-}
-
-async function fetchReadableArticle(link: string): Promise<ReadableArticle | undefined> {
-  if (!validateLink(link)) {
+async function retrieveReadableArticle(link: string): Promise<ReadableArticle | undefined> {
+  if (!isValidLink(link)) {
     return undefined;
   }
 
-  const document = await fetchAndCleanDocument(link, config.app.userAgent);
+  const document = await retrieveAndSanitizeDocument(link, config.app.userAgent);
 
   if (!document) {
     return undefined;
@@ -460,10 +448,10 @@ async function fetchReadableArticle(link: string): Promise<ReadableArticle | und
   return undefined;
 }
 
-async function getUpdatedReadableArticle(link: string): Promise<ReadableArticle | undefined> {
+async function refreshReadableArticle(link: string): Promise<ReadableArticle | undefined> {
   const existingReadableArticle = await cacheService.getCachedReadableArticle(link);
 
-  const readableArticle = await fetchReadableArticle(link);
+  const readableArticle = await retrieveReadableArticle(link);
 
   if (!readableArticle) {
     return undefined;
@@ -481,23 +469,23 @@ async function getUpdatedReadableArticle(link: string): Promise<ReadableArticle 
   return readableArticle;
 }
 
-async function getCachedArticleMetadata(link: string): Promise<ArticleMetadata | null> {
-  const redis = getRedisClient();
+async function retrieveCachedArticleMetadata(link: string): Promise<ArticleMetadata | null> {
+  const redis = initializeRedisClient();
   if (!redis) throw new Error('Redis client not initialized');
 
   if (!link) {
     return null;
   }
 
-  const cached = await redis.get(`article-metadata:${hashLink(link)}`);
+  const cached = await redis.get(`article-metadata:${generateLinkHash(link)}`);
   if (cached) {
     return JSON.parse(cached);
   }
   return null;
 }
 
-async function cacheArticleMetadata(link: string, article: ArticleMetadata): Promise<void> {
-  const redis = getRedisClient();
+async function storeArticleMetadataInCache(link: string, article: ArticleMetadata): Promise<void> {
+  const redis = initializeRedisClient();
   if (!redis) throw new Error('Redis client not initialized');
 
   if (!link) {
@@ -506,33 +494,34 @@ async function cacheArticleMetadata(link: string, article: ArticleMetadata): Pro
 
   const expirationTime = 24 * 60 * 60; // 1 day
   await redis.set(
-    `article-metadata:${hashLink(link)}`,
+    `article-metadata:${generateLinkHash(link)}`,
     JSON.stringify(article),
     'EX',
     expirationTime
   );
 }
 
-async function deleteArticleMetadataCache(link: string): Promise<void> {
-  const redis = getRedisClient();
+async function removeArticleMetadataFromCache(link: string): Promise<void> {
+  const redis = initializeRedisClient();
   if (!redis) throw new Error('Redis client not initialized');
 
   if (!link) {
     throw new Error('Link is required');
   }
 
-  await redis.del(`article-metadata:${hashLink(link)}`);
+  await redis.del(`article-metadata:${generateLinkHash(link)}`);
 }
 
 export default {
-  getArticlesMetadata,
-  getArticleMetadata,
-  fetchAndCleanDocument,
-  getCachedArticleMetadata,
-  cacheArticleMetadata,
-  deleteArticleMetadataCache,
-  fetchArticleMetadata,
-  extractArticleMetadata,
-  isNewsArticle,
-  getUpdatedReadableArticle
+  retrieveArticlesMetadata,
+  retrieveArticleMetadata,
+  retrieveAndSanitizeDocument,
+  retrieveCachedArticleMetadata,
+  storeArticleMetadataInCache,
+  removeArticleMetadataFromCache,
+  retrieveArticleMetadataDetails,
+  deriveArticleMetadata,
+  checkIfNewsArticle,
+  retrieveReadableArticle,
+  refreshReadableArticle
 };

@@ -16,7 +16,7 @@ export function startArticleMetadataWorker(connection: ConnectionOptions) {
         console.error('Feed not found');
         return;
       }
-      const articlesMetadata = await articlesService.getArticlesMetadata(feed, job.id);
+      const articlesMetadata = await articlesService.retrieveArticlesMetadata(feed, job.id);
 
       return articlesMetadata;
     },
