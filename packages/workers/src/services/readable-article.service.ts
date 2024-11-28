@@ -47,8 +47,7 @@ async function cacheArticleMetadata(link: string, article: ArticleMetadata): Pro
     `article-metadata:${hashLink(link)}`,
     JSON.stringify(article),
     'EXAT',
-    new Date().getTime() + 24 * 60 * 60,
-    'NX'
+    new Date().getTime() + 24 * 60 * 60
   ); // 1 day
 }
 
@@ -73,7 +72,7 @@ async function cacheReadableArticle(link: string, article: ReadableArticle): Pro
     throw new Error('Link is required');
   }
 
-  await redis.set(`readable-article:${hashLink(link)}`, JSON.stringify(article), 'NX');
+  await redis.set(`readable-article:${hashLink(link)}`, JSON.stringify(article));
 }
 
 async function doesReadableArticleExist(link: string): Promise<boolean> {
