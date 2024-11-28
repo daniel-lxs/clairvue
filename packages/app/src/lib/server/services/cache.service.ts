@@ -56,7 +56,11 @@ async function getUpdatedReadableArticle(
 ): Promise<ReadableArticle | undefined> {
   const queueName = 'get-updated-article';
 
-  const job = await getUpdatedArticleQueue().add(queueName, { slug, url: link });
+  const job = await getUpdatedArticleQueue().add(queueName, { slug, url: link }, {
+    deduplication: {
+      id: slug
+    }
+  });
 
   const ttl = 1000 * 60 * 1; // 1 minute
 
