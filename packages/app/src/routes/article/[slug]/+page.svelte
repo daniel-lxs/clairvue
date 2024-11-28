@@ -5,6 +5,7 @@
   import { fontSize } from '@/stores/font-size';
   import showToast from '@/utils';
   import type { ReadableArticle } from '@clairvue/types';
+  import ArticlePageSkeleton from '@/components/article/article-page-skeleton.svelte';
 
   interface Props {
     data: PageData;
@@ -60,41 +61,45 @@
 </svelte:head>
 
 <main class="flex w-full max-w-full flex-col items-center overflow-x-hidden px-4 py-16 sm:px-0">
-  <article
-    class="prose dark:prose-invert w-full max-w-full sm:max-w-prose sm:pt-4"
-    class:prose-sm={$fontSize === 'sm'}
-    class:prose-base={$fontSize === 'base'}
-    class:prose-lg={$fontSize === 'lg'}
-    class:prose-xl={$fontSize === 'xl'}
-  >
-    <div class="space-y-6">
-      <a href={data.articleMetadata?.link} target="_blank">{data.articleMetadata?.siteName}</a>
-      <h2>{data.articleMetadata?.title}</h2>
-      {#if data.articleMetadata?.author || readableArticle?.byline}
-        <p class="text-md text-muted-foreground" id="author">
-          {data.articleMetadata?.author || readableArticle?.byline}
+  {#if !readableArticle}
+    <ArticlePageSkeleton />
+  {:else}
+    <article
+      class="prose dark:prose-invert w-full max-w-full sm:max-w-prose sm:pt-4"
+      class:prose-sm={$fontSize === 'sm'}
+      class:prose-base={$fontSize === 'base'}
+      class:prose-lg={$fontSize === 'lg'}
+      class:prose-xl={$fontSize === 'xl'}
+    >
+      <div class="space-y-6">
+        <a href={data.articleMetadata?.link} target="_blank">{data.articleMetadata?.siteName}</a>
+        <h2>{data.articleMetadata?.title}</h2>
+        {#if data.articleMetadata?.author || readableArticle?.byline}
+          <p class="text-md text-muted-foreground" id="author">
+            {data.articleMetadata?.author || readableArticle?.byline}
+          </p>
+        {/if}
+        {#if readableArticle?.publishedTime}
+          <p class="text-muted-foreground text-sm">
+            {formatArticleDate(readableArticle?.publishedTime)}
+          </p>
+        {/if}
+        {#if updatedReadableArticle}
+          <button
+            title="This article has a new version"
+            onclick={handleUpdate}
+            class="text-muted-foreground text-sm">Refresh article</button
+          >
+        {/if}
+        <p class="text-muted-foreground flex h-4 items-center text-sm">
+          <BookOpen class="my-0 mr-1 h-4 w-4" />
+          {getReadingTime(readableArticle?.content || '')} min. read
         </p>
-      {/if}
-      {#if readableArticle?.publishedTime}
-        <p class="text-muted-foreground text-sm">
-          {formatArticleDate(readableArticle?.publishedTime)}
-        </p>
-      {/if}
-      {#if updatedReadableArticle}
-        <button
-          title="This article has a new version"
-          onclick={handleUpdate}
-          class="text-muted-foreground text-sm">Refresh article</button
-        >
-      {/if}
-      <p class="text-muted-foreground flex h-4 items-center text-sm">
-        <BookOpen class="my-0 mr-1 h-4 w-4" />
-        {getReadingTime(readableArticle?.content || '')} min. read
-      </p>
-    </div>
+      </div>
 
-    <Separator class="my-6" />
+      <Separator class="my-6" />
 
-    {@html readableArticle?.content}
-  </article>
+      {@html readableArticle?.content}
+    </article>
+  {/if}
 </main>

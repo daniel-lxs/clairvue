@@ -21,11 +21,7 @@ export const load: PageServerLoad = async ({ params }) => {
     redirect(302, article.link);
   }
 
-  // Try to get the article from cache first
-  let cachedReadableArticle = undefined;
-  if (article.readable) {
-    cachedReadableArticle = await cacheService.getCachedReadableArticle(article.link);
-  }
+  const cachedReadableArticle = await cacheService.getCachedReadableArticle(article.link);
 
   return {
     status: 200,
