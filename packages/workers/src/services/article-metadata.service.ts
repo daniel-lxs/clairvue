@@ -141,9 +141,6 @@ async function getArticleMetadata(article: Parser.Item): Promise<ArticleMetadata
   const existingArticleMetadata = await cacheService.getCachedArticleMetadata(link);
 
   if (existingArticleMetadata) {
-    if (existingArticleMetadata.readable) {
-      await createReadableArticleCache(existingArticleMetadata.link);
-    }
     return undefined;
   }
 
@@ -243,7 +240,8 @@ async function fetchArticleMetadata(
       };
     }
 
-    const isReadablePromise = isArticleReadable(link, ua);
+    const readableArticle = await fetchReadableArticle(link);
+    const readable = !!readableArticle;
 
     const metadata = await urlMetadata(link, {
       timeout: 10000,
@@ -252,11 +250,9 @@ async function fetchArticleMetadata(
       }
     });
 
-    // Wait for readability check with a timeout
-    const readable = await Promise.race([
-      isReadablePromise,
-      new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 15000))
-    ]);
+    if (readable) {
+      createReadableArticleCache(link, readableArticle);
+    }
 
     const articleMetadata = extractArticleMetadata(metadata, new URL(link).hostname);
 
@@ -279,16 +275,6 @@ async function fetchArticleMetadata(
     }
     return undefined;
   }
-}
-
-async function isArticleReadable(link: string, ua?: string | null): Promise<boolean> {
-  const document = await fetchAndCleanDocument(link, ua);
-
-  if (!document) {
-    return false;
-  }
-
-  return isProbablyReaderable(document);
 }
 
 function extractArticleMetadata(
@@ -403,18 +389,10 @@ function isNewsArticle(
   return false;
 }
 
-async function createReadableArticleCache(link: string | undefined) {
-  if (!validateLink(link)) {
-    return;
-  }
-
-  const doesArticleExists = await cacheService.doesReadableArticleExist(link);
-  if (doesArticleExists) {
-    return;
-  }
-
-  const readableArticle = await fetchReadableArticle(link);
-
+async function createReadableArticleCache(
+  link: string,
+  readableArticle: ReadableArticle
+): Promise<void> {
   if (readableArticle) {
     await cacheService.cacheReadableArticle(link, readableArticle);
   }
@@ -477,6 +455,7 @@ async function getUpdatedReadableArticle(link: string): Promise<ReadableArticle 
   const newHash = createHash('sha256').update(readableArticle.textContent).digest('hex');
 
   if (existingReadableArticle && existingReadableArticle.contentHash === newHash) {
+    console.log(`Compared article hash ${existingReadableArticle.contentHash} with ${newHash}`);
     return undefined;
   }
 
@@ -490,7 +469,6 @@ export default {
   getArticleMetadata,
   fetchAndCleanDocument,
   extractArticleMetadata,
-  isArticleReadable,
   isNewsArticle,
   getUpdatedReadableArticle
 };
