@@ -5,8 +5,6 @@ import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params }) => {
   const slug = params.slug;
-  const userAgent =
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/237.84.2.178 Safari/537.36';
 
   const article = await articleService.findBySlug(slug);
 
@@ -24,12 +22,17 @@ export const load: PageServerLoad = async ({ params }) => {
   }
 
   // Try to get the article from cache first
-  const cachedReadableArticle = await cacheService.getCachedReadableArticle(slug);
+  let cachedReadableArticle = undefined;
+  if (article.readable) {
+    cachedReadableArticle = await cacheService.getCachedReadableArticle(article.slug, article.link);
+  }
 
   return {
     status: 200,
     streamed: {
-      updatedArticle: cacheService.getUpdatedReadableArticle(slug, article.link)
+      updatedArticle: article.readable
+        ? cacheService.getUpdatedReadableArticle(article.slug, article.link)
+        : undefined
     },
     readableArticle: cachedReadableArticle,
     articleMetadata: article,
