@@ -9,6 +9,22 @@ import feedService from './feed.service';
 import { ArticleMetadata, Feed, ReadableArticle, ProcessArticlesOptions } from '@clairvue/types';
 import cacheService from './readable-article.service';
 import { createHash } from 'crypto';
+import Redis from 'ioredis';
+
+let redisClient: Redis | null = null;
+
+function getRedisClient(): Redis | null {
+  if (!redisClient) {
+    redisClient = new Redis(config.redis);
+  }
+
+  return redisClient;
+}
+
+function hashLink(link: string): string {
+  const hash = createHash('sha256').update(link).digest('hex');
+  return hash.substring(0, 16);
+}
 
 async function parseFeed(url: string): Promise<Parser.Output<Parser.Item> | undefined> {
   const parser = new Parser({
@@ -138,7 +154,7 @@ async function getArticleMetadata(article: Parser.Item): Promise<ArticleMetadata
 
   const siteName = new URL(link).hostname.replace('www.', '');
 
-  const existingArticleMetadata = await cacheService.getCachedArticleMetadata(link);
+  const existingArticleMetadata = await getCachedArticleMetadata(link);
 
   if (existingArticleMetadata) {
     return undefined;
@@ -156,7 +172,7 @@ async function getArticleMetadata(article: Parser.Item): Promise<ArticleMetadata
     link,
     siteName
   };
-  cacheService.cacheArticleMetadata(link, articleMetadata);
+  cacheArticleMetadata(link, articleMetadata);
   return articleMetadata;
 }
 
@@ -464,10 +480,57 @@ async function getUpdatedReadableArticle(link: string): Promise<ReadableArticle 
   return readableArticle;
 }
 
+async function getCachedArticleMetadata(link: string): Promise<ArticleMetadata | null> {
+  const redis = getRedisClient();
+  if (!redis) throw new Error('Redis client not initialized');
+
+  if (!link) {
+    return null;
+  }
+
+  const cached = await redis.get(`article-metadata:${hashLink(link)}`);
+  if (cached) {
+    return JSON.parse(cached);
+  }
+  return null;
+}
+
+async function cacheArticleMetadata(link: string, article: ArticleMetadata): Promise<void> {
+  const redis = getRedisClient();
+  if (!redis) throw new Error('Redis client not initialized');
+
+  if (!link) {
+    throw new Error('Link is required');
+  }
+
+  const expirationTime = 24 * 60 * 60; // 1 day
+  await redis.set(
+    `article-metadata:${hashLink(link)}`,
+    JSON.stringify(article),
+    'EX',
+    expirationTime
+  );
+}
+
+async function deleteArticleMetadataCache(link: string): Promise<void> {
+  const redis = getRedisClient();
+  if (!redis) throw new Error('Redis client not initialized');
+
+  if (!link) {
+    throw new Error('Link is required');
+  }
+
+  await redis.del(`article-metadata:${hashLink(link)}`);
+}
+
 export default {
   getArticlesMetadata,
   getArticleMetadata,
   fetchAndCleanDocument,
+  getCachedArticleMetadata,
+  cacheArticleMetadata,
+  deleteArticleMetadataCache,
+  fetchArticleMetadata,
   extractArticleMetadata,
   isNewsArticle,
   getUpdatedReadableArticle

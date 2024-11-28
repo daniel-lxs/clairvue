@@ -1,5 +1,5 @@
 import { Redis } from 'ioredis';
-import type { ArticleMetadata, ReadableArticle } from '@clairvue/types';
+import type { ReadableArticle } from '@clairvue/types';
 import config from '../config';
 import { createHash } from 'crypto';
 
@@ -16,51 +16,6 @@ function getRedisClient(): Redis | null {
 function hashLink(link: string): string {
   const hash = createHash('sha256').update(link).digest('hex');
   return hash.substring(0, 16);
-}
-
-// Article metadata
-
-async function getCachedArticleMetadata(link: string): Promise<ArticleMetadata | null> {
-  const redis = getRedisClient();
-  if (!redis) throw new Error('Redis client not initialized');
-
-  if (!link) {
-    return null;
-  }
-
-  const cached = await redis.get(`article-metadata:${hashLink(link)}`);
-  if (cached) {
-    return JSON.parse(cached);
-  }
-  return null;
-}
-
-async function cacheArticleMetadata(link: string, article: ArticleMetadata): Promise<void> {
-  const redis = getRedisClient();
-  if (!redis) throw new Error('Redis client not initialized');
-
-  if (!link) {
-    throw new Error('Link is required');
-  }
-
-  const expirationTime = 24 * 60 * 60; // 1 day
-  await redis.set(
-    `article-metadata:${hashLink(link)}`,
-    JSON.stringify(article),
-    'EX',
-    expirationTime
-  );
-}
-
-async function deleteArticleMetadataCache(link: string): Promise<void> {
-  const redis = getRedisClient();
-  if (!redis) throw new Error('Redis client not initialized');
-
-  if (!link) {
-    throw new Error('Link is required');
-  }
-
-  await redis.del(`article-metadata:${hashLink(link)}`);
 }
 
 // Readable article
@@ -119,12 +74,64 @@ async function deleteReadableArticleCache(link: string): Promise<void> {
   await redis.del(`readable-article:${hashLink(link)}`);
 }
 
+async function createReadableArticleCache(
+  link: string,
+  readableArticle: ReadableArticle
+): Promise<void> {
+  const redis = getRedisClient();
+  if (!redis) throw new Error('Redis client not initialized');
+
+  if (!link) {
+    throw new Error('Link is required');
+  }
+
+  const expirationTime = 24 * 60 * 60 * 2; // 2 days
+  await redis.set(
+    `readable-article:${hashLink(link)}`,
+    JSON.stringify(readableArticle),
+    'EXAT',
+    expirationTime
+  );
+}
+
+async function fetchReadableArticle(link: string): Promise<ReadableArticle | undefined> {
+  const redis = getRedisClient();
+  if (!redis) return undefined;
+
+  if (!link) {
+    return undefined;
+  }
+
+  const cached = await redis.get(`readable-article:${hashLink(link)}`);
+  if (cached) {
+    return JSON.parse(cached);
+  }
+  return undefined;
+}
+
+async function getUpdatedReadableArticle(link: string): Promise<ReadableArticle | undefined> {
+  const redis = getRedisClient();
+  if (!redis) return undefined;
+
+  if (!link) {
+    return undefined;
+  }
+
+  const cached = await redis.get(`readable-article:${hashLink(link)}`);
+  if (cached) {
+    const article: ReadableArticle = JSON.parse(cached);
+    // Update logic here if needed
+    return article;
+  }
+  return undefined;
+}
+
 export default {
-  getCachedArticleMetadata,
-  cacheArticleMetadata,
-  deleteArticleMetadataCache,
   cacheReadableArticle,
   getCachedReadableArticle,
   doesReadableArticleExist,
-  deleteReadableArticleCache
+  deleteReadableArticleCache,
+  createReadableArticleCache,
+  fetchReadableArticle,
+  getUpdatedReadableArticle
 };
