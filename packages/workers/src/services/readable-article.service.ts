@@ -43,12 +43,13 @@ async function cacheArticleMetadata(link: string, article: ArticleMetadata): Pro
     throw new Error('Link is required');
   }
 
+  const expirationTime = 24 * 60 * 60; // 1 day
   await redis.set(
     `article-metadata:${hashLink(link)}`,
     JSON.stringify(article),
-    'EXAT',
-    new Date().getTime() + 24 * 60 * 60
-  ); // 1 day
+    'EX',
+    expirationTime
+  );
 }
 
 async function deleteArticleMetadataCache(link: string): Promise<void> {
@@ -72,7 +73,13 @@ async function cacheReadableArticle(link: string, article: ReadableArticle): Pro
     throw new Error('Link is required');
   }
 
-  await redis.set(`readable-article:${hashLink(link)}`, JSON.stringify(article));
+  const expirationTime = 24 * 60 * 60 * 2; // 2 days
+  await redis.set(
+    `readable-article:${hashLink(link)}`,
+    JSON.stringify(article),
+    'EXAT',
+    expirationTime
+  ); // 2 days
 }
 
 async function doesReadableArticleExist(link: string): Promise<boolean> {
