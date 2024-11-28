@@ -21,6 +21,7 @@ export const listenArticlesQueue = () => {
   const queueEvents = new QueueEvents('get-articles', { connection });
 
   queueEvents.on('completed', async ({ jobId }) => {
+    console.info(`Job ${jobId} completed...`);
     const job = await Job.fromId(articleQueue, jobId);
 
     if (!job) {
