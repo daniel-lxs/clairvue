@@ -1,7 +1,6 @@
 import { redirect } from '@sveltejs/kit';
 import articleService from '@/server/services/article.service';
-import { getCachedArticle } from '@/server/services/cache.service';
-import { getArticleCacheQueue } from '@/server/queue/articles';
+import cacheService from '@/server/services/cache.service';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params }) => {
@@ -14,9 +13,9 @@ export const load: PageServerLoad = async ({ params }) => {
   if (!article) {
     return {
       status: 404,
-      article: undefined,
-      streamed: { parsedArticle: undefined },
-      error: 'Article not found'
+      error: 'Article not found',
+      readableArticle: undefined,
+      articleMetadata: undefined
     };
   }
 
@@ -25,26 +24,15 @@ export const load: PageServerLoad = async ({ params }) => {
   }
 
   // Try to get the article from cache first
-  const cachedArticle = await getCachedArticle(slug);
-
-  // If not in cache, parse it and queue caching job
-  if (!cachedArticle) {
-    const queue = getArticleCacheQueue();
-    await queue.add(
-      'cache-article',
-      { slug, url: article.link },
-      { removeOnComplete: true, removeOnFail: true }
-    );
-  }
+  const cachedReadableArticle = await cacheService.getCachedReadableArticle(slug);
 
   return {
     status: 200,
     streamed: {
-      parsedArticle: cachedArticle
-        ? Promise.resolve(cachedArticle)
-        : articleService.parseReadableArticle(article.link, userAgent)
+      updatedArticle: cacheService.getUpdatedReadableArticle(slug, article.link)
     },
-    article,
+    readableArticle: cachedReadableArticle,
+    articleMetadata: article,
     error: undefined
   };
 };

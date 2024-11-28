@@ -1,7 +1,7 @@
 import type { RequestHandler } from '@sveltejs/kit';
 import feedService from '@/server/services/feed.service';
 import { createFeedDto, updateFeedDto, type CreateFeedDto } from '@/server/dto/feed.dto';
-import type { CreateFeedResult } from '@/types/CreateFeedResult';
+import type { CreateFeedResult } from '@clairvue/types';
 import type { Feed } from '@/server/data/schema';
 import { validateAuthSession } from '@/server/services/auth.service';
 

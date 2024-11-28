@@ -2,11 +2,11 @@ import feedRepository from '@/server/data/repositories/feed.repository';
 import type { Feed } from '@/server/data/schema';
 import DOMPurify from 'isomorphic-dompurify';
 import type { CreateFeedDto } from '@/server/dto/feed.dto';
-import type { CreateFeedResult } from '@/types/CreateFeedResult';
-import { getArticleQueue } from '@/server/queue/articles';
+import { getArticlesQueue } from '@/server/queue/articles';
 import collectionService from './collection.service';
 import config from '@/config';
 import { JSDOM } from 'jsdom';
+import type { CreateFeedResult } from '@clairvue/types';
 
 async function findFeedById(id: string): Promise<Feed | undefined> {
   return await feedRepository.findById(id);
@@ -37,7 +37,7 @@ async function createFeed(feedData: CreateFeedDto, userId: string): Promise<Crea
     }
 
     if (!createdFeed.link.startsWith('default-feed')) {
-      const articleQueue = getArticleQueue();
+      const articleQueue = getArticlesQueue();
       articleQueue?.add(
         'sync',
         { feedId: createdFeed.id },

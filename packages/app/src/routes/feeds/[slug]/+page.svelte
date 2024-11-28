@@ -6,7 +6,7 @@
   import collectionApi from '@/api/collection';
   import feedApi from '@/api/feed';
   import showToast from '@/utils';
-  import type { NewFeed } from '@/types/NewFeed';
+  import type { NewFeed } from '@clairvue/types';
   import type { Collection, Feed } from '@/server/data/schema';
   import * as Breadcrumb from '@/components/ui/breadcrumb';
   import * as Select from '@/components/ui/select';
@@ -108,7 +108,7 @@
             <Label class="text-lg sm:text-xl" href="/feeds/{selectedCollection.slug}"
               >{pageTitle}</Label
             >
-            <p class="text-sm text-muted-foreground">
+            <p class="text-muted-foreground text-sm">
               {#if isDefaultSelected}
                 View and manage all your RSS feeds
               {:else}

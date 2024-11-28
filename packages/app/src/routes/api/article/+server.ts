@@ -23,7 +23,7 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
       take = 5;
     }
 
-    const articles = await articlesService.findArticlesByCollectionId(
+    const articles = await articlesService.findByCollectionId(
       collectionId,
       beforePublishedAt,
       take
@@ -32,7 +32,7 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
   }
 
   if (feedId) {
-    const articles = await articlesService.findArticlesByFeedId(feedId, beforePublishedAt, take);
+    const articles = await articlesService.findByFeedId(feedId, beforePublishedAt, take);
     return new Response(JSON.stringify(articles), { status: 200 });
   }
 

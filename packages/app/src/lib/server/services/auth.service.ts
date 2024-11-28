@@ -3,7 +3,7 @@ import type { Cookies } from '@sveltejs/kit';
 import type { Session, User } from '../data/schema';
 import { sha256 } from "@oslojs/crypto/sha2";
 import { createSession as insertSession, validateSession, deleteSession } from "../data/repositories/user.repository";
-import type { SessionValidationResult } from "@/types/auth/SessionValidationResult";
+import type { SessionValidationResult } from '@clairvue/types'
 
 export function generateSessionToken(): string {
 	const bytes = new Uint8Array(32);

@@ -7,7 +7,7 @@
   import { AlertOctagon } from 'lucide-svelte';
 
   interface Props {
-    form: { errors: Record<string, string[] | undefined> } | null;
+    form: { errors: Record<string, string[]> | undefined } | null;
   }
 
   let { form = $bindable() }: Props = $props();
@@ -20,9 +20,11 @@
       if (!form) {
         form = { errors: { password: ['Passwords do not match!'] } };
       }
-      form.errors.password = ['Passwords do not match!'];
+      if (form.errors) {
+        form.errors.password = ['Passwords do not match!'];
+      }
     } else if (form) {
-      delete form.errors.password;
+      delete form.errors?.password;
       form = form;
     }
   }
@@ -68,11 +70,11 @@
           ? 'opacity-100 transition-opacity'
           : ''}"
       >
-        <AlertOctagon />{form?.errors['username']?.[0] || form?.errors['password']?.[0]}
+        <AlertOctagon />{form?.errors?.['username']?.[0] || form?.errors?.['password']?.[0]}
       </p>
     </div>
   </Card.Content>
   <Card.Footer>
-    <a href="/auth/login" class="text-sm text-muted-foreground">Already have an account? Sign in</a>
+    <a href="/auth/login" class="text-muted-foreground text-sm">Already have an account? Sign in</a>
   </Card.Footer>
 </Card.Root>

@@ -1,6 +1,7 @@
 import { Redis } from 'ioredis';
-import type { ParsedArticle } from '@/types/ParsedArticle';
 import config from '@/config';
+import type { ReadableArticle } from '@clairvue/types';
+import { getQueueEvents, getUpdatedArticleQueue } from '../queue/articles';
 
 // Check if we're in a server environment
 const isServer = typeof process !== 'undefined' && config.redis.host && config.redis.port;
@@ -23,29 +24,31 @@ function getRedisClient(): Redis | null {
   return redisClient;
 }
 
-const CACHE_TTL = Number(config.app.articleCacheTTL || 3600); // Default 1 hour
-
-export async function getCachedArticle(slug: string): Promise<ParsedArticle | null> {
+async function getCachedReadableArticle(slug: string): Promise<ReadableArticle | undefined> {
   const redis = getRedisClient();
-  if (!redis) return null;
+  if (!redis) return undefined;
 
   const cached = await redis.get(`article:${slug}`);
   if (cached) {
     return JSON.parse(cached);
   }
-  return null;
+  return undefined;
 }
 
-export async function cacheArticle(slug: string, article: ParsedArticle): Promise<void> {
-  const redis = getRedisClient();
-  if (!redis) return;
+async function getUpdatedReadableArticle(
+  slug: string,
+  link: string
+): Promise<ReadableArticle | string> {
+  const queueName = 'get-updated-article';
 
-  await redis.set(`article:${slug}`, JSON.stringify(article), 'EX', CACHE_TTL);
+  const job = await getUpdatedArticleQueue().add(queueName, { slug, url: link });
+
+  const ttl = 1000 * 60 * 1; // 1 minute
+
+  return job.waitUntilFinished(getQueueEvents(queueName), ttl);
 }
 
-export async function invalidateArticleCache(slug: string): Promise<void> {
-  const redis = getRedisClient();
-  if (!redis) return;
-
-  await redis.del(`article:${slug}`);
-}
+export default {
+  getCachedReadableArticle,
+  getUpdatedReadableArticle
+};

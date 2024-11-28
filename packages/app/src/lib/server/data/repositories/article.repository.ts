@@ -8,8 +8,7 @@ import {
   collectionsToFeeds
 } from '../schema';
 import { count, desc, eq, lt, sql, and, gt } from 'drizzle-orm';
-import type { NewArticle } from '@/types/NewArticle';
-import type { PaginatedList } from '@/types/PaginatedList';
+import type { NewArticle, PaginatedList } from '@clairvue/types';
 
 async function create(newArticles: NewArticle | NewArticle[]): Promise<string[] | undefined> {
   const db = getClient();

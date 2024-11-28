@@ -1,5 +1,5 @@
 import type { CreateFeedDto } from '@/server/dto/feed.dto';
-import type { CreateFeedResult } from '@/types/CreateFeedResult';
+import type { CreateFeedResult } from '@clairvue/types';
 import type { Feed } from '@/server/data/schema';
 
 async function createFeeds(feeds: CreateFeedDto[]): Promise<CreateFeedResult[]> {

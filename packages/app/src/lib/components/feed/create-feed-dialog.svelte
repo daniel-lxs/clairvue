@@ -5,7 +5,7 @@
   import { Label } from '@/components/ui/label';
   import feedApi from '@/api/feed';
   import { Loader2, PlusCircle } from 'lucide-svelte';
-  import type { NewFeed } from '@/types/NewFeed';
+  import type { NewFeed } from '@clairvue/types';
   import { z } from 'zod';
 
   let {
@@ -99,7 +99,7 @@
         <Input id="name" bind:value={link} class="col-span-3" />
       </div>
 
-      <p class="text-center text-xs text-muted-foreground {hasError ? 'text-red-500' : ''}">
+      <p class="text-muted-foreground text-center text-xs {hasError ? 'text-red-500' : ''}">
         {#if hasError}
           Invalid feed link
         {:else}

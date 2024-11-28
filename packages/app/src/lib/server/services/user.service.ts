@@ -1,12 +1,10 @@
 import { z } from 'zod';
-import type { LoginResult } from '@/types/auth/LoginResult';
-import type { SignupResult } from '@/types/auth/SignupResult';
-import type { ValidationResult } from '@/types/auth/ValidationResult';
 import { findByUsername, create as createUser } from '@/server/data/repositories/user.repository';
 import collectionService from './collection.service';
 import feedService from './feed.service';
 import argon2 from 'argon2';
 import { generateId } from '@/utils';
+import type { LoginResult, SignupResult } from '@clairvue/types';
 
 const validateUserForm = z.object({
   username: z
@@ -20,7 +18,13 @@ const validateUserForm = z.object({
     .max(255, 'Password too long')
 });
 
-const validateUser = async (username: string, password: string): Promise<ValidationResult> => {
+const validateUser = async (
+  username: string,
+  password: string
+): Promise<{
+  success: boolean;
+  errors?: Record<string, string[]> | undefined;
+}> => {
   const result = validateUserForm.safeParse({ username, password });
   if (!result.success) {
     return {

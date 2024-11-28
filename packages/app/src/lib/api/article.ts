@@ -1,5 +1,5 @@
 import type { Article } from '@/server/data/schema';
-import type { PaginatedList } from '@/types/PaginatedList';
+import type { PaginatedList } from '@clairvue/types';
 
 export async function getArticlesByCollectionId(
   collectionId: string,

@@ -1,10 +1,11 @@
 import { CronJob } from 'cron';
 import feedRepository from '@/server/data/repositories/feed.repository';
-import { getArticleQueue } from '@/server/queue/articles';
+import { getArticlesQueue } from '@/server/queue/articles';
 
 export function startScheduler() {
   console.log(`[Scheduler] Started at ${new Date().toLocaleString()}`);
-  const job = new CronJob('*/2 * * * *', async () => {
+  const articleQueue = getArticlesQueue();
+  const cronJob = new CronJob('*/2 * * * *', async () => {
     // Every 2 minutes
     console.log(`[Scheduler] Running job at ${new Date().toLocaleString()}`);
     const pageSize = 20;
@@ -23,15 +24,14 @@ export function startScheduler() {
         }
 
         console.log(`[Scheduler] Syncing ${feeds.length} feeds...`);
-        const articleQueue = getArticleQueue();
-        articleQueue?.addBulk(
+
+        await articleQueue.addBulk(
           feeds.map((feed) => {
             return (() => {
-              const feedId = feed.id;
               return {
                 name: 'sync',
-                data: { feedId },
-                opts: { jobId: feedId, removeOnComplete: true, removeOnFail: true }
+                data: { feed },
+                opts: { jobId: feed.id, removeOnComplete: true, removeOnFail: true }
               };
             })();
           })
@@ -48,6 +48,5 @@ export function startScheduler() {
       }
     }
   });
-
-  job.start();
+  cronJob.start();
 }
