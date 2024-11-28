@@ -1,5 +1,5 @@
 import { Worker, type ConnectionOptions } from 'bullmq';
-import articleService from './services/article.service';
+import articleService from './services/article-metadata.service';
 
 interface GetUpdatedArticleJob {
   slug: string;
@@ -13,10 +13,7 @@ export function startArticleUpdatedWorker(connection: ConnectionOptions) {
       try {
         const updatedArticle = await articleService.getUpdatedReadableArticle(url);
 
-        return {
-          isUpdated: !!updatedArticle,
-          article: updatedArticle
-        };
+        return updatedArticle;
       } catch (error) {
         console.error(`Failed to cache article ${slug}:`, error);
         throw error;
@@ -26,7 +23,7 @@ export function startArticleUpdatedWorker(connection: ConnectionOptions) {
   );
 
   worker.on('ready', () => {
-    console.info(`Article metadata worker is ready.`);
+    console.info(`Get updated article worker is ready.`);
   });
 
   worker.on('completed', async (job) => {
