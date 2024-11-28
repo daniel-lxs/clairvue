@@ -1,10 +1,11 @@
 {
-  "name": "worker",
+  "name": "workers",
   "version": "0.0.1",
   "type": "module",
   "scripts": {
     "build": "vite build",
-    "start": "node dist/index.cjs"
+    "start": "node dist/index.cjs",
+    "dev": "tsx watch src/index.ts"
   },
   "dependencies": {
     "@clairvue/types": "workspace:*",
@@ -16,6 +17,7 @@
     "rss-parser": "^3.13.0",
     "url-metadata": "^3.5.6",
     "vite-plugin-node": "^4.0.0",
+    "dotenv": "^16.4.5",
     "zod": "^3.23.8"
   },
   "devDependencies": {
@@ -23,7 +25,6 @@
     "@types/node": "^22.10.0",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
-    "dotenv": "^16.4.5",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
     "vite": "^5.4.11"

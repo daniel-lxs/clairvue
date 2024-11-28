@@ -111,6 +111,9 @@ importers:
       '@types/jsdom':
         specifier: ^21.1.7
         version: 21.1.7
+      '@types/node':
+        specifier: ^22.10.0
+        version: 22.10.0
       '@types/throttle-debounce':
         specifier: ^5.0.2
         version: 5.0.2
@@ -213,6 +216,9 @@ importers:
       bullmq:
         specifier: ^5.26.1
         version: 5.29.1
+      dotenv:
+        specifier: ^16.4.5
+        version: 16.4.5
       ioredis:
         specifier: ^5.4.1
         version: 5.4.1
@@ -247,9 +253,6 @@ importers:
       '@typescript-eslint/parser':
         specifier: ^6.21.0
         version: 6.21.0(eslint@8.57.1)(typescript@5.7.2)
-      dotenv:
-        specifier: ^16.4.5
-        version: 16.4.5
       tsx:
         specifier: ^4.19.2
         version: 4.19.2

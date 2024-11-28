@@ -3,8 +3,8 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "dev": "dotenv -e .env.local vite dev",
-    "build": "NODE_ENV=build vite build",
+    "dev": "vite dev",
+    "build": "vite build",
     "preview": "vite preview",
     "start": "node -r dotenv/config build",
     "watch": "vite dev",
@@ -26,6 +26,7 @@
     "@tailwindcss/typography": "^0.5.15",
     "@types/eslint": "8.56.0",
     "@types/jsdom": "^21.1.7",
+    "@types/node": "^22.10.0",
     "@types/throttle-debounce": "^5.0.2",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",

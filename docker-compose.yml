@@ -2,8 +2,10 @@ version: '3.8'
 
 services:
   app:
-    build: .
-    command: pnpm run start
+    build:
+      context: .
+      target: app
+    command: pnpm --filter app run start
     environment:
       - HOST=0.0.0.0
       - PORT=3000
@@ -12,8 +14,26 @@ services:
       - REDIS_PORT=${REDIS_PORT}
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - DB_URL=${DB_URL}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
     ports:
       - '7149:3000'
+    depends_on:
+      - redis
+      - db
+
+  worker:
+    build:
+      context: .
+      target: worker
+    command: pnpm --filter workers run start
+    environment:
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
     depends_on:
       - redis
       - db
@@ -34,16 +54,3 @@ services:
       - POSTGRES_DB=clairvue
     ports:
       - '5432:5432'
-
-  migrations:
-    build: .
-    command: pnpm run migrate
-    environment:
-      - DB_URL=${DB_URL}
-      - DB_HOST=${DB_HOST}
-      - DB_PORT=${DB_PORT}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME}
-    depends_on:
-      - db
