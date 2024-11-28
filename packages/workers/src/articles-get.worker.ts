@@ -1,5 +1,5 @@
 import { Worker, type ConnectionOptions } from 'bullmq';
-import articlesService from './services/article.service';
+import articlesService from './services/article-metadata.service';
 import type { Feed } from '@clairvue/types';
 
 interface GetArticlesJob {
@@ -27,7 +27,7 @@ export function startArticleMetadataWorker(connection: ConnectionOptions) {
   );
 
   worker.on('ready', () => {
-    console.info(`Article metadata worker is ready.`);
+    console.info(`Get articles worker is ready.`);
   });
 
   worker.on('completed', async (job) => {
