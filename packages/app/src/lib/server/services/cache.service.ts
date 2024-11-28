@@ -80,8 +80,6 @@ async function getUpdatedReadableArticle(
   if (typeof updatedReadableArticle === 'string') {
     return undefined;
   } else {
-    //Clean up
-    await getUpdatedArticleQueue().remove(job.id);
     return updatedReadableArticle;
   }
 }
