@@ -144,7 +144,7 @@ async function getArticleMetadata(article: Parser.Item): Promise<ArticleMetadata
     if (existingArticleMetadata.readable) {
       await createReadableArticleCache(existingArticleMetadata.link);
     }
-    return existingArticleMetadata;
+    return undefined;
   }
 
   console.info(`Processing article: ${link}`);
