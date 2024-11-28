@@ -1,5 +1,5 @@
 import { Worker, type ConnectionOptions } from 'bullmq';
-import articleService from './services/article-metadata.service';
+import readableArticleService from './services/readable-article.service';
 
 interface GetUpdatedArticleJob {
   slug: string;
@@ -11,7 +11,7 @@ export function startArticleUpdatedWorker(connection: ConnectionOptions) {
     async (job) => {
       const { slug, url } = job.data;
       try {
-        const updatedArticle = await articleService.getUpdatedReadableArticle(url);
+        const updatedArticle = await readableArticleService.getUpdatedReadableArticle(url);
 
         return updatedArticle;
       } catch (error) {
