@@ -11,6 +11,4 @@ export const createArticleDto = z.object({
   publishedAt: z.date({ coerce: true })
 });
 
-export const createArticlesDto = z.object({
-  articles: z.array(createArticleDto)
-});
+export const createArticlesDto = z.array(createArticleDto);

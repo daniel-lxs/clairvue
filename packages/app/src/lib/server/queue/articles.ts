@@ -22,14 +22,16 @@ export const listenArticlesQueue = () => {
 
   queueEvents.on('completed', async ({ jobId }) => {
     const job = await Job.fromId(articleQueue, jobId);
-    if (job) {
-      articleService.createFromJobResult(jobId, job.data);
+
+    if (!job) {
+      console.error(`Job ${jobId} not found`);
+      return;
     }
+
+    articleService.createFromJobResult(job.data.feed.id, job.returnvalue);
   });
 };
 
 export const getUpdatedArticleQueue = () => {
   return new Queue('get-updated-article', { connection });
 };
-
-
