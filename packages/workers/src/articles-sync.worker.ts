@@ -12,7 +12,6 @@ interface WorkerConfig {
   chunkSize?: number;
   parallelDelay?: number;
   concurrency?: number;
-  fetchTimeout?: number;
   rateLimit?: {
     max: number;
     duration: number;
@@ -23,7 +22,6 @@ const DEFAULT_CONFIG: Required<WorkerConfig> = {
   chunkSize: 10,
   parallelDelay: 1000,
   concurrency: 5,
-  fetchTimeout: 10000,
   rateLimit: {
     max: 100,
     duration: 60000
@@ -85,10 +83,7 @@ export function startSyncArticlesWorker(
                   return undefined;
                 }
 
-                const { response, mimeType } = await httpService.fetchWithTimeout(
-                  link,
-                  finalConfig.fetchTimeout
-                );
+                const { response, mimeType } = await httpService.fetchArticle(link);
 
                 if (!response || !isHtmlMimeType(mimeType)) {
                   console.warn(`[${job.id}] Article not HTML: ${link}`);
@@ -103,7 +98,7 @@ export function startSyncArticlesWorker(
 
                 const readableArticle = await readableArticleService.retrieveReadableArticle(
                   link,
-                  response
+                  response.clone()
                 );
                 const readable = !!readableArticle;
 
@@ -114,7 +109,7 @@ export function startSyncArticlesWorker(
                 }
 
                 return await articleMetadataService.retrieveArticleMetadata(
-                  response,
+                  response.clone(),
                   article,
                   readable
                 );

@@ -1,20 +1,12 @@
 import config from '../config';
 
-async function fetchWithTimeout(url: string, timeout: number) {
+async function fetchArticle(url: string) {
   try {
     const userAgent = config.app.userAgent;
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => {
-      controller.abort();
-      console.error(`Timeout reached while fetching ${url}`);
-    }, timeout);
 
     const response = await fetch(url, {
-      headers: { 'User-Agent': userAgent, Accept: 'text/html' },
-      signal: controller.signal
+      headers: { 'User-Agent': userAgent, Accept: 'text/html' }
     });
-
-    clearTimeout(timeoutId);
 
     const mimeType = response.headers.get('content-type') ?? undefined;
 
@@ -26,5 +18,5 @@ async function fetchWithTimeout(url: string, timeout: number) {
 }
 
 export default {
-  fetchWithTimeout
+  fetchArticle
 };

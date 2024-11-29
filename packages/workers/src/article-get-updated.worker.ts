@@ -10,7 +10,6 @@ interface GetUpdatedArticleJob {
 
 interface WorkerConfig {
   concurrency?: number;
-  fetchTimeout?: number;
   rateLimit?: {
     max: number;
     duration: number;
@@ -19,7 +18,6 @@ interface WorkerConfig {
 
 const DEFAULT_CONFIG: Required<WorkerConfig> = {
   concurrency: 5,
-  fetchTimeout: 10000,
   rateLimit: {
     max: 100,
     duration: 60000 // 1 minute
@@ -42,10 +40,7 @@ export function startArticleUpdatedWorker(connection: ConnectionOptions, config?
         throw new Error('Invalid link');
       }
 
-      const { response, mimeType } = await httpService.fetchWithTimeout(
-        url,
-        finalConfig.fetchTimeout
-      );
+      const { response, mimeType } = await httpService.fetchArticle(url);
 
       if (!response || !isHtmlMimeType(mimeType)) {
         console.warn(`[${job.id}] Invalid response or content type for ${url}`);

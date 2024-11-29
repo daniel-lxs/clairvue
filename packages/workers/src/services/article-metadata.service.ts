@@ -92,7 +92,7 @@ async function retrieveArticleMetadata(
 
   console.info(`Processing article: ${link}`);
 
-  const partialMetadata = await retrieveArticleMetadataDetails(link, response, title);
+  const partialMetadata = await retrieveArticleMetadataDetails(link, response);
 
   const articleMetadata = {
     ...partialMetadata,
@@ -108,8 +108,7 @@ async function retrieveArticleMetadata(
 
 async function retrieveArticleMetadataDetails(
   link: string,
-  response: Response,
-  title?: string
+  response: Response
 ): Promise<Partial<ArticleMetadata> | undefined> {
   try {
     const metadata = await urlMetadata(null, {
