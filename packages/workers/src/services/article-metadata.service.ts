@@ -3,12 +3,10 @@ import { z } from 'zod';
 import urlMetadata from 'url-metadata';
 import config from '../config';
 import feedService from './feed.service';
-import { ArticleMetadata, Feed, ReadableArticle, ProcessArticlesOptions } from '@clairvue/types';
-import cacheService from './readable-article.service';
+import { ArticleMetadata } from '@clairvue/types';
 import { createHash } from 'crypto';
 import Redis from 'ioredis';
 import { isValidLink } from '../utils';
-import readableArticleService from './readable-article.service';
 
 let redisClient: Redis | null = null;
 
@@ -90,12 +88,6 @@ async function retrieveArticleMetadata(
   }
 
   const siteName = new URL(link).hostname.replace('www.', '');
-
-  const existingArticleMetadata = await retrieveCachedArticleMetadata(link);
-
-  if (existingArticleMetadata) {
-    return undefined;
-  }
 
   console.info(`Processing article: ${link}`);
 
