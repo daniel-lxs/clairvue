@@ -181,11 +181,9 @@ async function getUpdatedReadableArticle(link: string): Promise<ReadableArticle 
   }
 
   const newHash = createHash('sha256').update(readableArticle.textContent).digest('hex');
-  console.log(`Compared article hash ${existingReadableArticle?.contentHash} with ${newHash}`);
   if (existingReadableArticle && existingReadableArticle.contentHash === newHash) {
     return undefined;
   }
-  console.log(`Updated readable article for link ${link}`);
   await createReadableArticleCache(link, readableArticle);
 
   return readableArticle;
