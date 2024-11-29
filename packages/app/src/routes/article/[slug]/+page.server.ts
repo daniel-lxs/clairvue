@@ -26,9 +26,7 @@ export const load: PageServerLoad = async ({ params }) => {
   return {
     status: 200,
     streamed: {
-      updatedArticle: article.readable
-        ? cacheService.getUpdatedReadableArticle(article.slug, article.link)
-        : undefined
+      updatedArticle: cacheService.getUpdatedReadableArticle(article.slug, article.link)
     },
     readableArticle: cachedReadableArticle,
     articleMetadata: article,

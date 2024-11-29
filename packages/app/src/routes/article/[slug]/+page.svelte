@@ -40,7 +40,7 @@
 
   async function checkUpdatedArticle() {
     const updatedArticle = await data.streamed?.updatedArticle;
-    if (updatedArticle && typeof updatedArticle !== 'string') {
+    if (updatedArticle) {
       updatedReadableArticle = updatedArticle;
       showToast('Article updated', `This article has a new version.`, 'info', {
         label: 'Refresh',

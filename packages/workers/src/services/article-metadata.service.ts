@@ -1,15 +1,14 @@
 import Parser from 'rss-parser';
-import { isProbablyReaderable, Readability } from '@mozilla/readability';
 import { z } from 'zod';
 import urlMetadata from 'url-metadata';
-import DOMPurify from 'isomorphic-dompurify';
-import { JSDOM } from 'jsdom';
 import config from '../config';
 import feedService from './feed.service';
 import { ArticleMetadata, Feed, ReadableArticle, ProcessArticlesOptions } from '@clairvue/types';
 import cacheService from './readable-article.service';
 import { createHash } from 'crypto';
 import Redis from 'ioredis';
+import { isValidLink } from '../utils';
+import readableArticleService from './readable-article.service';
 
 let redisClient: Redis | null = null;
 
@@ -138,12 +137,6 @@ async function retrieveArticlesMetadata(
   }
 }
 
-function isValidLink(link: string | undefined): link is string {
-  if (!link) return false;
-  if (!z.string().url().safeParse(link).success) return false;
-  return true;
-}
-
 async function retrieveArticleMetadata(article: Parser.Item): Promise<ArticleMetadata | undefined> {
   const { link, title } = article;
   const pubDate = article.pubDate ?? article.isoDate;
@@ -174,55 +167,6 @@ async function retrieveArticleMetadata(article: Parser.Item): Promise<ArticleMet
   };
   await storeArticleMetadataInCache(link, articleMetadata);
   return articleMetadata;
-}
-
-async function retrieveAndSanitizeDocument(
-  link: string,
-  ua?: string | null
-): Promise<Document | undefined> {
-  const userAgent = ua || config.app.userAgent;
-  const timeout = 20000; // 20 seconds
-
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => {
-      controller.abort();
-      console.error(`Timeout reached while fetching article with link ${link}`);
-    }, timeout);
-
-    const pageResponse = await fetch(link, {
-      headers: { 'User-Agent': userAgent },
-      signal: controller.signal
-    });
-
-    clearTimeout(timeoutId);
-
-    if (!pageResponse.ok) {
-      console.error(
-        `Error occurred while fetching article with link ${link}: ${pageResponse.statusText}`
-      );
-      return undefined;
-    }
-
-    const html = await pageResponse.text();
-    const cleanHtml = DOMPurify.sanitize(html, {
-      FORBID_TAGS: ['script', 'style', 'title', 'noscript', 'iframe'],
-      FORBID_ATTR: ['style', 'class']
-    });
-    const dom = new JSDOM(cleanHtml, { url: link });
-    return dom.window.document;
-  } catch (error) {
-    if (error instanceof Error) {
-      if (error.name === 'AbortError') {
-        console.error(`Timeout reached while fetching article with link ${link}`);
-      } else {
-        console.error(`Error occurred while fetching article: ${error}`);
-      }
-    } else {
-      console.error(`Unknown error occurred while fetching article ${error}`);
-    }
-    return undefined;
-  }
 }
 
 async function getMimeType(url: string, ua: string): Promise<string | undefined> {
@@ -256,7 +200,7 @@ async function retrieveArticleMetadataDetails(
       };
     }
 
-    const readableArticle = await retrieveReadableArticle(link);
+    const readableArticle = await readableArticleService.retrieveReadableArticle(link);
     const readable = !!readableArticle;
 
     const metadata = await urlMetadata(link, {
@@ -267,7 +211,7 @@ async function retrieveArticleMetadataDetails(
     });
 
     if (readable) {
-      await cacheService.cacheReadableArticle(link, readableArticle);
+      await cacheService.createReadableArticleCache(link, readableArticle);
     }
 
     const articleMetadata = deriveArticleMetadata(metadata, new URL(link).hostname);
@@ -405,70 +349,6 @@ function checkIfNewsArticle(
   return false;
 }
 
-async function retrieveReadableArticle(link: string): Promise<ReadableArticle | undefined> {
-  if (!isValidLink(link)) {
-    return undefined;
-  }
-
-  const document = await retrieveAndSanitizeDocument(link, config.app.userAgent);
-
-  if (!document) {
-    return undefined;
-  }
-
-  if (isProbablyReaderable(document)) {
-    // Modify image paths to absolute URLs
-    const images = document.querySelectorAll('img');
-    images.forEach((imgElement) => {
-      const imgSrc = imgElement.getAttribute('src');
-      if (imgSrc && !imgSrc.startsWith('http')) {
-        // Convert relative image path to absolute URL
-        const absoluteUrl = new URL(imgSrc, link).href;
-        imgElement.setAttribute('src', absoluteUrl);
-      }
-    });
-
-    // Parse the modified HTML using Readability
-    const parsedArticle = new Readability(document).parse();
-    if (!parsedArticle) {
-      console.error('Error occurred while parsing article');
-      return undefined;
-    }
-
-    // Hash the content to check for updates
-    const hash = createHash('sha256').update(parsedArticle.textContent).digest('hex');
-    const readableArticle: ReadableArticle = {
-      ...parsedArticle,
-      contentHash: hash
-    };
-
-    return readableArticle;
-  }
-
-  return undefined;
-}
-
-async function refreshReadableArticle(link: string): Promise<ReadableArticle | undefined> {
-  const existingReadableArticle = await cacheService.getCachedReadableArticle(link);
-
-  const readableArticle = await retrieveReadableArticle(link);
-
-  if (!readableArticle) {
-    return undefined;
-  }
-
-  const newHash = createHash('sha256').update(readableArticle.textContent).digest('hex');
-
-  if (existingReadableArticle && existingReadableArticle.contentHash === newHash) {
-    console.log(`Compared article hash ${existingReadableArticle.contentHash} with ${newHash}`);
-    return undefined;
-  }
-
-  await cacheService.cacheReadableArticle(link, readableArticle);
-
-  return readableArticle;
-}
-
 async function retrieveCachedArticleMetadata(link: string): Promise<ArticleMetadata | null> {
   const redis = initializeRedisClient();
   if (!redis) throw new Error('Redis client not initialized');
@@ -515,13 +395,10 @@ async function removeArticleMetadataFromCache(link: string): Promise<void> {
 export default {
   retrieveArticlesMetadata,
   retrieveArticleMetadata,
-  retrieveAndSanitizeDocument,
   retrieveCachedArticleMetadata,
   storeArticleMetadataInCache,
   removeArticleMetadataFromCache,
   retrieveArticleMetadataDetails,
   deriveArticleMetadata,
-  checkIfNewsArticle,
-  retrieveReadableArticle,
-  refreshReadableArticle
+  checkIfNewsArticle
 };
