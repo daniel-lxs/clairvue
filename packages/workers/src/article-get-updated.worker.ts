@@ -5,35 +5,94 @@ interface GetUpdatedArticleJob {
   slug: string;
   url: string;
 }
-export function startArticleUpdatedWorker(connection: ConnectionOptions) {
+
+interface WorkerConfig {
+  concurrency?: number;
+  rateLimit?: {
+    max: number;
+    duration: number;
+  };
+}
+
+const DEFAULT_CONFIG: Required<WorkerConfig> = {
+  concurrency: 5,
+  rateLimit: {
+    max: 100,
+    duration: 60000 // 1 minute
+  }
+};
+
+export function startArticleUpdatedWorker(connection: ConnectionOptions, config?: WorkerConfig) {
+  const finalConfig = {
+    ...DEFAULT_CONFIG,
+    ...config
+  };
+
   const worker = new Worker<GetUpdatedArticleJob>(
     'get-updated-article',
     async (job) => {
       const { slug, url } = job.data;
+
+      if (!url) {
+        throw new Error('URL is required');
+      }
+
       try {
+        console.info(`[${job.id}] Updating article ${slug} from ${url}`);
         const updatedArticle = await readableArticleService.getUpdatedReadableArticle(url);
+
+        if (!updatedArticle) {
+          console.warn(`[${job.id}] No updated content found for article ${slug}`);
+          return null;
+        }
 
         return updatedArticle;
       } catch (error) {
-        console.error(`Failed to cache article ${slug}:`, error);
+        console.error(
+          `[${job.id}] Failed to update article ${slug}: ${error instanceof Error ? error.message : error}`
+        );
         throw error;
       }
     },
-    { connection }
+    {
+      connection,
+      concurrency: finalConfig.concurrency,
+      limiter: finalConfig.rateLimit
+    }
   );
 
   worker.on('ready', () => {
-    console.info(`Get updated article worker is ready.`);
+    console.info('Get updated article worker is ready.');
   });
 
-  worker.on('completed', async (job) => {
-    console.info(`Job ${job.id} finished...`);
+  worker.on('completed', async (job, result) => {
+    const processingTime = Date.now() - job.timestamp;
+    console.info(
+      `Job ${job.id} finished in ${processingTime}ms. ` +
+        `Article ${job.data.slug} ${result ? 'updated' : 'unchanged'}`
+    );
   });
 
-  worker.on('failed', async (job) => {
+  worker.on('failed', async (job, error) => {
+    const processingTime = job ? Date.now() - job.timestamp : 0;
     if (job) {
-      console.info(`Job ${job.id} failed: ${job.failedReason}`);
+      console.error(
+        `Job ${job.id} failed after ${processingTime}ms: ${error.message}`,
+        '\nStack:',
+        error.stack
+      );
+    } else {
+      console.error(`A worker error occurred: ${error.message}`);
     }
-    console.info(`A unknown error occurred on worker.`);
   });
+
+  worker.on('error', (error) => {
+    console.error('Worker error:', error);
+  });
+
+  worker.on('stalled', (jobId) => {
+    console.warn(`Job ${jobId} has stalled`);
+  });
+
+  return worker;
 }
