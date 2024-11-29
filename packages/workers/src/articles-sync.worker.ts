@@ -72,6 +72,12 @@ export function startSyncArticlesWorker(connection: ConnectionOptions, config?: 
                   return undefined;
                 }
 
+                const existingArticleMetadata = await articleMetadataService.retrieveCachedArticleMetadata(link);
+
+                if (existingArticleMetadata) {
+                  return undefined;
+                }
+
                 const readableArticle = await readableArticleService.retrieveReadableArticle(link);
                 const readable = !!readableArticle;
 
