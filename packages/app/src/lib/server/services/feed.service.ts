@@ -44,6 +44,11 @@ async function createFeed(feedData: CreateFeedDto, userId: string): Promise<Crea
         {
           deduplication: {
             id: createdFeed.id
+          },
+          attempts: 3,
+          backoff: {
+            type: 'exponential',
+            delay: 1000
           }
         }
       );

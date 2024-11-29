@@ -46,6 +46,7 @@ async function getUpdatedReadableArticle(
   slug: string,
   link: string
 ): Promise<ReadableArticle | undefined> {
+  const promiseTtl = 1000 * 60 * 1; // 1 minute
   const queueName = 'get-updated-article';
 
   const job = await getUpdatedArticleQueue().add(
@@ -54,6 +55,11 @@ async function getUpdatedReadableArticle(
     {
       deduplication: {
         id: slug
+      },
+      attempts: 3,
+      backoff: {
+        type: 'exponential',
+        delay: 1000
       }
     }
   );
@@ -62,10 +68,8 @@ async function getUpdatedReadableArticle(
     return undefined;
   }
 
-  const ttl = 1000 * 60 * 1; // 1 minute
-
   try {
-    return await job.waitUntilFinished(getQueueEvents(queueName), ttl);
+    return await job.waitUntilFinished(getQueueEvents(queueName), promiseTtl);
   } catch (error) {
     return undefined;
   }
