@@ -10,7 +10,7 @@ async function fetchWithTimeout(url: string, timeout: number) {
     }, timeout);
 
     const response = await fetch(url, {
-      headers: { 'User-Agent': userAgent },
+      headers: { 'User-Agent': userAgent, Accept: 'text/html' },
       signal: controller.signal
     });
 
