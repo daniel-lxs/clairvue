@@ -1,5 +1,7 @@
 import { Worker, type ConnectionOptions } from 'bullmq';
 import readableArticleService from './services/readable-article.service';
+import httpService from './services/http.service';
+import { isValidLink } from './utils';
 
 interface GetUpdatedArticleJob {
   slug: string;
@@ -8,6 +10,7 @@ interface GetUpdatedArticleJob {
 
 interface WorkerConfig {
   concurrency?: number;
+  fetchTimeout?: number;
   rateLimit?: {
     max: number;
     duration: number;
@@ -16,6 +19,7 @@ interface WorkerConfig {
 
 const DEFAULT_CONFIG: Required<WorkerConfig> = {
   concurrency: 5,
+  fetchTimeout: 10000,
   rateLimit: {
     max: 100,
     duration: 60000 // 1 minute
@@ -33,17 +37,28 @@ export function startArticleUpdatedWorker(connection: ConnectionOptions, config?
     async (job) => {
       const { slug, url } = job.data;
 
-      if (!url) {
-        throw new Error('URL is required');
+      if (!isValidLink(url)) {
+        console.warn(`[${job.id}] Invalid link found: ${url}`);
+        throw new Error('Invalid link');
+      }
+
+      const { response, mimeType } = await httpService.fetchWithTimeout(
+        url,
+        finalConfig.fetchTimeout
+      );
+
+      if (!response || mimeType !== 'text/html') {
+        console.warn(`[${job.id}] Invalid response or content type for ${url}`);
+        throw new Error('Invalid response');
       }
 
       try {
         console.info(`[${job.id}] Updating article ${slug} from ${url}`);
-        const updatedArticle = await readableArticleService.getUpdatedReadableArticle(url);
+        const updatedArticle = await readableArticleService.refreshReadableArticle(url, response);
 
         if (!updatedArticle) {
           console.warn(`[${job.id}] No updated content found for article ${slug}`);
-          return null;
+          return undefined;
         }
 
         return updatedArticle;

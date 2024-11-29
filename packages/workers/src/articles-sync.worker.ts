@@ -3,6 +3,7 @@ import type { ArticleMetadata, Feed } from '@clairvue/types';
 import articleMetadataService from './services/article-metadata.service';
 import readableArticleService from './services/readable-article.service';
 import { isValidLink } from './utils';
+import httpService from './services/http.service';
 
 interface GetArticlesJob {
   feed: Feed;
@@ -11,6 +12,7 @@ interface WorkerConfig {
   chunkSize?: number;
   parallelDelay?: number;
   concurrency?: number;
+  fetchTimeout?: number;
   rateLimit?: {
     max: number;
     duration: number;
@@ -21,16 +23,20 @@ const DEFAULT_CONFIG: Required<WorkerConfig> = {
   chunkSize: 10,
   parallelDelay: 1000,
   concurrency: 5,
+  fetchTimeout: 10000,
   rateLimit: {
     max: 100,
     duration: 60000
   }
 };
 
-export function startSyncArticlesWorker(connection: ConnectionOptions, config?: WorkerConfig) {
+export function startSyncArticlesWorker(
+  connection: ConnectionOptions,
+  workerConfig?: WorkerConfig
+) {
   const finalConfig = {
     ...DEFAULT_CONFIG,
-    ...config
+    ...workerConfig
   };
   const worker = new Worker<GetArticlesJob>(
     'sync-articles',
@@ -65,20 +71,40 @@ export function startSyncArticlesWorker(connection: ConnectionOptions, config?: 
           const chunkResults = await Promise.all(
             chunk.map(async (article) => {
               try {
-                const link = article.link;
+                const { title, link } = article;
 
                 if (!isValidLink(link)) {
                   console.warn(`[${job.id}] Invalid link found: ${link}`);
                   return undefined;
                 }
 
-                const existingArticleMetadata = await articleMetadataService.retrieveCachedArticleMetadata(link);
+                const existingArticleMetadata =
+                  await articleMetadataService.retrieveCachedArticleMetadata(link);
 
                 if (existingArticleMetadata) {
                   return undefined;
                 }
 
-                const readableArticle = await readableArticleService.retrieveReadableArticle(link);
+                const { response, mimeType } = await httpService.fetchWithTimeout(
+                  link,
+                  finalConfig.fetchTimeout
+                );
+
+                if (!response || mimeType !== 'text/html') {
+                  console.warn(`[${job.id}] Article not HTML: ${link}`);
+                  return {
+                    title: title ?? 'Untitled',
+                    link,
+                    readable: false,
+                    publishedAt: new Date(),
+                    siteName: new URL(link).hostname.replace('www.', '')
+                  };
+                }
+
+                const readableArticle = await readableArticleService.retrieveReadableArticle(
+                  link,
+                  response
+                );
                 const readable = !!readableArticle;
 
                 if (readable) {
@@ -87,7 +113,11 @@ export function startSyncArticlesWorker(connection: ConnectionOptions, config?: 
                   console.warn(`[${job.id}] Article not readable: ${link}`);
                 }
 
-                return await articleMetadataService.retrieveArticleMetadata(article, readable);
+                return await articleMetadataService.retrieveArticleMetadata(
+                  response,
+                  article,
+                  readable
+                );
               } catch (error) {
                 console.error(
                   `[${job.id}] Error processing article: ${error instanceof Error ? error.message : error}`

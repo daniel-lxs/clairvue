@@ -79,12 +79,15 @@ async function createReadableArticleCache(
   );
 }
 
-async function retrieveReadableArticle(link: string): Promise<ReadableArticle | undefined> {
+async function retrieveReadableArticle(
+  link: string,
+  response: Response
+): Promise<ReadableArticle | undefined> {
   if (!isValidLink(link)) {
     return undefined;
   }
 
-  const document = await retrieveAndSanitizeDocument(link, config.app.userAgent);
+  const document = await extractAndSanitizeDocument(link, response);
 
   if (!document) {
     return undefined;
@@ -122,35 +125,12 @@ async function retrieveReadableArticle(link: string): Promise<ReadableArticle | 
   return undefined;
 }
 
-async function retrieveAndSanitizeDocument(
+async function extractAndSanitizeDocument(
   link: string,
-  ua?: string | null
+  response: Response
 ): Promise<Document | undefined> {
-  const userAgent = ua || config.app.userAgent;
-  const timeout = 20000; // 20 seconds
-
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => {
-      controller.abort();
-      console.error(`Timeout reached while fetching article with link ${link}`);
-    }, timeout);
-
-    const pageResponse = await fetch(link, {
-      headers: { 'User-Agent': userAgent },
-      signal: controller.signal
-    });
-
-    clearTimeout(timeoutId);
-
-    if (!pageResponse.ok) {
-      console.error(
-        `Error occurred while fetching article with link ${link}: ${pageResponse.statusText}`
-      );
-      return undefined;
-    }
-
-    const html = await pageResponse.text();
+    const html = await response.text();
     const cleanHtml = DOMPurify.sanitize(html, {
       FORBID_TAGS: ['script', 'style', 'title', 'noscript', 'iframe'],
       FORBID_ATTR: ['style', 'class']
@@ -159,22 +139,21 @@ async function retrieveAndSanitizeDocument(
     return dom.window.document;
   } catch (error) {
     if (error instanceof Error) {
-      if (error.name === 'AbortError') {
-        console.error(`Timeout reached while fetching article with link ${link}`);
-      } else {
-        console.error(`Error occurred while fetching article: ${error}`);
-      }
+      console.error(`Error occurred while extracting document: ${error}`);
     } else {
-      console.error(`Unknown error occurred while fetching article ${error}`);
+      console.error(`Unknown error occurred while extracting document ${error}`);
     }
     return undefined;
   }
 }
 
-async function getUpdatedReadableArticle(link: string): Promise<ReadableArticle | undefined> {
+async function refreshReadableArticle(
+  link: string,
+  response: Response
+): Promise<ReadableArticle | undefined> {
   const existingReadableArticle = await getCachedReadableArticle(link);
 
-  const readableArticle = await retrieveReadableArticle(link);
+  const readableArticle = await retrieveReadableArticle(link, response);
 
   if (!readableArticle) {
     return undefined;
@@ -184,26 +163,6 @@ async function getUpdatedReadableArticle(link: string): Promise<ReadableArticle 
   if (existingReadableArticle && existingReadableArticle.contentHash === newHash) {
     return undefined;
   }
-  await createReadableArticleCache(link, readableArticle);
-
-  return readableArticle;
-}
-
-async function refreshReadableArticle(link: string): Promise<ReadableArticle | undefined> {
-  const existingReadableArticle = await getCachedReadableArticle(link);
-
-  const readableArticle = await retrieveReadableArticle(link);
-
-  if (!readableArticle) {
-    return undefined;
-  }
-
-  const newHash = createHash('sha256').update(readableArticle.textContent).digest('hex');
-
-  if (existingReadableArticle && existingReadableArticle.contentHash === newHash) {
-    return undefined;
-  }
-
   await createReadableArticleCache(link, readableArticle);
 
   return readableArticle;
@@ -214,7 +173,6 @@ export default {
   doesReadableArticleExist,
   deleteReadableArticleCache,
   createReadableArticleCache,
-  getUpdatedReadableArticle,
-  retrieveReadableArticle,
-  refreshReadableArticle
+  refreshReadableArticle,
+  retrieveReadableArticle
 };

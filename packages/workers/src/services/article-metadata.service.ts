@@ -77,6 +77,7 @@ async function retrieveArticlesFromFeed(link: string) {
 }
 
 async function retrieveArticleMetadata(
+  response: Response,
   article: Parser.Item,
   readable: boolean = false
 ): Promise<ArticleMetadata | undefined> {
@@ -91,7 +92,7 @@ async function retrieveArticleMetadata(
 
   console.info(`Processing article: ${link}`);
 
-  const partialMetadata = await retrieveArticleMetadataDetails(link, title);
+  const partialMetadata = await retrieveArticleMetadataDetails(link, response, title);
 
   const articleMetadata = {
     ...partialMetadata,
@@ -105,42 +106,14 @@ async function retrieveArticleMetadata(
   return articleMetadata;
 }
 
-async function getMimeType(url: string, ua: string): Promise<string | undefined> {
-  try {
-    const response = await fetch(url, { method: 'HEAD', headers: { 'User-Agent': ua } });
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    const mimeType = response.headers.get('content-type');
-    return mimeType ?? undefined;
-  } catch (error) {
-    console.error('Error fetching MIME type:', error);
-    return undefined;
-  }
-}
-
 async function retrieveArticleMetadataDetails(
   link: string,
+  response: Response,
   title?: string
 ): Promise<Partial<ArticleMetadata> | undefined> {
   try {
-    const ua = config.app.userAgent;
-
-    const mimeType = await getMimeType(link, ua);
-    if (!mimeType || !mimeType.startsWith('text/html')) {
-      console.error(`File with link ${link} is not an HTML file or could not be fetched`);
-      return {
-        title,
-        link,
-        readable: false
-      };
-    }
-
-    const metadata = await urlMetadata(link, {
-      timeout: 10000,
-      requestHeaders: {
-        'User-Agent': ua
-      }
+    const metadata = await urlMetadata(null, {
+      parseResponseObject: response
     });
 
     return deriveArticleMetadata(metadata, new URL(link).hostname);
