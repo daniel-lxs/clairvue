@@ -13,12 +13,12 @@ export function getQueueEvents(name: string) {
 }
 
 export const getArticlesQueue = () => {
-  return new Queue('get-articles', { connection });
+  return new Queue('sync-articles', { connection });
 };
 
 export const listenArticlesQueue = () => {
   const articleQueue = getArticlesQueue();
-  const queueEvents = new QueueEvents('get-articles', { connection });
+  const queueEvents = new QueueEvents('sync-articles', { connection });
 
   queueEvents.on('completed', async ({ jobId }) => {
     console.info(`Job ${jobId} completed...`);

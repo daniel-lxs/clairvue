@@ -78,66 +78,10 @@ async function retrieveArticlesFromFeed(link: string) {
   }
 }
 
-async function processArticleChunks(
-  articles: Parser.Item[],
-  options: ProcessArticlesOptions = { chunkSize: 10, parallelDelay: 1000 }
-): Promise<ArticleMetadata[]> {
-  if (articles.length === 0) return [];
-  const { chunkSize, parallelDelay } = options;
-  const articleMetadata: ArticleMetadata[] = [];
-
-  const chunks = Array.from({ length: Math.ceil(articles.length / chunkSize) }, (_, i) =>
-    articles.slice(i * chunkSize, i * chunkSize + chunkSize)
-  );
-
-  for (const chunk of chunks) {
-    const chunkResults = await Promise.all(
-      chunk.map(async (article) => {
-        return await retrieveArticleMetadata(article);
-      })
-    );
-
-    articleMetadata.push(
-      ...chunkResults.filter((article): article is ArticleMetadata => Boolean(article))
-    );
-
-    await new Promise((resolve) => setTimeout(resolve, parallelDelay));
-  }
-
-  return articleMetadata;
-}
-
-async function retrieveArticlesMetadata(
-  feed: Feed,
-  jobContext: string = 'None'
-): Promise<ArticleMetadata[]> {
-  try {
-    const orderedArticles = await retrieveArticlesFromFeed(feed.link);
-
-    if (!orderedArticles) return [];
-
-    console.info(`[${jobContext}] Syncing ${orderedArticles.length} articles from ${feed.name}...`);
-
-    const articles = await processArticleChunks(orderedArticles);
-
-    if (!articles || articles.length === 0) {
-      console.info(`[${jobContext}] No new articles found.`);
-      return [];
-    }
-
-    console.info(`[${jobContext}] ${articles.length} new articles found.`);
-    return articles;
-  } catch (error) {
-    if (error instanceof Error) {
-      console.error(`[${jobContext}] Error occurred while fetching feed articles:`, error.message);
-    } else {
-      console.error(`[${jobContext}] Unknown error occurred while fetching feed articles ${error}`);
-    }
-    return [];
-  }
-}
-
-async function retrieveArticleMetadata(article: Parser.Item): Promise<ArticleMetadata | undefined> {
+async function retrieveArticleMetadata(
+  article: Parser.Item,
+  readable: boolean = false
+): Promise<ArticleMetadata | undefined> {
   const { link, title } = article;
   const pubDate = article.pubDate ?? article.isoDate;
 
@@ -160,7 +104,7 @@ async function retrieveArticleMetadata(article: Parser.Item): Promise<ArticleMet
   const articleMetadata = {
     ...partialMetadata,
     title: title ?? partialMetadata?.title ?? 'Untitled',
-    readable: partialMetadata?.readable ?? false,
+    readable,
     publishedAt: pubDate ? new Date(pubDate) : new Date(),
     link,
     siteName
@@ -200,9 +144,6 @@ async function retrieveArticleMetadataDetails(
       };
     }
 
-    const readableArticle = await readableArticleService.retrieveReadableArticle(link);
-    const readable = !!readableArticle;
-
     const metadata = await urlMetadata(link, {
       timeout: 10000,
       requestHeaders: {
@@ -210,20 +151,7 @@ async function retrieveArticleMetadataDetails(
       }
     });
 
-    if (readable) {
-      await cacheService.createReadableArticleCache(link, readableArticle);
-    }
-
-    const articleMetadata = deriveArticleMetadata(metadata, new URL(link).hostname);
-
-    if (!articleMetadata) {
-      return undefined;
-    }
-
-    return {
-      ...articleMetadata,
-      readable
-    };
+    return deriveArticleMetadata(metadata, new URL(link).hostname);
   } catch (error) {
     if (error instanceof Error) {
       console.error(
@@ -393,9 +321,9 @@ async function removeArticleMetadataFromCache(link: string): Promise<void> {
 }
 
 export default {
-  retrieveArticlesMetadata,
   retrieveArticleMetadata,
   retrieveCachedArticleMetadata,
+  retrieveArticlesFromFeed,
   storeArticleMetadataInCache,
   removeArticleMetadataFromCache,
   retrieveArticleMetadataDetails,
