@@ -2,7 +2,7 @@ import { Worker, type ConnectionOptions } from 'bullmq';
 import type { ArticleMetadata, Feed } from '@clairvue/types';
 import articleMetadataService from './services/article-metadata.service';
 import readableArticleService from './services/readable-article.service';
-import { isValidLink } from './utils';
+import { isHtmlMimeType, isValidLink } from './utils';
 import httpService from './services/http.service';
 
 interface GetArticlesJob {
@@ -90,7 +90,7 @@ export function startSyncArticlesWorker(
                   finalConfig.fetchTimeout
                 );
 
-                if (!response || mimeType !== 'text/html') {
+                if (!response || !isHtmlMimeType(mimeType)) {
                   console.warn(`[${job.id}] Article not HTML: ${link}`);
                   return {
                     title: title ?? 'Untitled',

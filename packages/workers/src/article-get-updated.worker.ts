@@ -1,7 +1,7 @@
 import { Worker, type ConnectionOptions } from 'bullmq';
 import readableArticleService from './services/readable-article.service';
 import httpService from './services/http.service';
-import { isValidLink } from './utils';
+import { isHtmlMimeType, isValidLink } from './utils';
 
 interface GetUpdatedArticleJob {
   slug: string;
@@ -47,7 +47,7 @@ export function startArticleUpdatedWorker(connection: ConnectionOptions, config?
         finalConfig.fetchTimeout
       );
 
-      if (!response || mimeType !== 'text/html') {
+      if (!response || !isHtmlMimeType(mimeType)) {
         console.warn(`[${job.id}] Invalid response or content type for ${url}`);
         throw new Error('Invalid response');
       }
