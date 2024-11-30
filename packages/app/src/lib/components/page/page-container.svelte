@@ -8,11 +8,13 @@
 </script>
 
 <div
-  class="container mx-auto flex min-h-screen flex-col items-center px-4 pb-10 pt-16 sm:max-w-2xl sm:px-0 sm:pt-16"
+  class="mx-auto flex w-full max-w-[100rem] justify-center pb-8 pl-8 pr-6 pt-16 sm:pl-6 sm:pr-6 md:pl-8 lg:pr-12"
 >
   {@render children?.()}
 
-  <div class="footer mt-auto w-full pb-8">
-    {@render footer?.()}
-  </div>
+  {#if footer}
+    <div class="footer mt-auto w-full pb-8">
+      {@render footer?.()}
+    </div>
+  {/if}
 </div>

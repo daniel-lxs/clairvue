@@ -3,6 +3,7 @@ import ShortUniqueId from 'short-unique-id';
 import { getClient } from '../db';
 import { collectionsToFeeds, feedSchema, type Feed, articleSchema } from '../schema';
 import slugify from 'slugify';
+import { skip } from 'node:test';
 
 async function create(
   newFeed: Pick<Feed, 'name' | 'description' | 'link'>
@@ -97,6 +98,29 @@ async function findByLink(link: string): Promise<Feed | undefined> {
     return Feed;
   } catch (error) {
     console.error('Error occurred while finding feed by link:', error);
+    return undefined;
+  }
+}
+
+async function findByUserId (userId: string, take=20, skip=0): Promise<Feed[] | undefined> {
+  try {
+    const db = getClient();
+    take = take > 100 ? 100 : take;
+
+    const result = await db
+      .select()
+      .from(feedSchema)
+      .leftJoin(collectionsToFeeds, eq(collectionsToFeeds.feedId, feedSchema.id))
+      .where(eq(collectionsToFeeds.userId, userId))
+      .limit(take)
+      .offset(skip)
+      .execute();
+    
+
+    const feeds = result.map((r) => r.feeds);
+    return feeds;
+  } catch (error) {
+    console.error('Error occurred while finding feed by user id:', error);
     return undefined;
   }
 }
@@ -204,6 +228,7 @@ export default {
   findBySlug,
   findByLink,
   findAll,
+  findByUserId,
   findOutdated,
   countArticles,
   update,

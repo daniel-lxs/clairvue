@@ -2,7 +2,6 @@
   import { countArticles, getArticlesByCollectionId } from '@/api/article';
   import ArticleCard from '@/components/article/article-card.svelte';
   import * as Page from '@/components/page';
-  import { onMount } from 'svelte';
   import type { PageData } from './$types';
   import type { Article } from '@/server/data/schema';
   import ArticleCardSkeleton from '@/components/article/article-card-skeleton.svelte';
@@ -11,6 +10,7 @@
   import Button from '@/components/ui/button/button.svelte';
   import MoreHorizontal from 'lucide-svelte/icons/more-horizontal';
   import * as Tooltip from '@/components/ui/tooltip';
+  import { onMount } from 'svelte';
 
   interface Props {
     data: PageData;
@@ -173,49 +173,54 @@
   >
 </svelte:head>
 
-{#snippet title()}
-  <div class="flex w-full justify-between">
-    <h1 class="text-xl font-bold sm:text-3xl">{data.collection?.name}</h1>
-    <Tooltip.Root>
-      <Button
-        title="Edit feed collection"
-        href="/collections/edit/{data.collection.slug}"
-        variant="ghost"
-        size="icon"
-      >
-        <MoreHorizontal class="h-6 w-6" />
-      </Button>
-      <Tooltip.Content>
-        <p class="text-xs leading-4">Edit feed collection</p>
-      </Tooltip.Content>
-    </Tooltip.Root>
-  </div>
-{/snippet}
+<main class="flex h-[calc(100vh-3.5rem)] w-full">
+  <div class="flex-1">
+    <Page.Container>
+      <div class="flex w-full flex-col">
+        {#if newArticlesCount > 0}
+          <NewArticlesButton on:click={showNewArticles} />
+        {/if}
+        <Page.Header>
+          <div class="flex w-full justify-between">
+            <h1 class="text-xl font-semibold sm:text-2xl">{data.collection?.name}</h1>
+            <Tooltip.Root>
+              <Button
+                title="Edit feed collection"
+                href="/feeds/{data.collection.slug}"
+                variant="ghost"
+                size="icon"
+              >
+                <MoreHorizontal class="h-6 w-6" />
+              </Button>
+              <Tooltip.Content>
+                <p class="text-xs leading-4">Edit feed collection</p>
+              </Tooltip.Content>
+            </Tooltip.Root>
+          </div>
+          <p class="sm:text-md text-md text-muted-foreground">
+            {data.collection.feeds
+              ? `Showing articles from ${data.collection.feeds.length} feeds`
+              : undefined}
+          </p></Page.Header
+        >
 
-<Page.Container>
-  {#if newArticlesCount > 0}
-    <NewArticlesButton on:click={showNewArticles} />
-  {/if}
-  <Page.Header
-    {title}
-    subtitle={data.collection.feeds
-      ? `Showing articles from ${data.collection.feeds.length} feeds`
-      : undefined}
-  />
-  <div class="w-full space-y-4 sm:space-y-6 sm:px-0">
-    {#if isLoading}
-      {#each { length: perPage } as _}
-        <ArticleCardSkeleton />
-      {/each}
-    {:else if articles && articles.length > 0}
-      {#each articles as article}
-        <ArticleCard {article} />
-      {/each}
-      {#if isLoadingMore}
-        <ArticleCardSkeleton />
-      {/if}
-    {:else}
-      <p>No articles found</p>
-    {/if}
+        <div class="space-y-4 sm:space-y-2">
+          {#if isLoading}
+            {#each { length: perPage } as _}
+              <ArticleCardSkeleton />
+            {/each}
+          {:else if articles && articles.length > 0}
+            {#each articles as article}
+              <ArticleCard {article} />
+            {/each}
+            {#if isLoadingMore}
+              <ArticleCardSkeleton />
+            {/if}
+          {:else}
+            <p>No articles found</p>
+          {/if}
+        </div>
+      </div>
+    </Page.Container>
   </div>
-</Page.Container>
+</main>

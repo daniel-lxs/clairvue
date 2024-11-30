@@ -15,7 +15,7 @@ import feedRepository from './feed.repository';
 async function insert(name: string, userId: string, id?: string) {
   //TODO: Limit the number of collections per user to 5
 
-  const hasDefaultCollection = id?.includes('default-') && await findDefaultByUserId(userId);
+  const hasDefaultCollection = id?.includes('default-') && (await findDefaultByUserId(userId));
 
   if (hasDefaultCollection) {
     throw new Error('Default collection already exists');
@@ -210,13 +210,12 @@ async function findBySlugWithFeeds(
 async function findByUserId(userId: string): Promise<Collection[] | undefined> {
   try {
     const db = getClient();
-    const result = await db
-      .select()
-      .from(collectionSchema)
-      .where(eq(collectionSchema.userId, userId))
-      .execute();
-
+    const result = await db.query.collectionSchema.findMany({
+      where: eq(collectionSchema.userId, userId)
+    });
     if (!result || result.length === 0) return undefined;
+
+    return result;
   } catch (error) {
     console.error('Error occurred while finding Collection by user id:', error);
     return undefined;

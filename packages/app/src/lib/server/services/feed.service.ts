@@ -140,8 +140,17 @@ async function updateLastSyncedAt(id: string): Promise<void> {
   await feedRepository.updateLastSync(id);
 }
 
+async function findByUserId(
+  userId: string,
+  take?: number,
+  skip?: number
+): Promise<Feed[] | undefined> {
+  return await feedRepository.findByUserId(userId, take, skip);
+}
+
 export default {
   findFeedById,
+  findByUserId,
   createFeed,
   updateFeed,
   findBySlug,

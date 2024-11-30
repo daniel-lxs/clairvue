@@ -23,6 +23,9 @@
   let articles: Article[] = $state([]);
   let savedScrollPosition = 0;
   let hasReachedEnd = false;
+  let feedDomain = $derived(
+    data.feed.link.startsWith('default-') ? '' : new URL(data.feed.link).host
+  );
 
   // Save the current state before navigating away
   beforeNavigate(({ to }) => {
@@ -159,25 +162,31 @@
   <title>{newArticlesCount > 0 ? `(${newArticlesCount}) ` : ''}{data.feed?.name} - Clairvue</title>
 </svelte:head>
 
-<Page.Container>
-  {#if newArticlesCount > 0}
-    <NewArticlesButton on:click={showNewArticles} />
-  {/if}
-  <Page.Header title={data.feed?.name || 'Unnamed'} />
-  <div class="w-full space-y-4 sm:space-y-6 sm:px-0">
-    {#if isLoading}
-      {#each { length: perPage } as _}
-        <ArticleCardSkeleton />
-      {/each}
-    {:else if articles && articles.length > 0}
-      {#each articles as article}
-        <ArticleCard {article} />
-      {/each}
-      {#if isLoadingMore}
-        <ArticleCardSkeleton />
-      {/if}
-    {:else}
-      <p>No articles found</p>
-    {/if}
+<main class="flex h-[calc(100vh-3.5rem)] w-full">
+  <div class="flex-1">
+    <Page.Container>
+      <div class="flex flex-col">
+        {#if newArticlesCount > 0}
+          <NewArticlesButton on:click={showNewArticles} />
+        {/if}
+        <Page.Header title={data.feed?.name || 'Unnamed'} subtitle={feedDomain} />
+        <div class="w-full space-y-4 sm:space-y-6 sm:px-0">
+          {#if isLoading}
+            {#each { length: perPage } as _}
+              <ArticleCardSkeleton />
+            {/each}
+          {:else if articles && articles.length > 0}
+            {#each articles as article}
+              <ArticleCard {article} />
+            {/each}
+            {#if isLoadingMore}
+              <ArticleCardSkeleton />
+            {/if}
+          {:else}
+            <p>No articles found</p>
+          {/if}
+        </div>
+      </div>
+    </Page.Container>
   </div>
-</Page.Container>
+</main>

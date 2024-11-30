@@ -99,9 +99,23 @@ async function updateFeed(
   }
 }
 
+async function getFeeds(take: number = 10, skip: number = 0): Promise<Feed[]> {
+  try {
+    const response = await fetch(`/api/feeds?&take=${take}&skip=${skip}`);
+    if (!response.ok) {
+      throw new Error(`Failed to get feeds: ${response.statusText}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error occurred while getting feeds:', error);
+    return [];
+  }
+}
+
 export default {
   createFeeds,
   getFeedInfo,
   getFeed,
-  updateFeed
+  updateFeed,
+  getFeeds
 };
