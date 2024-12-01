@@ -8,7 +8,7 @@
 </script>
 
 <div
-  class="mx-auto flex w-full max-w-[100rem] justify-center pb-8 pl-8 pr-6 pt-16 sm:pl-6 sm:pr-6 md:pl-8 lg:pr-12"
+  class="mx-auto flex w-full max-w-[100rem] justify-center pb-8 pl-4 pr-4 pt-16 sm:pl-6 sm:pr-6 md:pl-8 lg:pr-12"
 >
   {@render children?.()}
 

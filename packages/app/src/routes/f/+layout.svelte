@@ -29,7 +29,7 @@
 <div class="mx-auto flex h-[calc(100vh-3.5rem)] w-full max-w-[90rem] pt-0">
   <div class="hidden md:block md:w-80 md:flex-shrink-0">
     <NavigationSidebar
-      class="fixed h-[calc(100vh-3.5rem)] w-80 overflow-hidden pl-12 pt-20"
+      class="fixed h-[calc(100vh-3.5rem)] w-80 overflow-hidden pl-4 pt-20 lg:pl-12"
       {collections}
       {feeds}
       onLoadMoreFeeds={loadMoreFeeds}

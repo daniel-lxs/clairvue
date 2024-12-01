@@ -165,7 +165,7 @@
 <main class="flex h-[calc(100vh-3.5rem)] w-full">
   <div class="flex-1">
     <Page.Container>
-      <div class="flex flex-col">
+      <div class="flex w-full flex-col">
         {#if newArticlesCount > 0}
           <NewArticlesButton on:click={showNewArticles} />
         {/if}

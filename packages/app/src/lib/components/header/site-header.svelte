@@ -27,7 +27,7 @@
   class="border-border/40 bg-background/95 supports-[backdrop-filter]:bg-background/60 fixed top-0 z-50 w-full border-b backdrop-blur"
 >
   <div
-    class="mx-auto flex h-12 w-full max-w-[90rem] items-center justify-between px-6 sm:h-14 lg:px-12"
+    class="mx-auto flex h-12 w-full max-w-[90rem] items-center justify-between px-4 sm:h-14 lg:px-12"
   >
     <div class="mr-4 hidden items-center md:flex md:flex-1">
       <Logo />
