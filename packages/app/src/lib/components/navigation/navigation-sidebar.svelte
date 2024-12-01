@@ -8,13 +8,13 @@
     feeds,
     currentFeedId,
     onLoadMoreFeeds
-  } = $props<{
+  }: {
     class?: string;
     collections: Collection[];
     feeds: Feed[];
     currentFeedId?: string;
     onLoadMoreFeeds: (page: number) => void;
-  }>();
+  } = $props();
 </script>
 
 <div class={className}>
