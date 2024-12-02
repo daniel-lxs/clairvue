@@ -5,7 +5,7 @@
  */
 export class Result<T, E> {
   private constructor(
-    private readonly value?: T,
+    private readonly value?: T | undefined,
     private readonly error?: E,
     readonly isOk: boolean = true
   ) {
@@ -33,9 +33,9 @@ export class Result<T, E> {
   /**
    * Unwraps the Result, returning the value if Ok or throwing the error if Err
    */
-  unwrap(): T {
+  unwrap(): T | undefined {
     if (this.isOk) {
-      return this.value!;
+      return this.value;
     }
     throw this.error;
   }
@@ -43,28 +43,28 @@ export class Result<T, E> {
   /**
    * Returns the contained Ok value or a provided default
    */
-  unwrapOr(defaultValue: T): T {
-    return this.isOk ? this.value! : defaultValue;
+  unwrapOr(defaultValue: T): T | undefined {
+    return this.isOk ? this.value : defaultValue;
   }
 
   /**
    * Maps a Result<T, E> to Result<U, E> by applying a function to the contained Ok value
    */
-  map<U>(fn: (value: T) => U): Result<U, E> {
-    return this.isOk ? Result.ok(fn(this.value!)) : Result.err(this.error!);
+  map<U>(fn: (value: T | undefined) => U): Result<U, E> {
+    return this.isOk ? Result.ok(fn(this.value)) : Result.err(this.error!);
   }
 
   /**
    * Maps a Result<T, E> to Result<T, F> by applying a function to the contained Err value
    */
-  mapErr<F>(fn: (error: E) => F): Result<T, F> {
-    return this.isErr ? Result.err(fn(this.error!)) : Result.ok(this.value!);
+  mapErr<F>(fn: (error: E) => F): Result<T | undefined, F> {
+    return this.isErr ? Result.err(fn(this.error!)) : Result.ok(this.value);
   }
 
   /**
    * Returns result if Ok, otherwise returns other
    */
-  or(other: Result<T, E>): Result<T, E> {
+  or(other: Result<T | undefined, E>): Result<T | undefined, E> {
     return this.isOk ? this : other;
   }
 
@@ -72,14 +72,14 @@ export class Result<T, E> {
    * Chains multiple Results together. If result is Ok, applies fn to the value.
    * If result is Err, returns the Err value.
    */
-  andThen<U>(fn: (value: T) => Result<U, E>): Result<U, E> {
-    return this.isOk ? fn(this.value!) : Result.err(this.error!);
+  andThen<U>(fn: (value: T | undefined) => Result<U, E>): Result<U, E> {
+    return this.isOk ? fn(this.value) : Result.err(this.error!);
   }
 
   /**
    * Match on the result and handle both cases
    */
-  match<U, V>(options: { ok: (value: T) => U; err: (error: E) => V }): U | V {
-    return this.isOk ? options.ok(this.value!) : options.err(this.error!);
+  match<U, V>(options: { ok: (value: T | undefined) => U; err: (error: E) => V }): U | V {
+    return this.isOk ? options.ok(this.value) : options.err(this.error!);
   }
 }
