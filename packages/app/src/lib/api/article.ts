@@ -1,27 +1,40 @@
-import type { Article } from '@/server/data/schema';
-import type { PaginatedList } from '@clairvue/types';
+import type { PaginatedList, Article } from '@clairvue/types';
+import { z } from 'zod';
+import { Result } from '@clairvue/types';
+import { normalizeError } from '@/utils';
 
 export async function getArticlesByCollectionId(
   collectionId: string,
   beforePublishedAt?: Date | string,
   take = 5
-): Promise<PaginatedList<Article>> {
-  try {
-    beforePublishedAt = beforePublishedAt
-      ? typeof beforePublishedAt === 'string'
-        ? new Date(beforePublishedAt)
-        : beforePublishedAt
+): Promise<Result<PaginatedList<Article>, Error>> {
+  let validatedDate: Date | undefined;
+
+  if (beforePublishedAt && typeof beforePublishedAt === 'string') {
+    validatedDate = z.date().safeParse(beforePublishedAt).success
+      ? z.date().safeParse(beforePublishedAt).data
       : undefined;
-    const response = await fetch(
-      `/api/article?collectionId=${collectionId}&${beforePublishedAt ? `beforePublishedAt=${beforePublishedAt.toISOString()}` : ''}&take=${take}`
-    );
-    if (!response.ok) {
-      throw new Error(`Failed to get articles: ${response.statusText}`);
+  }
+
+  try {
+    const url = new URL(`/api/article?collectionId=${collectionId}`, location.origin);
+    url.searchParams.set('take', take.toString());
+
+    if (validatedDate) {
+      url.searchParams.set('beforePublishedAt', validatedDate.toISOString());
     }
-    return await response.json();
-  } catch (error) {
+
+    const response = await fetch(url.toString());
+
+    if (!response.ok) {
+      return Result.err(new Error(`Failed to get articles: ${response.statusText}`));
+    }
+
+    return Result.ok(await response.json());
+  } catch (e) {
+    const error = normalizeError(e);
     console.error('Error occurred while getting articles:', error);
-    return { items: [], totalCount: 0 };
+    return Result.err(error);
   }
 }
 
@@ -29,49 +42,73 @@ export async function getArticlesByFeedId(
   feedId: string,
   beforePublishedAt?: Date | string,
   take = 5
-): Promise<PaginatedList<Article>> {
-  try {
-    beforePublishedAt = beforePublishedAt
-      ? typeof beforePublishedAt === 'string'
-        ? new Date(beforePublishedAt)
-        : beforePublishedAt
+): Promise<Result<PaginatedList<Article>, Error>> {
+  let validatedDate: Date | undefined;
+
+  if (beforePublishedAt && typeof beforePublishedAt === 'string') {
+    validatedDate = z.date().safeParse(beforePublishedAt).success
+      ? z.date().safeParse(beforePublishedAt).data
       : undefined;
-    const response = await fetch(
-      `/api/article?feedId=${feedId}&${beforePublishedAt ? `beforePublishedAt=${beforePublishedAt.toISOString()}` : ''}&take=${take}`
-    );
-    if (!response.ok) {
-      throw new Error(`Failed to get articles: ${response.statusText}`);
+  }
+
+  try {
+    const url = new URL(`/api/article?feedId=${feedId}`, location.origin);
+    url.searchParams.set('take', take.toString());
+
+    if (validatedDate) {
+      url.searchParams.set('beforePublishedAt', validatedDate.toISOString());
     }
-    return await response.json();
-  } catch (error) {
+
+    const response = await fetch(url.toString());
+
+    if (!response.ok) {
+      return Result.err(new Error(`Failed to get articles: ${response.statusText}`));
+    }
+
+    return Result.ok(await response.json());
+  } catch (e) {
+    const error = normalizeError(e);
     console.error('Error occurred while getting articles:', error);
-    return { items: [], totalCount: 0 };
+    return Result.err(error);
   }
 }
 
 export async function countArticles(
-  afterDate: Date | string,
+  afterPublishedAt: Date | string,
   feedId?: string,
   collectionId?: string
-): Promise<number | undefined> {
+): Promise<Result<number, Error>> {
+  let validatedDate: Date | undefined;
+
+  if (afterPublishedAt && typeof afterPublishedAt === 'string') {
+    validatedDate = z.date().safeParse(afterPublishedAt).success
+      ? z.date().safeParse(afterPublishedAt).data
+      : undefined;
+  }
+
   try {
-    let afterPublishedAt: string = '';
+    const url = new URL(`/api/article/count`, location.origin);
 
-    if (typeof afterDate !== 'string') {
-      afterPublishedAt = afterDate.toISOString();
-    } else {
-      afterPublishedAt = afterDate;
+    if (validatedDate) {
+      url.searchParams.set('afterPublishedAt', validatedDate.toISOString());
     }
 
-    const response = await fetch(
-      `/api/article/count?afterPublishedAt=${afterPublishedAt}${feedId ? `&feedId=${feedId}` : ''}${collectionId ? `&collectionId=${collectionId}` : ''}`
-    );
+    if (feedId) {
+      url.searchParams.set('feedId', feedId);
+    }
+
+    if (collectionId) {
+      url.searchParams.set('collectionId', collectionId);
+    }
+
+    const response = await fetch(url.toString());
     if (!response.ok) {
-      throw new Error(`Failed to get articles: ${response.statusText}`);
+      return Result.err(new Error(`Failed to get articles: ${response.statusText}`));
     }
-    return await response.json();
-  } catch (error) {
+    return Result.ok(await response.json());
+  } catch (e) {
+    const error = normalizeError(e);
     console.error('Error occurred while getting articles:', error);
-    return undefined;
+    return Result.err(error);
   }
 }

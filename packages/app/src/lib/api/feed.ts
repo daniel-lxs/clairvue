@@ -1,8 +1,10 @@
 import type { CreateFeedDto } from '@/server/dto/feed.dto';
-import type { CreateFeedResult } from '@clairvue/types';
+import type { CreateFeedResult, FeedInfo } from '@clairvue/types';
+import { Result } from '@clairvue/types';
 import type { Feed } from '@/server/data/schema';
+import { normalizeError } from '@/utils';
 
-async function createFeeds(feeds: CreateFeedDto[]): Promise<CreateFeedResult[]> {
+async function createFeeds(feeds: CreateFeedDto[]): Promise<Result<CreateFeedResult[], Error>> {
   try {
     const response = await fetch('/api/feed', {
       method: 'POST',
@@ -11,52 +13,51 @@ async function createFeeds(feeds: CreateFeedDto[]): Promise<CreateFeedResult[]> 
       },
       body: JSON.stringify(feeds)
     });
-    if (response.status === 400) {
-      throw new Error(`Invalid feed: ${response.statusText}`);
-    }
 
     if (!response.ok) {
-      throw new Error(`Failed to create feeds: ${response.statusText}`);
+      return Result.err(new Error(`Failed to create feeds: ${response.statusText}`));
     }
 
     const results: CreateFeedResult[] = await response.json();
     if (results.length !== feeds.length) {
-      throw new Error('Failed to create all feeds');
+      return Result.err(new Error('Failed to create all feeds'));
     }
 
-    return results;
-  } catch (error) {
+    return Result.ok(results);
+  } catch (e) {
+    const error = normalizeError(e);
     console.error('Error occurred while creating feeds:', error);
-    throw error;
+    return Result.err(error);
   }
 }
 
-async function getFeedInfo(
-  link: string
-): Promise<{ title: string; description: string; link: string } | undefined> {
+async function getFeedInfo(link: string): Promise<Result<FeedInfo, Error>> {
   try {
     const response = await fetch(`/api/feedInfo?link=${btoa(link)}`);
+
     if (!response.ok) {
-      console.error('Error fetching info:', response.statusText);
-      return undefined;
+      return Result.err(new Error(response.statusText));
     }
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching info:', error);
-    return undefined;
+
+    return Result.ok(await response.json());
+  } catch (e) {
+    const error = normalizeError(e);
+    console.error('Error occurred while getting feed info:', error);
+    return Result.err(error);
   }
 }
 
-async function getFeed(id: string): Promise<Feed | undefined> {
+async function getFeedBySlug(slug: string): Promise<Result<Feed, Error>> {
   try {
-    const response = await fetch(`/api/feed?id=${id}`);
+    const response = await fetch(`/api/feed?slug=${slug}`);
     if (!response.ok) {
-      throw new Error(`Failed to get feed: ${response.statusText}`);
+      return Result.err(new Error(`Failed to get feed: ${response.statusText}`));
     }
-    return await response.json();
-  } catch (error) {
+    return Result.ok(await response.json());
+  } catch (e) {
+    const error = normalizeError(e);
     console.error('Error occurred while getting feed:', error);
-    return undefined;
+    return Result.err(error);
   }
 }
 
@@ -66,7 +67,7 @@ async function updateFeed(
   description: string,
   link: string,
   collectionId: string
-) {
+): Promise<Result<Feed, Error>> {
   try {
     const response = await fetch('/api/feed', {
       method: 'PATCH',
@@ -81,10 +82,6 @@ async function updateFeed(
         collectionId
       })
     });
-    if (response.status === 400) {
-      console.error(`Invalid feed: ${response.statusText}`);
-      throw new Error('Invalid feed');
-    }
 
     if (!response.ok) {
       console.error(`Failed to update feed: ${response.statusText}`);
@@ -99,23 +96,24 @@ async function updateFeed(
   }
 }
 
-async function getFeeds(take: number = 10, skip: number = 0): Promise<Feed[]> {
+async function getFeeds(take: number = 10, skip: number = 0): Promise<Result<Feed[], Error>> {
   try {
     const response = await fetch(`/api/feeds?&take=${take}&skip=${skip}`);
     if (!response.ok) {
-      throw new Error(`Failed to get feeds: ${response.statusText}`);
+      return Result.err(new Error(`Failed to get feeds: ${response.statusText}`));
     }
-    return await response.json();
-  } catch (error) {
+    return Result.ok(await response.json());
+  } catch (e) {
+    const error = normalizeError(e);
     console.error('Error occurred while getting feeds:', error);
-    return [];
+    return Result.err(error);
   }
 }
 
 export default {
   createFeeds,
   getFeedInfo,
-  getFeed,
+  getFeedBySlug,
   updateFeed,
   getFeeds
 };
