@@ -7,10 +7,9 @@ import { Result } from '@clairvue/types';
 
 export const GET: RequestHandler = async ({ url, cookies }) => {
   const feedSlug = url.searchParams.get('slug');
-  const collectionSlug = url.searchParams.get('collectionSlug');
 
-  if (!feedSlug || !collectionSlug) {
-    return new Response('Invalid feed or collection slug', { status: 400 });
+  if (!feedSlug) {
+    return new Response('Invalid feed slug', { status: 400 });
   }
 
   const authSessionResult = await authService.validateAuthSession(cookies);
