@@ -1,21 +1,21 @@
-import { and, count, desc, eq, sql } from 'drizzle-orm';
+import { count, desc, eq, sql } from 'drizzle-orm';
 import ShortUniqueId from 'short-unique-id';
 import { getClient } from '../db';
 import { collectionsToFeeds, feedSchema, type Feed, articleSchema } from '../schema';
+import { Result } from '@clairvue/types';
+import { normalizeError } from '@/utils';
 import slugify from 'slugify';
-import { skip } from 'node:test';
 
 async function create(
   newFeed: Pick<Feed, 'name' | 'description' | 'link'>
-): Promise<Feed | undefined> {
+): Promise<Result<Feed, Error>> {
   try {
     const db = getClient();
 
-    const existingFeed = await findByLink(newFeed.link);
+    const existingFeed = (await findByLink(newFeed.link)).unwrap();
 
     if (existingFeed) {
-      const articleCount = await countArticles(existingFeed.id);
-      return { ...existingFeed, articleCount };
+      return Result.ok(existingFeed);
     }
 
     const { randomUUID } = new ShortUniqueId({ length: 8 });
@@ -25,84 +25,94 @@ async function create(
       remove: /[*+~.()'"!:@]/g
     });
 
-    const result = (
-      await db
-        .insert(feedSchema)
-        .values({
-          id,
-          name: newFeed.name,
-          slug,
-          description: newFeed.description,
-          link: newFeed.link
-        })
-        .returning({
-          id: feedSchema.id,
-          name: feedSchema.name,
-          slug: feedSchema.slug,
-          description: feedSchema.description,
-          link: feedSchema.link,
-          createdAt: feedSchema.createdAt,
-          updatedAt: feedSchema.updatedAt,
-          syncedAt: feedSchema.syncedAt
-        })
-        .execute()
-    )[0];
+    const result = await db
+      .insert(feedSchema)
+      .values({
+        id,
+        name: newFeed.name,
+        slug,
+        description: newFeed.description,
+        link: newFeed.link
+      })
+      .returning({
+        id: feedSchema.id,
+        name: feedSchema.name,
+        slug: feedSchema.slug,
+        description: feedSchema.description,
+        link: feedSchema.link,
+        createdAt: feedSchema.createdAt,
+        updatedAt: feedSchema.updatedAt,
+        syncedAt: feedSchema.syncedAt
+      })
+      .execute();
 
-    return result;
-  } catch (error) {
-    console.error('Error occurred while creating new feed:', error);
-    return undefined;
+    if (!result || result.length === 0) return Result.err(new Error('Failed to create feed'));
+
+    return Result.ok(result[0]);
+  } catch (e) {
+    const error = normalizeError(e);
+    console.error('Error occurred while creating feed:', error);
+    return Result.err(error);
   }
 }
 
-async function findById(id: string): Promise<Feed | undefined> {
+async function findById(id: string): Promise<Result<Feed | false, Error>> {
   try {
     const db = getClient();
     const result = await db.query.feedSchema.findFirst({ where: eq(feedSchema.id, id) }).execute();
 
-    if (!result) return undefined;
+    if (!result) return Result.ok(false);
 
-    const articleCount = await countArticles(id);
+    const articleCount = (await countArticles(id)).unwrapOr(0);
 
-    return {
+    return Result.ok({
       ...result,
       articleCount
-    };
-  } catch (error) {
-    console.error('Error occurred while finding feed by link:', error);
-    return undefined;
+    });
+  } catch (e) {
+    const error = normalizeError(e);
+    console.error('Error occurred while finding feed by id:', error);
+    return Result.err(error);
   }
 }
 
-async function findBySlug(slug: string): Promise<Feed | undefined> {
+async function findBySlug(slug: string): Promise<Result<Feed | false, Error>> {
   try {
     const db = getClient();
     const result = await db.query.feedSchema
       .findFirst({ where: eq(feedSchema.slug, slug) })
       .execute();
-    return result;
-  } catch (error) {
+
+    if (!result) return Result.ok(false);
+
+    return Result.ok(result);
+  } catch (e) {
+    const error = normalizeError(e);
     console.error('Error occurred while finding feed by slug:', error);
-    return undefined;
+    return Result.err(error);
   }
 }
 
-async function findByLink(link: string): Promise<Feed | undefined> {
+async function findByLink(link: string): Promise<Result<Feed | false, Error>> {
   try {
     const db = getClient();
     const result = await db.select().from(feedSchema).where(eq(feedSchema.link, link)).execute();
 
-    const Feed = result[0];
-    if (!Feed) return undefined;
+    if (!result || result.length === 0) return Result.ok(false);
 
-    return Feed;
-  } catch (error) {
+    return Result.ok(result[0]);
+  } catch (e) {
+    const error = normalizeError(e);
     console.error('Error occurred while finding feed by link:', error);
-    return undefined;
+    return Result.err(error);
   }
 }
 
-async function findByUserId (userId: string, take=20, skip=0): Promise<Feed[] | undefined> {
+async function findByUserId(
+  userId: string,
+  take = 20,
+  skip = 0
+): Promise<Result<Feed[] | false, Error>> {
   try {
     const db = getClient();
     take = take > 100 ? 100 : take;
@@ -115,17 +125,19 @@ async function findByUserId (userId: string, take=20, skip=0): Promise<Feed[] | 
       .limit(take)
       .offset(skip)
       .execute();
-    
+
+    if (!result || result.length === 0) return Result.ok(false);
 
     const feeds = result.map((r) => r.feeds);
-    return feeds;
-  } catch (error) {
+    return Result.ok(feeds);
+  } catch (e) {
+    const error = normalizeError(e);
     console.error('Error occurred while finding feed by user id:', error);
-    return undefined;
+    return Result.err(error);
   }
 }
 
-async function findAll(take = 20, skip = 0): Promise<Feed[]> {
+async function findAll(take = 20, skip = 0): Promise<Result<Feed[] | false, Error>> {
   try {
     const db = getClient();
 
@@ -138,15 +150,19 @@ async function findAll(take = 20, skip = 0): Promise<Feed[]> {
         orderBy: desc(feedSchema.createdAt)
       })
       .execute();
-    return result;
-  } catch (error) {
+
+    if (!result || result.length === 0) return Result.ok(false);
+
+    return Result.ok(result);
+  } catch (e) {
+    const error = normalizeError(e);
     console.error('Error occurred while finding all feeds:', error);
-    return [];
+    return Result.err(error);
   }
 }
 
 //TODO: drizzle has a bug where it won't return anything if more than a day has passed
-async function findOutdated(take = 20, skip = 0): Promise<Feed[]> {
+async function findOutdated(take = 20, skip = 0): Promise<Result<Feed[] | false, Error>> {
   try {
     const MAX_AGE = 10 * 60 * 1000; // 10 minutes
     take = take > 100 ? 100 : take;
@@ -167,14 +183,17 @@ async function findOutdated(take = 20, skip = 0): Promise<Feed[]> {
 
     const result: Feed[] = await db.execute(query);
 
-    return result;
-  } catch (error) {
+    if (!result || result.length === 0) return Result.ok(false);
+
+    return Result.ok(result);
+  } catch (e) {
+    const error = normalizeError(e);
     console.error('Error occurred while finding all outdated feeds:', error);
-    return [];
+    return Result.err(error);
   }
 }
 
-async function countArticles(id: string): Promise<number | undefined> {
+async function countArticles(id: string): Promise<Result<number, Error>> {
   try {
     const db = getClient();
     const [result] = await db
@@ -182,43 +201,60 @@ async function countArticles(id: string): Promise<number | undefined> {
       .from(articleSchema)
       .where(eq(articleSchema.feedId, id))
       .execute();
-    return result.count;
-  } catch (error) {
+
+    if (!result) return Result.ok(0);
+    return Result.ok(result.count);
+  } catch (e) {
+    const error = normalizeError(e);
     console.error('Error occurred while getting article count:', error);
-    return undefined;
+    return Result.err(error);
   }
 }
 
-async function update(id: string, updatedFeed: Pick<Feed, 'name' | 'description' | 'link'>) {
+async function update(
+  id: string,
+  toUpdate: Pick<Feed, 'name' | 'description' | 'link'>
+): Promise<Result<Feed, Error>> {
   try {
     const db = getClient();
     const currentDate = new Date();
-    await db
+    const result = await db
       .update(feedSchema)
       .set({
-        ...updatedFeed,
+        ...toUpdate,
         updatedAt: currentDate
       })
-      .where(eq(feedSchema.id, id)).execute;
+      .where(eq(feedSchema.id, id))
+      .returning()
+      .execute();
+
+    if (!result || result.length === 0) return Result.err(new Error('Failed to update feed'));
+
+    return Result.ok(result[0]);
   } catch (error) {
-    console.error('Error occurred while updating feed:', error);
-    throw error;
+    const err = normalizeError(error);
+    console.error('Error occurred while updating feed:', err);
+    return Result.err(err);
   }
 }
 
-async function updateLastSync(id: string) {
+async function updateLastSync(id: string): Promise<Result<Feed, Error>> {
   try {
     const db = getClient();
-    await db
+    const result = await db
       .update(feedSchema)
       .set({
         syncedAt: new Date()
       })
       .where(eq(feedSchema.id, id))
+      .returning()
       .execute();
+    if (!result || result.length === 0) return Result.err(new Error('Failed to update feed'));
+    return Result.ok(result[0]);
   } catch (error) {
-    console.error('Error occurred while updating feed:', error);
-    throw error;
+    const err = normalizeError(error);
+    console.error('Error occurred while updating feed last sync:', err);
+    return Result.err(err);
   }
 }
 

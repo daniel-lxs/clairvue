@@ -3,71 +3,116 @@ import { sessionSchema, userSchema } from '../schema/user.schema';
 import { eq } from 'drizzle-orm';
 import type { Session, User } from '../schema/user.schema';
 import { encodeHexLowerCase } from '@oslojs/encoding';
+import { Result } from '@clairvue/types';
+import { normalizeError } from '@/utils';
 import { sha256 } from '@oslojs/crypto/sha2';
 
-export async function findByUsername(username: string): Promise<User | undefined> {
-  const db = getClient();
-  const users = await db
-    .select()
-    .from(userSchema)
-    .where(eq(userSchema.username, username))
-    .execute();
-  return users[0];
+async function findByUsername(username: string): Promise<Result<User | false, Error>> {
+  try {
+    const db = getClient();
+    const users = await db
+      .select()
+      .from(userSchema)
+      .where(eq(userSchema.username, username))
+      .execute();
+
+    if (!users || users.length === 0) return Result.ok(false);
+
+    return Result.ok(users[0]);
+  } catch (e) {
+    const error = normalizeError(e);
+    console.error('Error occurred while finding user by username:', error);
+    return Result.err(error);
+  }
 }
 
-export async function create(data: {
+async function create(data: {
   id: string;
   username: string;
   hashedPassword: string;
-}): Promise<User> {
-  const db = getClient();
-  const [user] = await db.insert(userSchema).values(data).returning();
-  return user;
+}): Promise<Result<User, Error>> {
+  try {
+    const db = getClient();
+    const [user] = await db.insert(userSchema).values(data).returning();
+    return Result.ok(user);
+  } catch (e) {
+    const error = normalizeError(e);
+    console.error('Error occurred while creating user:', error);
+    return Result.err(error);
+  }
 }
 
-export async function createSession(session: Session) {
-  const db = getClient();
-  await db.insert(sessionSchema).values(session).returning();
+async function createSession(session: Session): Promise<Result<Session, Error>> {
+  try {
+    const db = getClient();
+    const savedSession = await db.insert(sessionSchema).values(session).returning();
+    return Result.ok(savedSession[0]);
+  } catch (e) {
+    const error = normalizeError(e);
+    console.error('Error occurred while creating session:', error);
+    return Result.err(error);
+  }
 }
 
-export async function validateSession(
+async function validateSession(
   token: string
-): Promise<{ session: Session | null; user: User | null }> {
-  const db = getClient();
-  const sessionId = encodeHexLowerCase(sha256(new TextEncoder().encode(token)));
+): Promise<Result<{ session: Session; user: User } | false, Error>> {
+  try {
+    const db = getClient();
+    const sessionId = encodeHexLowerCase(sha256(new TextEncoder().encode(token)));
 
-  const result = await db
-    .select({ user: userSchema, session: sessionSchema })
-    .from(sessionSchema)
-    .innerJoin(userSchema, eq(sessionSchema.userId, userSchema.id))
-    .where(eq(sessionSchema.id, sessionId));
+    const result = await db
+      .select({ user: userSchema, session: sessionSchema })
+      .from(sessionSchema)
+      .innerJoin(userSchema, eq(sessionSchema.userId, userSchema.id))
+      .where(eq(sessionSchema.id, sessionId));
 
-  if (result.length < 1) {
-    return { session: null, user: null };
+    if (!result || result.length < 1) {
+      return Result.ok(false);
+    }
+
+    const { user, session } = result[0];
+
+    if (Date.now() >= session.expiresAt.getTime()) {
+      await db.delete(sessionSchema).where(eq(sessionSchema.id, session.id));
+      return Result.ok(false);
+    }
+
+    if (Date.now() >= session.expiresAt.getTime() - 1000 * 60 * 60 * 24 * 15) {
+      const newExpiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30);
+      await db
+        .update(sessionSchema)
+        .set({
+          expiresAt: newExpiresAt
+        })
+        .where(eq(sessionSchema.id, session.id));
+      session.expiresAt = newExpiresAt;
+    }
+
+    return Result.ok({ session, user });
+  } catch (e) {
+    const error = normalizeError(e);
+    console.error('Error occurred while validating session:', error);
+    return Result.err(error);
   }
-
-  const { user, session } = result[0];
-
-  if (Date.now() >= session.expiresAt.getTime()) {
-    await db.delete(sessionSchema).where(eq(sessionSchema.id, session.id));
-    return { session: null, user: null };
-  }
-
-  if (Date.now() >= session.expiresAt.getTime() - 1000 * 60 * 60 * 24 * 15) {
-    const newExpiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30);
-    await db
-      .update(sessionSchema)
-      .set({
-        expiresAt: newExpiresAt
-      })
-      .where(eq(sessionSchema.id, session.id));
-    session.expiresAt = newExpiresAt;
-  }
-
-  return { session, user };
 }
 
-export async function deleteSession(sessionId: string) {
-  const db = getClient();
-  await db.delete(sessionSchema).where(eq(sessionSchema.id, sessionId));
+async function deleteSession(sessionId: string): Promise<Result<true, Error>> {
+  try {
+    const db = getClient();
+    await db.delete(sessionSchema).where(eq(sessionSchema.id, sessionId));
+    return Result.ok(true);
+  } catch (e) {
+    const error = normalizeError(e);
+    console.error('Error occurred while deleting session:', error);
+    return Result.err(error);
+  }
 }
+
+export default {
+  findByUsername,
+  create,
+  createSession,
+  validateSession,
+  deleteSession
+};

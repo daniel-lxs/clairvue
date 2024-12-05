@@ -8,9 +8,11 @@ import {
   collectionsToFeeds
 } from '../schema';
 import { count, desc, eq, lt, sql, and, gt } from 'drizzle-orm';
+import { Result } from '@clairvue/types';
 import type { NewArticle, PaginatedList } from '@clairvue/types';
+import { normalizeError } from '@/utils';
 
-async function create(newArticles: NewArticle | NewArticle[]): Promise<string[] | undefined> {
+async function create(newArticles: NewArticle | NewArticle[]): Promise<Result<string[], Error>> {
   const db = getClient();
   const { randomUUID } = new ShortUniqueId({ length: 8 });
 
@@ -28,16 +30,17 @@ async function create(newArticles: NewArticle | NewArticle[]): Promise<string[] 
       })
       .execute();
 
-    if (!result || result.length === 0) return undefined;
+    if (!result || result.length === 0) return Result.err(new Error('Failed to create article'));
 
-    return result.map((r) => r.slug);
-  } catch (error) {
-    console.error('Error occurred while creating new Article:', error);
-    return undefined;
+    return Result.ok(result.map((r) => r.slug));
+  } catch (e) {
+    const error = normalizeError(e);
+    console.error('Error occurred while creating article:', error);
+    return Result.err(error);
   }
 }
 
-async function findBySlug(slug: string): Promise<Article | undefined> {
+async function findBySlug(slug: string): Promise<Result<Article | false, Error>> {
   try {
     const db = getClient();
     const result = await db
@@ -45,28 +48,31 @@ async function findBySlug(slug: string): Promise<Article | undefined> {
       .from(articleSchema)
       .where(eq(articleSchema.slug, slug))
       .execute();
-    return result[0];
-  } catch (error) {
-    console.error('Error occurred while finding Article by id:', error);
-    return undefined;
+    if (!result || result.length === 0) return Result.ok(false);
+    return Result.ok(result[0]);
+  } catch (e) {
+    const error = normalizeError(e);
+    console.error('Error occurred while finding Article by slug:', error);
+    return Result.err(error);
   }
 }
 
-async function existsWithLink(link: string): Promise<boolean | undefined> {
+async function existsWithLink(link: string): Promise<Result<boolean, Error>> {
   try {
     const db = getClient();
     const [{ exists }]: { exists: boolean }[] = await db.execute(sql`
-    SELECT EXISTS (
-      SELECT 1
-      FROM ${articleSchema}
-      WHERE ${articleSchema.link} = ${link}
-      LIMIT 1
-    )
-  `);
-    return exists;
-  } catch (error) {
+      SELECT EXISTS (
+        SELECT 1
+        FROM ${articleSchema}
+        WHERE ${articleSchema.link} = ${link}
+        LIMIT 1
+      )
+    `);
+    return Result.ok(exists);
+  } catch (e) {
+    const error = normalizeError(e);
     console.error('Error occurred while finding Article by link:', error);
-    return undefined;
+    return Result.err(error);
   }
 }
 
@@ -74,7 +80,7 @@ async function findByFeedId(
   feedId: string,
   beforePublishedAt: string = new Date().toISOString(),
   take = 5
-): Promise<PaginatedList<Article> | undefined> {
+): Promise<Result<PaginatedList<Article> | false, Error>> {
   try {
     const db = getClient();
     const result = await db.query.articleSchema.findMany({
@@ -88,13 +94,17 @@ async function findByFeedId(
       limit: take,
       orderBy: (articleSchema, { desc }) => desc(articleSchema.publishedAt)
     });
-    return {
+
+    if (!result || result.length === 0) return Result.ok(false);
+
+    return Result.ok({
       items: result,
       totalCount: result.length
-    };
-  } catch (error) {
-    console.error('Error occurred while finding Article by feedId:', error);
-    return undefined;
+    });
+  } catch (e) {
+    const error = normalizeError(e);
+    console.error('Error occurred while finding Articles by feedId:', error);
+    return Result.err(error);
   }
 }
 
@@ -102,7 +112,7 @@ async function findByCollectionId(
   collectionId: string,
   beforePublishedAt: string = new Date().toISOString(),
   take = 5
-): Promise<PaginatedList<Article> | undefined> {
+): Promise<Result<PaginatedList<Article> | false, Error>> {
   try {
     const db = getClient();
 
@@ -114,7 +124,7 @@ async function findByCollectionId(
       .execute();
 
     if (!collectionExists || collectionExists.length === 0) {
-      return undefined;
+      return Result.ok(false);
     }
 
     // Get articles after the provided publishedAt, ordered by publishedAt
@@ -157,12 +167,18 @@ async function findByCollectionId(
       .limit(take)
       .execute();
 
-    return {
+    if (!queryResult || queryResult.length === 0) {
+      return Result.ok(false);
+    }
+
+    return Result.ok({
       items: queryResult,
       totalCount: queryResult.length
-    };
-  } catch (error) {
-    console.log('Error occurred while finding Articles by collectionId:', error);
+    });
+  } catch (e) {
+    const error = normalizeError(e);
+    console.error('Error occurred while finding Articles by collectionId:', error);
+    return Result.err(error);
   }
 }
 
@@ -170,24 +186,32 @@ async function countArticles(
   afterPublishedAt: Date,
   feedId?: string,
   collectionId?: string
-): Promise<number | undefined> {
-  const db = getClient();
+): Promise<Result<number, Error>> {
+  try {
+    const db = getClient();
 
-  const articleCount = await db
-    .select({ count: sql<number>`cast(${count(articleSchema.id)} as int)` })
-    .from(articleSchema)
-    .leftJoin(feedSchema, eq(articleSchema.feedId, feedSchema.id))
-    .leftJoin(collectionsToFeeds, eq(feedSchema.id, collectionsToFeeds.feedId))
-    .where(
-      and(
-        collectionId ? eq(collectionsToFeeds.collectionId, collectionId) : undefined,
-        feedId ? eq(collectionsToFeeds.feedId, feedId) : undefined,
-        gt(articleSchema.publishedAt, afterPublishedAt)
+    const articleCount = await db
+      .select({ count: sql<number>`cast(${count(articleSchema.id)} as int)` })
+      .from(articleSchema)
+      .leftJoin(feedSchema, eq(articleSchema.feedId, feedSchema.id))
+      .leftJoin(collectionsToFeeds, eq(feedSchema.id, collectionsToFeeds.feedId))
+      .where(
+        and(
+          collectionId ? eq(collectionsToFeeds.collectionId, collectionId) : undefined,
+          feedId ? eq(collectionsToFeeds.feedId, feedId) : undefined,
+          gt(articleSchema.publishedAt, afterPublishedAt)
+        )
       )
-    )
-    .execute();
+      .execute();
 
-  return articleCount[0].count;
+    if (!articleCount || articleCount.length === 0) return Result.ok(0);
+
+    return Result.ok(articleCount[0].count);
+  } catch (e) {
+    const error = normalizeError(e);
+    console.error('Error occurred while getting article count:', error);
+    return Result.err(error);
+  }
 }
 
 export default {
