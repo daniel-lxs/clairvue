@@ -1,8 +1,8 @@
+import authService from '@/server/services/auth.service';
 import feedService from '@/server/services/feed.service';
 import type { RequestHandler } from '@sveltejs/kit';
-import Parser from 'rss-parser';
 
-export const GET: RequestHandler = async ({ url }) => {
+export const GET: RequestHandler = async ({ url, cookies }) => {
   const encodedFeedLink = url.searchParams.get('link');
 
   if (!encodedFeedLink) {
@@ -14,49 +14,43 @@ export const GET: RequestHandler = async ({ url }) => {
   if (!feedLink) {
     return new Response('Invalid feed link', { status: 400 });
   }
+  const authSessionResult = await authService.validateAuthSession(cookies);
 
-  try {
-    const feedInfo = await fetchAndParseFeed(feedLink);
-    return new Response(JSON.stringify({ ...feedInfo, link: feedLink }), {
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-  } catch (error) {
-    const alternativeLink = await feedService.tryGetFeedLink(feedLink);
-    if (!alternativeLink) {
-      return new Response('Could not find alternative feed link', { status: 404 });
+  if (authSessionResult.isOk()) {
+    const authSession = authSessionResult.unwrap();
+    if (!authSession || !authSession.user) {
+      return new Response('Unauthorized', { status: 401 });
     }
 
-    const feedInfo = await fetchAndParseFeed(alternativeLink);
-    return new Response(JSON.stringify({ ...feedInfo, link: alternativeLink }), {
+    const feedInfoResult = await feedService.fetchAndParseFeed(feedLink);
+
+    if (feedInfoResult.isErr()) {
+      const urlResult = await feedService.extractFeedUrl(feedLink);
+
+      if (urlResult.isOk()) {
+        const url = urlResult.unwrap();
+        const feedInfoResult = await feedService.fetchAndParseFeed(url);
+
+        return feedInfoResult.match({
+          ok: ({ title, description }) => {
+            return new Response(JSON.stringify({ title, description, url }), {
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            });
+          },
+          err: (error) => {
+            return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+          }
+        });
+      }
+    }
+    const { title, description } = feedInfoResult.unwrap();
+    return new Response(JSON.stringify({ title, description, url }), {
       headers: {
         'Content-Type': 'application/json'
       }
     });
   }
+  return new Response('Internal server error', { status: 500 });
 };
-
-async function fetchAndParseFeed(
-  url: string
-): Promise<{ title: string; description: string | undefined }> {
-  const response = await fetch(url);
-
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
-
-  const feedData = await response.text();
-  const parsedData = await new Parser().parseString(feedData);
-
-  if (!parsedData || !parsedData.title) {
-    throw new Error('Invalid feed');
-  }
-
-  const { title, description } = parsedData;
-
-  return {
-    title,
-    description
-  };
-}

@@ -6,94 +6,112 @@ import {
   deleteFeedFromCollectionDto,
   updateCollectionDto
 } from '@/server/dto/collection.dto';
-import { validateAuthSession } from '@/server/services/auth.service';
+import authService from '@/server/services/auth.service';
+import { parseErrorMessages } from '@/utils';
 
 export const GET: RequestHandler = async ({ url, cookies }) => {
-  try {
-    const collectionSlug = url.searchParams.get('slug');
+  const collectionSlug = url.searchParams.get('slug');
 
-    if (!collectionSlug) {
-      return new Response('Invalid collection slug', { status: 400 });
-    }
+  if (!collectionSlug) {
+    return new Response('Invalid collection slug', { status: 400 });
+  }
 
-    const authSession = await validateAuthSession(cookies);
-    if (
-      !authSession ||
-      !authSession.session ||
-      !authSession.user ||
-      authSession.session.expiresAt < new Date()
-    ) {
+  const authSessionResult = await authService.validateAuthSession(cookies);
+
+  if (authSessionResult.isOk()) {
+    const authSession = authSessionResult.unwrap();
+    if (!authSession || !authSession.user) {
       return new Response('Unauthorized', { status: 401 });
     }
 
-    const collection = await collectionService.findBySlug(authSession.user.id, collectionSlug);
+    const collectionResult = await collectionService.findBySlug(
+      authSession.user.id,
+      collectionSlug
+    );
 
-    if (!collection) {
-      return new Response('Collection not found', { status: 404 });
-    }
-
-    return new Response(JSON.stringify(collection), { status: 200 });
-  } catch (error) {
-    console.error('Error occurred on GET /api/collection', error);
-    return new Response('Internal server error', { status: 500 });
+    return collectionResult.match({
+      ok: (collection) => new Response(JSON.stringify(collection), { status: 200 }),
+      err: (error) => new Response(error.message, { status: 500 })
+    });
   }
+
+  return new Response('Internal server error', { status: 500 });
 };
 
 export const POST: RequestHandler = async ({ request, cookies }) => {
-  try {
-    const requestBody = await request.json();
+  const requestBody = await request.json();
 
-    if (!requestBody) {
-      return new Response('Missing body', { status: 400 });
-    }
+  if (!requestBody) {
+    return new Response('Missing body', { status: 400 });
+  }
 
-    const authSession = await validateAuthSession(cookies);
-    if (
-      !authSession ||
-      !authSession.session ||
-      !authSession.user ||
-      authSession.session.expiresAt < new Date()
-    ) {
+  const authSessionResult = await authService.validateAuthSession(cookies);
+
+  if (authSessionResult.isOk()) {
+    const authSession = authSessionResult.unwrap();
+    if (!authSession || !authSession.user) {
       return new Response('Unauthorized', { status: 401 });
     }
 
-    const result = createCollectionDto.safeParse(requestBody);
-    if (!result.success) {
-      return new Response(JSON.stringify(result.error), { status: 400 });
+    const { success, data: validationData, error } = createCollectionDto.safeParse(requestBody);
+    if (!success) {
+      return new Response(JSON.stringify(error), { status: 400 });
     }
 
-    const collection = await collectionService.create(result.data.name, authSession.user.id);
+    const collectionResult = await collectionService.create(
+      validationData.name,
+      authSession.user.id
+    );
 
-    if (!collection) {
-      return new Response('Failed to create collection', { status: 500 });
+    if (collectionResult.isOk()) {
+      if (validationData.feedIds && validationData.feedIds.length > 0) {
+        const collection = collectionResult.unwrap();
+        const feedAssignmentsResult = await collectionService.addFeedsToCollection(
+          collection.id,
+          validationData.feedIds
+        );
+
+        if (feedAssignmentsResult.isOk()) {
+          const { validationErrors, insertErrors } = feedAssignmentsResult.unwrap();
+
+          return new Response(
+            JSON.stringify({
+              collection,
+              assignmentErrors: {
+                validationErrors: parseErrorMessages(validationErrors),
+                insertErrors: parseErrorMessages(insertErrors)
+              }
+            }),
+            { status: 201 }
+          );
+        }
+
+        return new Response(
+          JSON.stringify({
+            collection,
+            assignmentError: feedAssignmentsResult.unwrapErr().message
+          }),
+          { status: 201 }
+        );
+      }
     }
-
-    if (result.data.feedIds && result.data.feedIds.length > 0) {
-      await collectionService.addFeedsToCollection(collection.id, result.data.feedIds);
-    }
-
-    return new Response(JSON.stringify(collection), { status: 200 });
-  } catch (error) {
-    console.error('Error occurred on POST /api/collection', error);
-    return new Response('Internal server error', { status: 500 });
   }
+
+  return new Response('Internal server error', { status: 500 });
 };
 
 export const PATCH: RequestHandler = async ({ request, cookies }) => {
-  try {
-    const requestBody = await request.json();
+  const requestBody = await request.json();
 
-    if (!requestBody) {
-      return new Response('Missing body', { status: 400 });
-    }
+  if (!requestBody) {
+    return new Response('Missing body', { status: 400 });
+  }
 
-    const authSession = await validateAuthSession(cookies);
-    if (
-      !authSession ||
-      !authSession.session ||
-      !authSession.user ||
-      authSession.session.expiresAt < new Date()
-    ) {
+  const authSessionResult = await authService.validateAuthSession(cookies);
+
+  if (authSessionResult.isOk()) {
+    const authSession = authSessionResult.unwrap();
+    if (!authSession || !authSession.user) {
       return new Response('Unauthorized', { status: 401 });
     }
 
@@ -102,32 +120,50 @@ export const PATCH: RequestHandler = async ({ request, cookies }) => {
       return new Response(JSON.stringify(validationResult.error), { status: 400 });
     }
 
-    await collectionService.update(validationResult.data.id, validationResult.data);
+    const updateResult = await collectionService.update(
+      validationResult.data.id,
+      validationResult.data
+    );
 
-    return new Response(null, { status: 200 });
-  } catch (error) {
-    console.error('Error occurred on PATCH /api/collection', error);
-    return new Response('Internal server error', { status: 500 });
+    return updateResult.match({
+      ok: () => {
+        return new Response('OK', { status: 200 });
+      },
+      err: (error) => {
+        return new Response(error.message, { status: 500 });
+      }
+    });
   }
+
+  return new Response('Internal server error', { status: 500 });
 };
 
 export const PUT: RequestHandler = async ({ url, request, cookies }) => {
-  try {
-    const collectionId = url.searchParams.get('id');
-    const requestBody = await request.json();
+  const collectionId = url.searchParams.get('id');
+  const { name, feedsToAdd, feedsToRemove }: { name?: string; feedsToAdd?: string[]; feedsToRemove?: string[] } =
+    await request.json();
 
-    const authSession = await validateAuthSession(cookies);
-    if (
-      !authSession ||
-      !authSession.session ||
-      !authSession.user ||
-      authSession.session.expiresAt < new Date()
-    ) {
+  if (!collectionId) {
+    return new Response('Missing collection ID', { status: 400 });
+  }
+
+  const authSessionResult = await authService.validateAuthSession(cookies);
+
+  if (authSessionResult.isOk()) {
+    const authSession = authSessionResult.unwrap();
+    if (!authSession || !authSession.user) {
       return new Response('Unauthorized', { status: 401 });
     }
 
-    const { feedsToAdd, feedsToRemove }: { feedsToAdd?: string[]; feedsToRemove?: string[] } =
-      requestBody;
+    let feedAssignmentErrors: Error[] = [];
+    let feedRemovalErrors: Error[] = [];
+
+    if (name) {
+      const result = await collectionService.update(collectionId, {name});
+      if (result.isErr()) {
+        return new Response(result.unwrapErr().message, { status: 500 });
+      }
+    }
 
     if (feedsToAdd && feedsToAdd.length > 0) {
       const validationResult = addFeedsToCollectionDto.safeParse({
@@ -139,7 +175,17 @@ export const PUT: RequestHandler = async ({ url, request, cookies }) => {
         return new Response(JSON.stringify(validationResult.error), { status: 400 });
       }
 
-      await collectionService.addFeedsToCollection(validationResult.data.id, feedsToAdd);
+      const feedAssignmentsResult = await collectionService.addFeedsToCollection(
+        validationResult.data.id,
+        feedsToAdd
+      );
+
+      if (feedAssignmentsResult.isErr()) {
+        return new Response(feedAssignmentsResult.unwrapErr().message, { status: 400 });
+      }
+
+      const { validationErrors, insertErrors } = feedAssignmentsResult.unwrap();
+      feedAssignmentErrors = [...validationErrors, ...insertErrors];
     }
 
     if (feedsToRemove && feedsToRemove.length > 0) {
@@ -153,39 +199,41 @@ export const PUT: RequestHandler = async ({ url, request, cookies }) => {
           return new Response(JSON.stringify(validationResult.error), { status: 400 });
         }
 
-        await collectionService.removeFeedFromCollection(
+        const removeResult = await collectionService.removeFeedFromCollection(
           validationResult.data.id,
           validationResult.data.feedId
         );
+
+        if (removeResult.isErr()) {
+          feedRemovalErrors.push(removeResult.unwrapErr());
+        }
       }
     }
 
     return new Response(
-      JSON.stringify({ id: collectionId, addedFeeds: feedsToAdd, removedFeeds: feedsToRemove }),
+      JSON.stringify({
+        assignmentErrors: parseErrorMessages(feedAssignmentErrors),
+        removalErrors: parseErrorMessages(feedRemovalErrors)
+      }),
       { status: 200 }
     );
-  } catch (error) {
-    console.error('Error occurred on PUT /api/collection', error);
-    return new Response('Internal server error', { status: 500 });
   }
+  return new Response('Internal server error', { status: 500 });
 };
 
 export const DELETE: RequestHandler = async ({ url, cookies }) => {
-  try {
-    const collectionId = url.searchParams.get('collectionId');
-    const feedId = url.searchParams.get('feedId');
+  const collectionId = url.searchParams.get('collectionId');
+  const feedId = url.searchParams.get('feedId');
 
-    if (!collectionId || !feedId) {
-      return new Response('Missing required parameters', { status: 400 });
-    }
+  if (!collectionId || !feedId) {
+    return new Response('Missing required parameters', { status: 400 });
+  }
 
-    const authSession = await validateAuthSession(cookies);
-    if (
-      !authSession ||
-      !authSession.session ||
-      !authSession.user ||
-      authSession.session.expiresAt < new Date()
-    ) {
+  const authSessionResult = await authService.validateAuthSession(cookies);
+
+  if (authSessionResult.isOk()) {
+    const authSession = authSessionResult.unwrap();
+    if (!authSession || !authSession.user) {
       return new Response('Unauthorized', { status: 401 });
     }
 
@@ -198,14 +246,16 @@ export const DELETE: RequestHandler = async ({ url, cookies }) => {
       return new Response(JSON.stringify(validationResult.error), { status: 400 });
     }
 
-    await collectionService.removeFeedFromCollection(
+    const removeResult = await collectionService.removeFeedFromCollection(
       validationResult.data.id,
       validationResult.data.feedId
     );
 
-    return new Response(null, { status: 200 });
-  } catch (error) {
-    console.error('Error occurred on DELETE /api/collection', error);
-    return new Response('Internal server error', { status: 500 });
+    return removeResult.match({
+      ok: () => new Response('OK', { status: 200 }),
+      err: (error) => new Response(error.message, { status: 500 })
+    });
   }
+
+  return new Response('Internal server error', { status: 500 });
 };

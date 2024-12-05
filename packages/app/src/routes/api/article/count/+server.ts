@@ -1,6 +1,6 @@
 import type { RequestHandler } from '@sveltejs/kit';
 import articleService from '@/server/services/article.service';
-import { validateAuthSession } from '@/server/services/auth.service';
+import authService from '@/server/services/auth.service';
 
 export const GET: RequestHandler = async ({ url, cookies }) => {
   const collectionId = url.searchParams.get('collectionId') || undefined;
@@ -8,17 +8,18 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
   const afterPublishedAt = url.searchParams.get('afterPublishedAt');
 
   if (!afterPublishedAt) {
-    return new Response('Invalid request', { status: 400 });
+    return new Response('Missing required parameters: afterPublishedAt', { status: 400 });
   }
 
-  const authSession = await validateAuthSession(cookies);
-  if (
-    !authSession ||
-    !authSession.session ||
-    !authSession.user ||
-    authSession.session.expiresAt < new Date()
-  ) {
-    return new Response('Unauthorized', { status: 401 });
+  const authSessionResult = await authService.validateAuthSession(cookies);
+
+  if (authSessionResult.isErr()) {
+    return new Response('Internal server error', { status: 500 });
+  } else {
+    const authSession = authSessionResult.unwrap();
+    if (!authSession) {
+      return new Response('Unauthorized', { status: 401 });
+    }
   }
 
   let afterPublishedAtDate: Date;
@@ -29,5 +30,9 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
   }
 
   const articles = await articleService.countArticles(afterPublishedAtDate, feedId, collectionId);
-  return new Response(JSON.stringify(articles), { status: 200 });
+
+  return articles.match({
+    ok: (count) => new Response(JSON.stringify({ count }), { status: 200 }),
+    err: (error) => new Response(error.message, { status: 500 })
+  });
 };
