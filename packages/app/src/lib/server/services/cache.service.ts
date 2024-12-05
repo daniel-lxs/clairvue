@@ -20,11 +20,7 @@ function getRedisClient(): Redis | null {
   }
 
   if (!redisClient) {
-    redisClient = new Redis({
-      host: config.redis.host,
-      port: config.redis.port,
-      password: config.redis.password
-    });
+    redisClient = new Redis(config.redis);
   }
 
   return redisClient;

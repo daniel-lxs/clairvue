@@ -1,10 +1,16 @@
 import { z } from 'zod';
-import { findByUsername, create as createUser } from '@/server/data/repositories/user.repository';
+import userRepository from '@/server/data/repositories/user.repository';
 import collectionService from './collection.service';
 import feedService from './feed.service';
 import argon2 from 'argon2';
 import { generateId } from '@/utils';
-import type { LoginResult, SignupResult } from '@clairvue/types';
+import {
+  Result,
+  type Collection,
+  type LoginResult,
+  type SignupResult,
+  type User
+} from '@clairvue/types';
 
 const validateUserForm = z.object({
   username: z
@@ -18,144 +24,107 @@ const validateUserForm = z.object({
     .max(255, 'Password too long')
 });
 
-const validateUser = async (
+const validateUserInput = async (
   username: string,
   password: string
-): Promise<{
-  success: boolean;
-  errors?: Record<string, string[]> | undefined;
-}> => {
+): Promise<Result<true, Error>> => {
   const result = validateUserForm.safeParse({ username, password });
   if (!result.success) {
-    return {
-      success: false,
-      errors: result.error.formErrors.fieldErrors
-    };
+    return Result.err(
+      new Error('Invalid username or password', {
+        cause: result.error
+      })
+    );
   }
-  return { success: true };
+  return Result.ok(true);
 };
 
-const login = async (username: string, password: string): Promise<LoginResult> => {
-  const validation = await validateUser(username, password);
-  if (!validation.success) {
-    return {
-      success: false,
-      errors: validation.errors
-    };
+const login = async (username: string, password: string): Promise<Result<User, Error>> => {
+  const validationResult = await validateUserInput(username, password);
+
+  if (validationResult.isErr()) {
+    return Result.err(validationResult.unwrapErr());
   }
 
-  const existingUser = await findByUsername(username);
+  const existingUserResult = await userRepository.findByUsername(username);
 
   // Simulate a delay to prevent timing attacks
   //TODO: Replace with a better solution
   await new Promise((resolve) => setTimeout(resolve, 1000));
 
-  if (!existingUser) {
-    return {
-      success: false,
-      errors: {
-        username: ['Invalid username or password']
+  return existingUserResult.match({
+    ok: async (user) => {
+      if (!user) {
+        return Result.err(new Error('Invalid username or password'));
       }
-    };
-  }
 
-  const validPassword = await argon2.verify(existingUser.hashedPassword, password);
-  if (!validPassword) {
-    return {
-      success: false,
-      errors: {
-        username: ['Invalid username or password']
+      const validPassword = await argon2.verify(user.hashedPassword, password);
+
+      if (!validPassword) {
+        return Result.err(new Error('Invalid username or password'));
       }
-    };
-  }
 
-  return {
-    success: true,
-    user: existingUser
-  };
+      return Result.ok(user);
+    },
+    err: (error) => {
+      return Result.err(error);
+    }
+  });
 };
 
-const signup = async (username: string, password: string): Promise<SignupResult> => {
-  try {
-    const validation = await validateUser(username, password);
-    if (!validation.success) {
-      return {
-        success: false,
-        errors: validation.errors
-      };
-    }
+const signup = async (username: string, password: string): Promise<Result<User, Error>> => {
+  const validationResult = await validateUserInput(username, password);
 
-    const existingUser = await findByUsername(username);
-
-    if (existingUser) {
-      return {
-        success: false,
-        errors: {
-          username: ['Username already taken']
-        }
-      };
-    }
-
-    const hashedPassword = await argon2.hash(password);
-    const userId = generateId(15);
-
-    await createUser({
-      id: userId,
-      username,
-      hashedPassword
-    });
-
-    // Create a default collection for the user
-    const defaultCollection = await collectionService.createDefault('All Feeds', userId);
-
-    if (!defaultCollection) {
-      console.error('Error creating default collection');
-      return {
-        success: false,
-        errors: {
-          collection: ['Failed to create default collection']
-        }
-      };
-    }
-
-    // Create a default feed for saved articles
-    const defaultFeed = await feedService.createFeed(
-      {
-        name: 'Saved Articles',
-        description: 'Articles you have saved',
-        link: `default-feed-${userId}`,
-        collectionId: defaultCollection?.id
-      },
-      userId
-    );
-
-    if (!defaultFeed) {
-      console.error('Error creating default feed');
-      return {
-        success: false,
-        errors: {
-          feed: ['Failed to create default feed']
-        }
-      };
-    }
-
-    return {
-      success: true,
-      userId
-    };
-  } catch (error) {
-    console.error(JSON.stringify(error));
-    return {
-      success: false,
-      errors: {
-        unknown: ['Cannot sign you up']
-      }
-    };
+  if (validationResult.isErr()) {
+    return Result.err(validationResult.unwrapErr());
   }
+
+  const existingUserResult = await userRepository.findByUsername(username);
+
+  if (existingUserResult.isOk()) {
+    const user = existingUserResult.unwrap();
+
+    if (user) {
+      return Result.err(new Error('User already exists'));
+    }
+  }
+
+  const hashedPassword = await argon2.hash(password);
+  const userId = generateId(15);
+
+  const result = await userRepository.create({
+    id: userId,
+    username,
+    hashedPassword
+  });
+
+  // Create a default collection for the user
+  const defaultCollectionResult = await collectionService.createDefault('All Feeds', userId);
+
+  if (defaultCollectionResult.isErr()) {
+    return Result.err(defaultCollectionResult.unwrapErr());
+  }
+
+  const defaultCollection = defaultCollectionResult.unwrap();
+
+  const defaultFeedResult = await feedService.createFeed(
+    {
+      name: 'Saved Articles',
+      description: 'Articles you have saved',
+      link: `default-feed-${userId}`,
+      collectionId: defaultCollection?.id
+    },
+    userId
+  );
+
+  if (defaultFeedResult.isErr()) {
+    return Result.err(defaultFeedResult.unwrapErr());
+  }
+
+  return result;
 };
 
 export default {
-  validateUser,
   login,
   signup
 };

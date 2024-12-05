@@ -6,20 +6,19 @@ import { getArticlesQueue } from '@/server/queue/articles';
 import collectionService from './collection.service';
 import config from '@/config';
 import { JSDOM } from 'jsdom';
-import type { CreateFeedResult } from '@clairvue/types';
+import { Result } from '@clairvue/types';
+import { normalizeError } from '@/utils';
+import Parser from 'rss-parser';
 
-async function findFeedById(id: string): Promise<Feed | undefined> {
+async function findFeedById(id: string): Promise<Result<Feed | false, Error>> {
   return await feedRepository.findById(id);
 }
 
-async function createFeed(feedData: CreateFeedDto, userId: string): Promise<CreateFeedResult> {
+async function createFeed(feedData: CreateFeedDto, userId: string): Promise<Result<Feed, Error>> {
   try {
-    const newFeedData = { ...feedData, description: feedData.description || null };
-    const createdFeed = await feedRepository.create(newFeedData);
-
-    if (!createdFeed) {
-      return { result: 'error', reason: 'Unable to create' };
-    }
+    const createdFeed = (
+      await feedRepository.create({ ...feedData, description: feedData.description ?? null })
+    ).unwrap();
 
     if (feedData.collectionId) {
       await collectionService.addFeedToCollection(feedData.collectionId, createdFeed.id);
@@ -27,13 +26,18 @@ async function createFeed(feedData: CreateFeedDto, userId: string): Promise<Crea
 
     // Always add to the default collection
     if (!feedData.collectionId.includes('default')) {
-      const defaultCollection = await collectionService.findDefault(userId);
-
-      if (!defaultCollection) {
-        return { result: 'error', reason: 'Unable to find default collection' };
-      }
-
-      await collectionService.addFeedToCollection(defaultCollection.id, createdFeed.id);
+      (await collectionService.findDefault(userId)).match({
+        ok: (defaultCollection) => {
+          if (!defaultCollection) {
+            throw new Error('Default collection not found');
+          }
+          collectionService.addFeedToCollection(defaultCollection.id, createdFeed.id);
+        },
+        err: (error) => {
+          console.error('Error occurred while finding default collection:', error);
+          throw error;
+        }
+      });
     }
 
     if (!createdFeed.link.startsWith('default-feed')) {
@@ -54,34 +58,60 @@ async function createFeed(feedData: CreateFeedDto, userId: string): Promise<Crea
       );
     }
 
-    return { result: 'success', data: createdFeed };
-  } catch (error) {
-    return { result: 'error', reason: 'Internal error' };
+    return Result.ok(createdFeed);
+  } catch (e) {
+    const error = normalizeError(e);
+    console.error('Error occurred while creating feed:', error);
+    return Result.err(error);
   }
 }
 
 async function updateFeed(
   id: string,
   data: Pick<Feed, 'name' | 'link' | 'description'>
-): Promise<void> {
-  await feedRepository.update(id, data);
+): Promise<Result<Feed, Error>> {
+  return await feedRepository.update(id, data);
 }
 
-async function findBySlug(slug: string): Promise<Feed> {
-  const feed = await feedRepository.findBySlug(slug);
+async function findBySlug(slug: string): Promise<Result<Feed | false, Error>> {
+  return await feedRepository.findBySlug(slug);
+}
 
-  if (!feed) {
-    throw new Error('Feed not found');
+async function countArticles(id: string): Promise<Result<number, Error>> {
+  return await feedRepository.countArticles(id);
+}
+
+async function fetchAndParseFeed(
+  url: string
+): Promise<Result<{ title: string; description: string | undefined }, Error>> {
+  try {
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      return Result.err(new Error(`HTTP error! status: ${response.status}`));
+    }
+
+    const feedData = await response.text();
+    const parsedData = await new Parser().parseString(feedData);
+
+    if (!parsedData || !parsedData.title) {
+      return Result.err(new Error('Invalid feed'));
+    }
+
+    const { title, description } = parsedData;
+
+    return Result.ok({
+      title,
+      description
+    });
+  } catch (e) {
+    const error = normalizeError(e);
+    console.error('Error occurred while parsing feed:', error);
+    return Result.err(error);
   }
-
-  return feed;
 }
 
-async function countArticles(id: string): Promise<number> {
-  return (await feedRepository.countArticles(id)) ?? 0;
-}
-
-async function tryGetFeedLink(url: string): Promise<string | undefined> {
+async function extractFeedUrl(url: string): Promise<Result<string, Error>> {
   try {
     const response = await fetch(url, {
       method: 'GET',
@@ -91,7 +121,7 @@ async function tryGetFeedLink(url: string): Promise<string | undefined> {
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      return Result.err(new Error(`HTTP error! status: ${response.status}`));
     }
 
     const html = await response.text();
@@ -112,27 +142,29 @@ async function tryGetFeedLink(url: string): Promise<string | undefined> {
 
     if (rssLinkElement) {
       const rssLink = rssLinkElement.getAttribute('href');
-      if (rssLink && !rssLink.startsWith('http')) {
-        //Assume relative URL
-        return new URL(rssLink, url).toString();
-      } else {
-        return rssLink ?? undefined;
+      if (rssLink) {
+        if (!rssLink.startsWith('http')) {
+          return Result.ok(new URL(rssLink, url).toString());
+        }
+        return Result.ok(rssLink);
       }
     }
 
     if (atomLinkElement) {
       const atomLink = atomLinkElement.getAttribute('href');
-      if (atomLink && !atomLink.startsWith('http')) {
-        return new URL(atomLink, url).toString();
-      } else {
-        return atomLink ?? undefined;
+      if (atomLink) {
+        if (!atomLink.startsWith('http')) {
+          return Result.ok(new URL(atomLink, url).toString());
+        }
+        return Result.ok(atomLink);
       }
     }
 
-    return undefined;
-  } catch (error) {
-    console.error('Could not parse link: ', error);
-    return undefined;
+    return Result.err(new Error('No RSS or Atom link found'));
+  } catch (e) {
+    const error = normalizeError(e);
+    console.error('Error occurred while finding feed link:', error);
+    return Result.err(error);
   }
 }
 
@@ -144,7 +176,7 @@ async function findByUserId(
   userId: string,
   take?: number,
   skip?: number
-): Promise<Feed[] | undefined> {
+): Promise<Result<Feed[] | false, Error>> {
   return await feedRepository.findByUserId(userId, take, skip);
 }
 
@@ -155,6 +187,7 @@ export default {
   updateFeed,
   findBySlug,
   countArticles,
-  tryGetFeedLink,
+  extractFeedUrl,
+  fetchAndParseFeed,
   updateLastSyncedAt
 };

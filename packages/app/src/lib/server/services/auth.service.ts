@@ -1,39 +1,40 @@
-import { encodeBase32LowerCaseNoPadding, encodeHexLowerCase } from "@oslojs/encoding";
+import { encodeBase32LowerCaseNoPadding, encodeHexLowerCase } from '@oslojs/encoding';
 import type { Cookies } from '@sveltejs/kit';
-import type { Session, User } from '../data/schema';
-import { sha256 } from "@oslojs/crypto/sha2";
-import { createSession as insertSession, validateSession, deleteSession } from "../data/repositories/user.repository";
-import type { SessionValidationResult } from '@clairvue/types'
+import type { Session } from '../data/schema';
+import { sha256 } from '@oslojs/crypto/sha2';
+import userRepository from '../data/repositories/user.repository';
+import type { SessionValidationResult } from '@clairvue/types';
+import { Result } from '@clairvue/types';
 
-export function generateSessionToken(): string {
-	const bytes = new Uint8Array(32);
+function generateSessionToken(): string {
+  const bytes = new Uint8Array(32);
   crypto.getRandomValues(bytes);
   return encodeBase32LowerCaseNoPadding(bytes);
 }
 
-export async function createSession(token: string, userId: string): Promise<Session> {
+async function createSession(token: string, userId: string): Promise<Result<Session, Error>> {
   const sessionId = encodeHexLowerCase(sha256(new TextEncoder().encode(token)));
-	const session: Session = {
-		id: sessionId,
-		userId,
+  const session: Session = {
+    id: sessionId,
+    userId,
     createdAt: new Date(),
     updatedAt: new Date(),
-		expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30)
-	};
-	await insertSession(session);
-	return session;
+    expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30)
+  };
+  return await userRepository.createSession(session);
 }
 
-export async function validateSessionToken(token: string): Promise<SessionValidationResult> {
-	const { session, user } = await validateSession(token);
-  return { session, user };
+async function validateSessionToken(
+  token: string
+): Promise<Result<SessionValidationResult | false, Error>> {
+  return await userRepository.validateSession(token);
 }
 
-export async function invalidateSession(sessionId: string): Promise<void> {
-	await deleteSession(sessionId);
+async function invalidateSession(sessionId: string): Promise<Result<true, Error>> {
+  return await userRepository.deleteSession(sessionId);
 }
 
-export function generateSessionCookie(sessionId: string) {
+function generateSessionCookie(sessionId: string) {
   return {
     name: 'auth_session',
     value: sessionId,
@@ -43,29 +44,39 @@ export function generateSessionCookie(sessionId: string) {
       httpOnly: true,
       sameSite: 'lax' as const
     }
-  }
-}
-  
-
-
-export async function validateAuthSession(
-  cookies: Cookies
-): Promise<{ session: Session; user: User } | undefined> {
-  const sessionId = cookies.get('auth_session');
-
-
-  if (!sessionId) {
-    return undefined;
-  }
-
-
-  const { session, user } = await validateSession(sessionId);
-  if (!session || !user || session.expiresAt < new Date()) {
-    return undefined;
-  }
-
-  return {
-    session,
-    user
   };
 }
+
+async function validateAuthSession(
+  cookies: Cookies
+): Promise<Result<SessionValidationResult | false, Error>> {
+  const sessionId = cookies.get('auth_session');
+
+  if (!sessionId) {
+    return Result.err(new Error('No session found'));
+  }
+
+  return (await userRepository.validateSession(sessionId)).match({
+    ok: (authSession) => {
+      if (authSession) {
+        if (authSession.session.expiresAt < new Date()) {
+          return Result.ok(false);
+        }
+        return Result.ok({ session: authSession.session, user: authSession.user });
+      }
+      return Result.ok(false);
+    },
+    err: (error) => {
+      return Result.err(error);
+    }
+  });
+}
+
+export default {
+  generateSessionToken,
+  createSession,
+  validateSessionToken,
+  invalidateSession,
+  generateSessionCookie,
+  validateAuthSession
+};
