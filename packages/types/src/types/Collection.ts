@@ -13,8 +13,13 @@ export interface CollectionWithFeeds extends Collection {
   feeds: Feed[];
 }
 
-export interface CollectionToFeed {
+export interface CollectionToFeeds {
   collectionId: string;
   feedId: string;
   userId: string;
+}
+
+export interface AddFeedsToCollectionResult {
+  validationErrors: Error[];
+  insertErrors: Error[];
 }

@@ -26,6 +26,6 @@ interface SignupError {
 export type SignupResult = SignupSuccess | SignupError;
 
 export interface SessionValidationResult {
-  session: Session | null;
-  user: User | null;
+  session: Session;
+  user: User;
 }

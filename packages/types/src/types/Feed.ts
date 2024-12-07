@@ -18,8 +18,8 @@ export interface FeedWithArticles extends Feed {
 
 export interface NewFeed extends Pick<Feed, 'id' | 'name' | 'description' | 'link'> {}
 
-export interface CreateFeedResult {
-  result: 'success' | 'error';
-  data?: Feed;
-  reason?: string;
+export interface FeedInfo {
+  title: string;
+  description: string | undefined;
+  url: string;
 }

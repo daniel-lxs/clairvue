@@ -4,6 +4,8 @@
  * without throwing exceptions. This enables explicit error handling and type-safe error
  * propagation throughout your codebase.
  *
+ * Note: Creating a new Ok result with `undefined` as an argument will always be treated as an error result.
+ *
  * @typeparam T The type of the success value
  * @typeparam E The type of the error value
  *
@@ -12,6 +14,7 @@
  * // Creating and using Results
  * const success = Result.ok<number, string>(42);
  * const error = Result.err<string, number>("failed");
+ * const undefinedError = Result.ok<number | undefined, string>(undefined); // Treated as an error
  *
  * // Pattern matching
  * success.match({
@@ -22,15 +25,10 @@
  */
 export class Result<T, E> {
   private constructor(
-    private readonly value?: T | undefined,
-    private readonly error?: E,
-    readonly isOk: boolean = true
+    private readonly value?: T,
+    private readonly error?: E
   ) {
     Object.freeze(this);
-  }
-
-  get isErr(): boolean {
-    return !this.isOk;
   }
 
   /**
@@ -46,7 +44,7 @@ export class Result<T, E> {
    * ```
    */
   static ok<T, E = never>(value: T): Result<T, E> {
-    return new Result<T, E>(value, undefined, true);
+    return new Result<T, E>(value, undefined);
   }
 
   /**
@@ -62,7 +60,142 @@ export class Result<T, E> {
    * ```
    */
   static err<E, T = never>(error: E): Result<T, E> {
-    return new Result<T, E>(undefined, error, false);
+    return new Result<T, E>(undefined, error);
+  }
+
+  /**
+   * Creates a Result from a JSON string representation.
+   * The string should be in the format of either {"ok": value} or {"err": error}.
+   *
+   * @param str The JSON string to parse
+   * @returns A new Result instance parsed from the string or a Result containing a `SyntaxError` if the string is invalid.
+   *
+   * @example
+   * ```typescript
+   * const success = Result.fromString('{"ok": 42}');
+   * const error = Result.fromString('{"err": "not found"}');
+   * ```
+   */
+  static fromString<T, E>(str: string): Result<T, E> {
+    try {
+      const value = JSON.parse(str);
+      if ('ok' in value) {
+        return new Result<T, E>(value.ok, undefined);
+      } else {
+        return new Result<T, E>(undefined, value.err);
+      }
+    } catch (e) {
+      return new Result<T, E>(undefined, e as E);
+    }
+  }
+
+  static fromJSON<T, E>(json: { ok: T } | { err: E }): Result<T, E> {
+    if ('ok' in json) {
+      return new Result<T, E>(json.ok, undefined);
+    } else {
+      return new Result<T, E>(undefined, json.err);
+    }
+  }
+
+  /**
+   * Returns the contained Ok value if present, otherwise undefined.
+   * This is a safe way to access the Ok value without throwing.
+   *
+   * @returns The contained value if Ok, otherwise undefined
+   *
+   * @example
+   * ```typescript
+   * const success = Result.ok<number, string>(42);
+   * console.log(success.ok()); // 42
+   *
+   * const error = Result.err<number, string>("failed");
+   * console.log(error.ok()); // undefined
+   * ```
+   */
+  ok(): T | undefined {
+    if (this.isOk()) {
+      return this.value!;
+    }
+    return undefined;
+  }
+
+  /**
+   * Returns the contained Err value if present, otherwise undefined.
+   * This is a safe way to access the Err value without throwing.
+   *
+   * @returns The contained error if Err, otherwise undefined
+   *
+   * @example
+   * ```typescript
+   * const error = Result.err<number, string>("failed");
+   * console.log(error.err()); // "failed"
+   *
+   * const success = Result.ok<number, string>(42);
+   * console.log(success.err()); // undefined
+   * ```
+   */
+  err(): E | undefined {
+    if (this.isErr()) {
+      return this.error!;
+    }
+    return undefined;
+  }
+
+  /**
+   * Returns true if the Result is Ok.
+   * This is a type guard that narrows the type to Result<T, never>.
+   *
+   * @returns true if the Result contains a success value
+   *
+   * @example
+   * ```typescript
+   * const success = Result.ok<number, string>(42);
+   * if (success.isOk()) {
+   *   // TypeScript knows success.value is number
+   *   console.log(success.value);
+   * }
+   * ```
+   */
+  isOk(): this is Result<T, never> {
+    return 'value' in this && this.value !== undefined;
+  }
+
+  /**
+   * Returns true if the Result is Ok and the value satisfies the provided predicate.
+   *
+   * @param fn Predicate function to apply to the value
+   * @returns true if the Result is Ok and the value satisfies the predicate
+   *
+   * @example
+   * ```typescript
+   * const success = Result.ok<number, string>(42);
+   * if (success.isOkAnd(x => x > 0)) {
+   *   // TypeScript knows success.unwrap() is number
+   *   console.log(success.unwrap());
+   * }
+   * ```
+   */
+  isOkAnd(fn: (value: T) => boolean): this is Result<T, never> {
+    return this.isOk() && fn(this.value!);
+  }
+
+  /**
+   * Returns true if the Result is Err.
+   * This is a type guard that narrows the type to Result<never, E>.
+   *
+   * @returns true if the Result contains an error value
+   *
+   * @example
+   * ```typescript
+   * const error = Result.err<number, string>("failed");
+   * if (error.isErr()) {
+   *   // TypeScript knows error.error is string
+   *   console.log(error.error);
+   * }
+   * ```
+   */
+  isErr(): this is Result<never, E> {
+    return !this.isOk();
   }
 
   /**
@@ -82,11 +215,11 @@ export class Result<T, E> {
    * // error.unwrap(); // throws "failed"
    * ```
    */
-  unwrap(): T | undefined {
-    if (this.isOk) {
-      return this.value;
+  unwrap(): T {
+    if (this.isOk()) {
+      return this.value!;
     }
-    throw this.error;
+    throw this.error!;
   }
 
   /**
@@ -105,8 +238,32 @@ export class Result<T, E> {
    * console.log(error.unwrapOr(0)); // 0
    * ```
    */
-  unwrapOr(defaultValue: T): T | undefined {
-    return this.isOk ? this.value : defaultValue;
+  unwrapOr(defaultValue: T): T {
+    return this.isOk() ? this.value! : defaultValue;
+  }
+
+  /**
+   * Unwraps the Result, returning the contained error if Err or throwing the value if Ok.
+   * This is the opposite of `unwrap()`. It should be used with caution as it can throw.
+   * Consider using `match` for safer error handling.
+   *
+   * @throws The contained value if the Result is Ok
+   * @returns The contained error if the Result is Err
+   *
+   * @example
+   * ```typescript
+   * const error = Result.err<number, string>("not found");
+   * console.log(error.unwrapErr()); // "not found"
+   *
+   * const success = Result.ok<number, string>(42);
+   * // success.unwrapErr(); // throws 42
+   * ```
+   */
+  unwrapErr(): E {
+    if (this.isErr()) {
+      return this.error!;
+    }
+    throw this.value!;
   }
 
   /**
@@ -123,8 +280,12 @@ export class Result<T, E> {
    * console.log(mapped.unwrap()); // "42"
    * ```
    */
-  map<U>(fn: (value: T | undefined) => U): Result<U, E> {
-    return this.isOk ? Result.ok(fn(this.value)) : Result.err(this.error!);
+  map<U>(fn: (value: T) => U): Result<U, E> {
+    return this.isOk() ? Result.ok(fn(this.value!)) : Result.err(this.error!);
+  }
+
+  mapOrElse<U>(defaultFn: (error: E) => U, fn: (value: T) => U): U {
+    return this.isOk() ? fn(this.value!) : defaultFn(this.error!);
   }
 
   /**
@@ -140,8 +301,8 @@ export class Result<T, E> {
    * const mapped = error.mapErr(e => new Error(e)); // Result<number, Error>
    * ```
    */
-  mapErr<F>(fn: (error: E) => F): Result<T | undefined, F> {
-    return this.isErr ? Result.err(fn(this.error!)) : Result.ok(this.value);
+  mapErr<F>(fn: (error: E) => F): Result<T, F> {
+    return this.isErr() ? Result.err(fn(this.error!)) : Result.ok(this.value!);
   }
 
   /**
@@ -159,8 +320,8 @@ export class Result<T, E> {
    * console.log(result.unwrap()); // 42
    * ```
    */
-  or(other: Result<T | undefined, E>): Result<T | undefined, E> {
-    return this.isOk ? this : other;
+  or(other: Result<T, E>): Result<T, E> {
+    return this.isOk() ? this : other;
   }
 
   /**
@@ -183,8 +344,8 @@ export class Result<T, E> {
    *   .andThen(divide); // Result.err("divide by zero")
    * ```
    */
-  andThen<U>(fn: (value: T | undefined) => Result<U, E>): Result<U, E> {
-    return this.isOk ? fn(this.value) : Result.err(this.error!);
+  andThen<U>(fn: (value: T) => Result<U, E>): Result<U, E> {
+    return this.isOk() ? fn(this.value!) : Result.err(this.error!);
   }
 
   /**
@@ -204,7 +365,30 @@ export class Result<T, E> {
    * console.log(message); // "Success: 42"
    * ```
    */
-  match<U, V>(options: { ok: (value: T | undefined) => U; err: (error: E) => V }): U | V {
-    return this.isOk ? options.ok(this.value) : options.err(this.error!);
+  match<U, V>(options: { ok: (value: T) => U; err: (error: E) => V }): U | V {
+    return this.isOk() ? options.ok(this.value!) : options.err(this.error!);
+  }
+
+  /**
+   * Returns a JSON string representation of the Result.
+   * The string is in the format of either {"ok": value} or {"err": error}.
+   *
+   * @returns A JSON string representation of the Result
+   *
+   * @example
+   * ```typescript
+   * const success = Result.ok<number, string>(42);
+   * console.log(success.toString()); // {"ok": 42}
+   *
+   * const error = Result.err<number, string>("failed");
+   * console.log(error.toString()); // {"err": "failed"}
+   * ```
+   */
+  toJSON(): { ok: T } | { err: E } {
+    if (this.isOk()) {
+      return { ok: this.value! };
+    } else {
+      return { err: this.error instanceof Error ? (this.error.message as E) : this.error! };
+    }
   }
 }

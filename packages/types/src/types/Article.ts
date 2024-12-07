@@ -1,3 +1,5 @@
+import { Feed } from './Feed';
+
 export interface Article {
   id: string;
   slug: string;
@@ -12,6 +14,10 @@ export interface Article {
   publishedAt: Date;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface ArticleWithFeed extends Article {
+  feed?: Feed;
 }
 
 export interface NewArticle extends Omit<Article, 'id' | 'slug' | 'createdAt' | 'updatedAt'> {}
