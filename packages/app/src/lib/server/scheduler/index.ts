@@ -13,11 +13,12 @@ export function startScheduler() {
     let hasMoreFeeds = true;
 
     while (hasMoreFeeds) {
-      try {
-        const feeds = await feedRepository.findOutdated(pageSize, page * pageSize);
+      const feedsResult = await feedRepository.findOutdated(pageSize, page * pageSize);
 
-        //Only outdated feeds will be synced
-        if (feeds.length === 0) {
+      //Only outdated feeds will be synced
+      if (feedsResult.isOk()) {
+        const feeds = feedsResult.unwrap();
+        if (!feeds) {
           console.log(`[Scheduler] No feeds to sync...`);
           hasMoreFeeds = false;
           break;
@@ -51,7 +52,8 @@ export function startScheduler() {
         } else {
           page++;
         }
-      } catch (error) {
+      } else {
+        const error = feedsResult.unwrapErr();
         console.error('[Scheduler] Error fetching outdated feeds:', error);
         hasMoreFeeds = false;
       }
