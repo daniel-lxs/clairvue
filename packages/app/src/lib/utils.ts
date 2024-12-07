@@ -2,10 +2,9 @@ import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { cubicOut } from 'svelte/easing';
 import type { TransitionConfig } from 'svelte/transition';
-import { generateRandomString } from "@oslojs/crypto/random";
-import type { RandomReader } from "@oslojs/crypto/random";
+import { generateRandomString } from '@oslojs/crypto/random';
+import type { RandomReader } from '@oslojs/crypto/random';
 import { toast } from 'svelte-sonner';
-
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -111,21 +110,17 @@ export function truncateDescription(description: string, maxLength: number = 160
   return truncatedDescription.trim();
 }
 
-
 export function generateId(length: number): string {
+  const random: RandomReader = {
+    read(bytes) {
+      crypto.getRandomValues(bytes);
+    }
+  };
 
-    const random: RandomReader = {
-        read(bytes) {
-            crypto.getRandomValues(bytes);
-        }
-    };
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 
-    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-
-    return generateRandomString(random, alphabet, length);
+  return generateRandomString(random, alphabet, length);
 }
-
-
 
 export default function showToast(
   title: string,
@@ -140,4 +135,12 @@ export default function showToast(
     description,
     action
   });
+}
+
+export function normalizeError(error: unknown): Error {
+  return error instanceof Error ? error : new Error('Unknown error', { cause: error });
+}
+
+export function parseErrorMessages(errors: Error[]): string[] {
+  return errors.map((error) => error.message);
 }
