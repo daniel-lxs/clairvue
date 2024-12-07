@@ -10,6 +10,13 @@ async function findBySlug(
   return await collectionRepository.findBySlug(userId, slug);
 }
 
+async function findBySlugWithFeeds(
+  userId: string,
+  slug: string
+): Promise<Result<CollectionWithFeeds | false, Error>> {
+  return await collectionRepository.findBySlugWithFeeds(userId, slug);
+}
+
 async function create(name: string, userId: string): Promise<Result<Collection, Error>> {
   return await collectionRepository.create({ name, userId });
 }
@@ -99,6 +106,7 @@ async function findDefaultWithFeeds(
 
 export default {
   findBySlug,
+  findBySlugWithFeeds,
   create,
   createDefault,
   update,
