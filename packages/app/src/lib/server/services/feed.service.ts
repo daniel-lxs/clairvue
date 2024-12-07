@@ -10,7 +10,7 @@ import { Result } from '@clairvue/types';
 import { normalizeError } from '@/utils';
 import Parser from 'rss-parser';
 
-async function findFeedById(id: string): Promise<Result<Feed | false, Error>> {
+async function findById(id: string): Promise<Result<Feed | false, Error>> {
   return await feedRepository.findById(id);
 }
 
@@ -181,7 +181,7 @@ async function findByUserId(
 }
 
 export default {
-  findFeedById,
+  findById,
   findByUserId,
   createFeed,
   updateFeed,
