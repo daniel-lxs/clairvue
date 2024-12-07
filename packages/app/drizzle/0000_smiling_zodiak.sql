@@ -1,18 +1,18 @@
 CREATE TYPE "public"."type" AS ENUM('rss', 'atom');--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "articles" (
-	"id" serial PRIMARY KEY NOT NULL,
+	"id" varchar PRIMARY KEY NOT NULL,
 	"slug" varchar NOT NULL,
 	"title" text NOT NULL,
 	"link" text NOT NULL,
 	"feedId" text NOT NULL,
 	"description" text,
-	"siteName" text,
+	"siteName" text NOT NULL,
 	"image" text,
 	"author" text,
 	"readable" boolean DEFAULT false NOT NULL,
 	"publishedAt" timestamp DEFAULT now() NOT NULL,
-	"createdAt" timestamp DEFAULT now(),
-	"updatedAt" timestamp DEFAULT now(),
+	"createdAt" timestamp DEFAULT now() NOT NULL,
+	"updatedAt" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "articles_link_unique" UNIQUE("link")
 );
 --> statement-breakpoint
@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS "collections" (
 CREATE TABLE IF NOT EXISTS "collectionsToFeeds" (
 	"collectionId" varchar NOT NULL,
 	"feedId" varchar NOT NULL,
+	"userId" varchar NOT NULL,
 	CONSTRAINT "collectionsToFeeds_collectionId_feedId_pk" PRIMARY KEY("collectionId","feedId")
 );
 --> statement-breakpoint
@@ -62,6 +63,12 @@ CREATE TABLE IF NOT EXISTS "users" (
 --> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "collections" ADD CONSTRAINT "collections_userId_users_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "collectionsToFeeds" ADD CONSTRAINT "collectionsToFeeds_userId_users_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;

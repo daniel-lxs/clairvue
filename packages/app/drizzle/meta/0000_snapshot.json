@@ -1,5 +1,5 @@
 {
-  "id": "d803307d-3117-4930-8c11-265325782db3",
+  "id": "53729811-9e9b-487c-b1e9-c6ca753d1cd2",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -10,7 +10,7 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "serial",
+          "type": "varchar",
           "primaryKey": true,
           "notNull": true
         },
@@ -48,7 +48,7 @@
           "name": "siteName",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "image": {
           "name": "image",
@@ -80,14 +80,14 @@
           "name": "createdAt",
           "type": "timestamp",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "default": "now()"
         },
         "updatedAt": {
           "name": "updatedAt",
           "type": "timestamp",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "default": "now()"
         }
       },
@@ -187,10 +187,30 @@
           "type": "varchar",
           "primaryKey": false,
           "notNull": true
+        },
+        "userId": {
+          "name": "userId",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
         }
       },
       "indexes": {},
-      "foreignKeys": {},
+      "foreignKeys": {
+        "collectionsToFeeds_userId_users_id_fk": {
+          "name": "collectionsToFeeds_userId_users_id_fk",
+          "tableFrom": "collectionsToFeeds",
+          "tableTo": "users",
+          "columnsFrom": [
+            "userId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {
         "collectionsToFeeds_collectionId_feedId_pk": {
           "name": "collectionsToFeeds_collectionId_feedId_pk",
