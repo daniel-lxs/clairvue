@@ -96,7 +96,13 @@ export function startSyncArticlesWorker(
 
             if (articleResult.isErr()) {
               console.warn(`[${job.id}] Error fetching article: ${link}`);
-              return undefined;
+              return {
+                title: title ?? 'Untitled',
+                link,
+                readable: false,
+                publishedAt: new Date(),
+                siteName: new URL(link).hostname.replace('www.', '')
+              };
             }
 
             const { response, mimeType } = articleResult.unwrap();
