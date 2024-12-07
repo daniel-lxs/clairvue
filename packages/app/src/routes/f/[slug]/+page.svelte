@@ -4,10 +4,11 @@
   import * as Page from '@/components/page';
   import { onMount } from 'svelte';
   import type { PageData } from './$types';
-  import type { Article } from '@/server/data/schema';
   import ArticleCardSkeleton from '@/components/article/article-card-skeleton.svelte';
   import NewArticlesButton from '@/components/collection/new-articles-button.svelte';
   import { afterNavigate, beforeNavigate } from '$app/navigation';
+  import { Result, type PaginatedList, type Article } from '@clairvue/types';
+  import showToast from '@/utils';
 
   interface Props {
     data: PageData;
@@ -67,23 +68,32 @@
   });
 
   const getArticles = async () => {
-    try {
-      articles = (await data.streamed.articles)?.items || [];
-    } catch (error) {
-      console.error('Error fetching articles:', error);
-    } finally {
-      isLoading = false;
-    }
+    const dehydratedResult = JSON.stringify(await data.streamed.articles);
+    const result = Result.fromString(dehydratedResult) as Result<PaginatedList<Article>, Error>;
+
+    result.match({
+      ok: (a) => {
+        if (a.items.length) {
+          articles = a.items;
+        }
+      },
+      err: (error) => {
+        showToast('There was an error', error.message, 'error');
+      }
+    });
+    isLoading = false;
   };
 
   const fetchArticles = async (limit: number, beforePublishedAt: Date | string = new Date()) => {
-    const { items: fetchedArticles } = await getArticlesByFeedId(
-      data.feed.id,
-      beforePublishedAt,
-      limit
-    );
+    const result = await getArticlesByFeedId(data.feed.id, beforePublishedAt, limit);
 
-    return fetchedArticles || [];
+    return result.match({
+      ok: (a) => a.items,
+      err: (error) => {
+        showToast('There was an error', error.message, 'error');
+        return undefined;
+      }
+    });
   };
 
   // Separate function for loading more articles
@@ -93,11 +103,12 @@
     isLoadingMore = true;
 
     const newArticles = await fetchArticles(perPage, articles[articles.length - 1].publishedAt);
-    if (newArticles.length === 0) {
-      hasReachedEnd = true;
-    } else {
+
+    if (newArticles && newArticles.length > 0) {
       articles = [...articles, ...newArticles];
       currentPage += 1;
+    } else {
+      hasReachedEnd = true;
     }
 
     isLoadingMore = false;
@@ -123,7 +134,7 @@
 
     const initialArticleLimit = 20;
     const newArticles = await fetchArticles(initialArticleLimit);
-    if (newArticles.length) {
+    if (newArticles && newArticles.length > 0) {
       articles = newArticles;
     }
 
@@ -131,7 +142,15 @@
   };
 
   const checkNewArticles = async () => {
-    newArticlesCount = (await countArticles(articles[0].publishedAt, data.feed.id)) || 0;
+    newArticlesCount = (
+      await countArticles(articles[0].publishedAt, data.feed.id, undefined)
+    ).match({
+      ok: (count) => count,
+      err: (error) => {
+        showToast('There was an error', error.message, 'error');
+        return 0;
+      }
+    });
   };
 
   onMount(() => {

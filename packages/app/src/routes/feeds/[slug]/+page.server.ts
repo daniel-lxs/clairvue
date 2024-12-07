@@ -1,5 +1,5 @@
 import collectionService from '@/server/services/collection.service';
-import { validateAuthSession } from '@/server/services/auth.service';
+import authService from '@/server/services/auth.service';
 import type { PageServerLoad } from './$types';
 import { redirect, error } from '@sveltejs/kit';
 import feedService from '@/server/services/feed.service';
@@ -8,39 +8,61 @@ export const load = (async ({ cookies, params, depends }) => {
   // Add dependency on feeds data
   depends('feeds');
 
-  const authSession = await validateAuthSession(cookies);
-  if (!authSession) {
-    throw redirect(302, '/auth/login');
+  const slug = params.slug;
+  if (!slug) {
+    error(400, 'Invalid slug');
   }
 
-  const collections = await collectionService.findByUserIdWithFeeds(authSession.user.id);
+  const authSessionResult = await authService.validateAuthSession(cookies);
 
-  if (!collections) {
-    throw error(404, 'Collections not found');
-  }
+  return authSessionResult.match({
+    err: (e) => error(500, e.message),
+    ok: async (authSession) => {
+      if (!authSession) {
+        redirect(302, '/auth/login');
+      }
 
-  // Find the requested collection by slug
-  const selectedCollection = collections.find((collection) => collection.slug === params.slug);
+      const collectionsResult = await collectionService.findByUserIdWithFeeds(authSession.user.id);
 
-  const defaultCollection = collections.find((collection) => collection.id.startsWith('default-'));
+      if (collectionsResult.isErr()) {
+        error(500, collectionsResult.unwrapErr().message);
+      }
 
-  if (!selectedCollection || !defaultCollection) {
-    throw error(404, 'Collection not found');
-  }
+      const collections = collectionsResult.unwrap();
 
-  // Count articles for the selected collection's feeds
-  if (selectedCollection.feeds) {
-    await Promise.all(
-      selectedCollection.feeds.map(async (feed) => {
-        feed.articleCount = await feedService.countArticles(feed.id);
-      })
-    );
-  }
+      if (!collections) {
+        error(404, 'Collections not found');
+      }
 
-  return {
-    collection: selectedCollection,
-    collections,
-    defaultCollection,
-    userId: authSession.user.id
-  };
+      // Find the requested collection by slug
+      const selectedCollection = collections.find((collection) => collection.slug === params.slug);
+    
+      const defaultCollection = collections.find((collection) => collection.id.startsWith('default-'));
+    
+      if (!selectedCollection || !defaultCollection) {
+        error(404, 'Collections not found');
+      }
+    
+      // Count articles for the selected collection's feeds
+      if (selectedCollection.feeds) {
+        await Promise.all(
+          selectedCollection.feeds.map(async (feed) => {
+            feed.articleCount = (await feedService.countArticles(feed.id)).match({
+              ok: (count) => count,
+              err: (e) => error(500, e.message)
+            });
+          })
+        );
+      }
+    
+      return {
+        collection: selectedCollection,
+        collections,
+        defaultCollection,
+        userId: authSession.user.id
+      };
+    }
+  });
+
+
 }) satisfies PageServerLoad;

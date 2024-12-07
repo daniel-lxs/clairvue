@@ -3,7 +3,6 @@
   import ArticleCard from '@/components/article/article-card.svelte';
   import * as Page from '@/components/page';
   import type { PageData } from './$types';
-  import type { Article } from '@/server/data/schema';
   import ArticleCardSkeleton from '@/components/article/article-card-skeleton.svelte';
   import NewArticlesButton from '@/components/collection/new-articles-button.svelte';
   import { beforeNavigate, afterNavigate } from '$app/navigation';
@@ -11,6 +10,8 @@
   import MoreHorizontal from 'lucide-svelte/icons/more-horizontal';
   import * as Tooltip from '@/components/ui/tooltip';
   import { onMount } from 'svelte';
+  import { Result, type PaginatedList, type Article } from '@clairvue/types';
+  import showToast from '@/utils';
 
   interface Props {
     data: PageData;
@@ -75,23 +76,38 @@
   });
 
   const getArticles = async () => {
-    try {
-      articles = (await data.streamed.articles)?.items || [];
-    } catch (error) {
-      console.error('Error fetching articles:', error);
-    } finally {
-      isLoading = false;
-    }
+    const dehydratedResult = await data.streamed.articles;
+    const articlesResult: Result<Article[] | false, string> = Result.fromString(
+      JSON.stringify(dehydratedResult)
+    );
+    articlesResult.match({
+      ok: (a) => {
+        articles = a || [];
+      },
+      err: (error) => {
+        console.error('Error fetching articles:', error);
+        isLoading = false;
+      }
+    });
   };
 
-  const fetchArticles = async (limit: number, beforePublishedAt: Date | string = new Date()) => {
-    const { items: fetchedArticles } = await getArticlesByCollectionId(
+  const fetchArticles = async (
+    limit: number,
+    beforePublishedAt: Date | string = new Date()
+  ): Promise<PaginatedList<Article> | undefined> => {
+    const articlesResult = await getArticlesByCollectionId(
       data.collection.id,
       beforePublishedAt,
       limit
     );
 
-    return fetchedArticles || [];
+    return articlesResult.match({
+      ok: (articles) => articles,
+      err: (error) => {
+        showToast('There was an error', error.message, 'error');
+        return undefined;
+      }
+    });
   };
 
   // Separate function for loading more articles
@@ -101,10 +117,11 @@
     isLoadingMore = true;
 
     const newArticles = await fetchArticles(perPage, articles[articles.length - 1].publishedAt);
-    if (newArticles.length === 0) {
+
+    if (!newArticles || newArticles.items.length === 0) {
       hasReachedEnd = true;
     } else {
-      articles = [...articles, ...newArticles];
+      articles = [...articles, ...newArticles.items];
       currentPage += 1;
     }
 
@@ -131,16 +148,23 @@
 
     const initialArticleLimit = 20;
     const newArticles = await fetchArticles(initialArticleLimit);
-    if (newArticles.length) {
-      articles = newArticles;
+    if (newArticles && newArticles.items.length > 0) {
+      articles = newArticles.items;
     }
 
     isLoading = false;
   };
 
   const checkNewArticles = async () => {
-    newArticlesCount =
-      (await countArticles(articles[0].publishedAt, undefined, data.collection.id)) ?? 0;
+    newArticlesCount = (
+      await countArticles(articles[0].publishedAt, undefined, data.collection.id)
+    ).match({
+      ok: (count) => count,
+      err: (error) => {
+        showToast('There was an error', error.message, 'error');
+        return 0;
+      }
+    });
   };
 
   onMount(() => {

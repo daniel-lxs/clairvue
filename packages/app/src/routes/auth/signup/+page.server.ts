@@ -2,7 +2,7 @@ import { fail, redirect } from '@sveltejs/kit';
 import userService from '@/server/services/user.service';
 
 import type { Actions } from './$types';
-import { createSession, generateSessionCookie, generateSessionToken } from '@/server/services/auth.service';
+import authService from '@/server/services/auth.service';
 
 export const actions: Actions = {
   default: async (event) => {
@@ -11,29 +11,35 @@ export const actions: Actions = {
     const password = formData.get('password');
 
     if (!username || typeof username !== 'string' || !password || typeof password !== 'string') {
-      const errors: Record<string, string[]> = {
-        username: ['Invalid or missing username'],
-        password: ['Invalid or missing password']
-      };
       return fail(400, {
-        message: 'Invalid username or password',
-        errors
+        message: 'Invalid username or password'
       });
     }
 
     const result = await userService.signup(username, password);
-    if (!result.success) {
-      return fail(400, {
-        errors: result.errors
-      });
-    }
 
-    const token = generateSessionToken();
+    return result.match({
+      ok: async (user) => {
+        const token = authService.generateSessionToken();
+        const sessionResult = await authService.createSession(token, user.id);
 
-    const session = await createSession(token, result.userId);
-    const sessionCookie = generateSessionCookie(session.id);
-    event.cookies.set(sessionCookie.name, token, sessionCookie.attributes);
+        if (sessionResult.isErr()) {
+          return fail(500, {
+            message: 'Failed to create session'
+          });
+        }
 
-    return redirect(302, '/');
+        const session = sessionResult.unwrap();
+        const sessionCookie = authService.generateSessionCookie(session.id);
+        event.cookies.set(sessionCookie.name, token, sessionCookie.attributes);
+
+        return redirect(302, '/');
+      },
+      err: (error) => {
+        return fail(400, {
+          message: error.message
+        });
+      }
+    });
   }
 };

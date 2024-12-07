@@ -32,31 +32,40 @@
 
   async function handleRemoveFeed(feed: Feed) {
     if (data.collection) {
-      await collectionApi.removeFeedFromCollection(data.collection.id, feed.id);
-      await invalidate('feeds');
-      showToast('Feed deleted', `Feed "${feed.name}" has been deleted.`);
+      const result = await collectionApi.removeFeedFromCollection(data.collection.id, feed.id);
+
+      result.match({
+        ok: async () => {
+          await invalidate('feeds');
+          showToast('Feed deleted', `Feed "${feed.name}" has been deleted.`);
+        },
+        err: (error) => {
+          showToast('Error', error.message || 'Failed to remove feed.', 'error');
+        }
+      });
     }
   }
 
   async function handleSaveFeed(newFeed: NewFeed) {
     if (!data.collection) return;
 
-    const createFeedResult = (
-      await feedApi.createFeeds([
-        {
-          ...newFeed,
-          collectionId: data.collection.id,
-          description: newFeed.description || undefined
-        }
-      ])
-    )[0];
+    const createFeedResult = await feedApi.createFeeds([
+      {
+        ...newFeed,
+        collectionId: data.collection.id,
+        description: newFeed.description || undefined
+      }
+    ]);
 
-    if (createFeedResult.result === 'success') {
-      await invalidate('feeds');
-      showToast('Feed created', `Feed "${newFeed.name}" has been created.`);
-    } else {
-      showToast('Error', createFeedResult.reason || 'Failed to create feed.', 'error');
-    }
+    createFeedResult.match({
+      err: (error) => {
+        showToast('Error', error.message || 'Failed to create feed.', 'error');
+      },
+      ok: async (feeds) => {
+        await invalidate('feeds');
+        showToast('Feed created', `Feed "${feeds[0].name}" has been created.`);
+      }
+    });
   }
 
   async function handleSaveCollection(collection: Collection) {

@@ -1,27 +1,39 @@
-import articlesRepository from '@/server/data/repositories/article.repository';
-import { redirect } from '@sveltejs/kit';
-import { validateAuthSession } from '@/server/services/auth.service';
+import { error, redirect } from '@sveltejs/kit';
+import authService from '@/server/services/auth.service';
 import type { PageServerLoad } from './$types';
-import feedRepository from '@/server/data/repositories/feed.repository';
+import articleService from '@/server/services/article.service';
+import feedService from '@/server/services/feed.service';
+import type { Feed } from '@clairvue/types';
 
 export const load: PageServerLoad = async ({ params: { slug: feedId }, cookies }) => {
-  const authSession = await validateAuthSession(cookies);
+  const authSessionResult = await authService.validateAuthSession(cookies);
 
-  if (!authSession) {
-    redirect(302, '/auth/login');
-  }
+  return authSessionResult.match({
+    ok: async (authSession) => {
+      if (!authSession) {
+        redirect(302, '/auth/login');
+      }
 
-  const feed = await feedRepository.findById(feedId);
+      const feedResult = await feedService.findById(feedId);
 
-  if (!feed) {
-    throw new Error('Feed not found');
-  }
+      if (feedResult.isErr()) {
+        return error(500, feedResult.unwrapErr().message);
+      }
 
-  const limitPerPage = 20;
-  return {
-    feed,
-    streamed: {
-      articles: articlesRepository.findByFeedId(feedId, undefined, limitPerPage)
+      if (feedResult.isOkAnd((feed) => !feed)) {
+        return error(404, 'Feed not found');
+      }
+
+      const limitPerPage = 20;
+      return {
+        feed: feedResult.unwrap() as Feed,
+        streamed: {
+          articles: articleService.findByFeedId(feedId, undefined, limitPerPage)
+        }
+      };
+    },
+    err: () => {
+      redirect(302, '/auth/login');
     }
-  };
+  });
 };

@@ -1,15 +1,18 @@
-import { validateAuthSession } from '@/server/services/auth.service';
+import authService from '@/server/services/auth.service';
 import type { PageServerLoad } from './$types';
-import { redirect } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
 
 export const load: PageServerLoad = async ({ cookies }) => {
-  const authSession = await validateAuthSession(cookies);
+  const authSessionResult = await authService.validateAuthSession(cookies);
 
-  if (!authSession) {
-    return {
-      session: null
-    };
-  }
-
-  redirect(302, '/feeds');
+  authSessionResult.match({
+    ok: (authSession) => {
+      if (authSession) {
+        redirect(302, '/feeds');
+      }
+    },
+    err: (e) => {
+      error(500, e.message);
+    }
+  });
 };
