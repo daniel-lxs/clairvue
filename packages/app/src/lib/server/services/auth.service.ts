@@ -53,23 +53,10 @@ async function validateAuthSession(
   const sessionId = cookies.get('auth_session');
 
   if (!sessionId) {
-    return Result.err(new Error('No session found'));
+    return Result.ok(false);
   }
 
-  return (await userRepository.validateSession(sessionId)).match({
-    ok: (authSession) => {
-      if (authSession) {
-        if (authSession.session.expiresAt < new Date()) {
-          return Result.ok(false);
-        }
-        return Result.ok({ session: authSession.session, user: authSession.user });
-      }
-      return Result.ok(false);
-    },
-    err: (error) => {
-      return Result.err(error);
-    }
-  });
+  return await userRepository.validateSession(sessionId);
 }
 
 export default {
