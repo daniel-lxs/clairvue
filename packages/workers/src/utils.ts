@@ -11,3 +11,7 @@ export function isHtmlMimeType(mimeType: string | undefined) {
   const baseMimeType = mimeType.split(';')[0].trim();
   return baseMimeType.toLowerCase() === 'text/html';
 }
+
+export function normalizeError(error: unknown): Error {
+  return error instanceof Error ? error : new Error('Unknown error', { cause: error });
+}

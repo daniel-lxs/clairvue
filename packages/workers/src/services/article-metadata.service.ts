@@ -1,12 +1,12 @@
 import Parser from 'rss-parser';
-import { z } from 'zod';
 import urlMetadata from 'url-metadata';
 import config from '../config';
 import feedService from './feed.service';
 import { ArticleMetadata } from '@clairvue/types';
 import { createHash } from 'crypto';
 import Redis from 'ioredis';
-import { isValidLink } from '../utils';
+import { isValidLink, normalizeError } from '../utils';
+import { Result } from '@clairvue/types';
 
 let redisClient: Redis | null = null;
 
@@ -23,7 +23,7 @@ function generateLinkHash(link: string): string {
   return hash.substring(0, 16);
 }
 
-async function retrieveFeedData(url: string): Promise<Parser.Output<Parser.Item> | undefined> {
+async function retrieveFeedData(url: string): Promise<Result<Parser.Output<Parser.Item>, Error>> {
   const parser = new Parser({
     timeout: 40000, // 40 seconds
     headers: {
@@ -32,256 +32,278 @@ async function retrieveFeedData(url: string): Promise<Parser.Output<Parser.Item>
   });
 
   try {
-    return await parser.parseURL(url);
+    return Result.ok(await parser.parseURL(url));
   } catch (error) {
     console.error(
       `Feed with url: ${url} could not be parsed, trying to find RSS or Atom feed link`,
       error
     );
 
-    const feedLink = await feedService.tryGetFeedLink(url);
+    const urlResult = await feedService.tryGetFeedUrl(url);
 
-    if (!feedLink) {
-      throw new Error('No valid feed found');
-    }
-
-    return await parser.parseURL(feedLink);
+    return urlResult.match({
+      ok: async (feedUrl) => {
+        if (feedUrl === url) {
+          return Result.err(new Error('Feed URL is the same as the original URL'));
+        }
+        try {
+          return Result.ok(await parser.parseURL(feedUrl));
+        } catch (parseError) {
+          return Result.err(new Error(`Failed to parse feed from ${feedUrl}: ${parseError}`));
+        }
+      },
+      err: (error) => Result.err(error)
+    });
   }
 }
 
-async function retrieveArticlesFromFeed(link: string) {
-  try {
-    const feed = await retrieveFeedData(link);
+async function retrieveArticlesFromFeed(link: string): Promise<Result<Parser.Item[], Error>> {
+  const feedResult = await retrieveFeedData(link);
 
-    if (!feed || !feed.items || feed.items.length === 0) {
-      throw new Error('No feed items found');
-    }
-
-    feed.items.sort((a, b) => {
-      if (a.pubDate && b.pubDate) {
-        return new Date(b.pubDate).valueOf() - new Date(a.pubDate).valueOf();
-      } else {
-        return 0; // Or handle the case where pubDate is undefined
+  return feedResult.match({
+    ok: (feed) => {
+      if (!feed || !feed.items || feed.items.length === 0) {
+        return Result.err(new Error('No items found in feed'));
       }
-    });
 
-    return feed.items;
-  } catch (error) {
-    if (error instanceof Error) {
-      console.error('Error occurred while fetching feed articles:', error.message);
-    } else {
-      console.error(`Unknown error occurred while fetching feed articles ${error}`);
+      feed.items.sort((a, b) => {
+        if (a.pubDate && b.pubDate) {
+          return new Date(b.pubDate).valueOf() - new Date(a.pubDate).valueOf();
+        } else {
+          return 0; // Or handle the case where pubDate is undefined
+        }
+      });
+
+      return Result.ok(feed.items);
+    },
+    err: (e) => {
+      const error = normalizeError(e);
+      console.error('Error occurred while retrieving articles from feed:', error);
+      return Result.err(error);
     }
-    return undefined;
-  }
+  });
 }
 
 async function retrieveArticleMetadata(
   response: Response,
   article: Parser.Item,
   readable: boolean = false
-): Promise<ArticleMetadata | undefined> {
+): Promise<Result<ArticleMetadata, Error>> {
   const { link, title } = article;
   const pubDate = article.pubDate ?? article.isoDate;
 
   if (!isValidLink(link)) {
-    return undefined;
+    return Result.err(new Error('Invalid link'));
   }
 
   const siteName = new URL(link).hostname.replace('www.', '');
 
   console.info(`Processing article: ${link}`);
 
-  const partialMetadata = await retrieveArticleMetadataDetails(link, response);
+  const metadataResult = await retrieveArticleMetadataDetails(link, response);
 
-  const articleMetadata = {
-    ...partialMetadata,
-    title: title ?? partialMetadata?.title ?? 'Untitled',
-    readable,
-    publishedAt: pubDate ? new Date(pubDate) : new Date(),
-    link,
-    siteName
-  };
-  await storeArticleMetadataInCache(link, articleMetadata);
-  return articleMetadata;
+  return metadataResult.match({
+    ok: async (partialMetadata) => {
+      const metadata = {
+        ...partialMetadata,
+        title: title ?? partialMetadata.title ?? 'Untitled',
+        readable,
+        publishedAt: pubDate ? new Date(pubDate) : new Date(),
+        link,
+        siteName
+      };
+      await storeArticleMetadataInCache(link, metadata);
+      return Result.ok(metadata);
+    },
+    err: (e) => {
+      console.error('Error occurred while retrieving article metadata:', e);
+      return Result.err(e);
+    }
+  });
 }
 
 async function retrieveArticleMetadataDetails(
   link: string,
   response: Response
-): Promise<Partial<ArticleMetadata> | undefined> {
+): Promise<Result<Partial<ArticleMetadata>, Error>> {
   try {
     const metadata = await urlMetadata(null, {
       parseResponseObject: response
     });
 
-    return deriveArticleMetadata(metadata, new URL(link).hostname);
-  } catch (error) {
-    if (error instanceof Error) {
-      console.error(
-        `Error occurred while fetching metadata for article with link ${link}:`,
-        error.message
-      );
-    } else {
-      console.error('Error occurred while fetching metadata');
+    if (!metadata) {
+      return Result.err(new Error('Metadata not found'));
     }
+
+    return deriveArticleMetadata(metadata, new URL(link).hostname);
+  } catch (e) {
+    const error = normalizeError(e);
+    console.error('Error occurred while retrieving article metadata:', error);
+    return Result.err(error);
+  }
+}
+
+function extractMetadataValue(
+  metadata: urlMetadata.Result,
+  primaryKey: string,
+  alternateKeys: string[] = [],
+  transformer?: (value: any) => string | undefined
+): string | undefined {
+  const possibleValues = [metadata[primaryKey], ...alternateKeys.map((key) => metadata[key])];
+
+  const value = possibleValues.find((v) => typeof v === 'string');
+  return transformer ? transformer(value) : value;
+}
+
+function extractJsonLdValue(
+  jsonld: any,
+  primaryPath: (string | number)[],
+  fallbackPaths: (string | number)[][] = []
+): string | undefined {
+  if (Array.isArray(jsonld)) {
+    const primaryMatch = jsonld.find((item) => primaryPath.every((path) => path in item));
+
+    if (primaryMatch) {
+      return primaryPath.reduce((obj, key) => obj?.[key], primaryMatch);
+    }
+
+    for (const fallbackPath of fallbackPaths) {
+      const fallbackMatch = jsonld.find((item) => fallbackPath.every((path) => path in item));
+
+      if (fallbackMatch) {
+        return fallbackPath.reduce((obj, key) => obj?.[key], fallbackMatch);
+      }
+    }
+  }
+
+  return undefined;
+}
+
+function normalizeUrl(url: string | undefined, domain: string): string | undefined {
+  if (!url) return undefined;
+
+  try {
+    if (!url.startsWith('http')) {
+      url = new URL(url, `https://${domain}`).href;
+    }
+
+    if (url.includes(',')) {
+      url = url.split(',')[0].trim();
+    }
+
+    new URL(url);
+    return url;
+  } catch {
     return undefined;
   }
 }
 
 function deriveArticleMetadata(
-  metadata: urlMetadata.Result | undefined,
-  domain: string
-): Partial<ArticleMetadata> | undefined {
-  if (!metadata) {
-    return undefined;
-  }
+  metadata: urlMetadata.Result,
+  domain: string,
+  logger?: (message: string) => void
+): Result<Partial<ArticleMetadata>, Error> {
+  logger?.(`Extracting metadata for domain: ${domain}`);
 
-  const title = ((metadata: urlMetadata.Result): string | undefined => {
-    const title =
-      metadata.title ||
-      metadata['og:title'] ||
-      metadata['twitter:title'] ||
-      (Array.isArray(metadata.jsonld) &&
-        metadata.jsonld.length > 0 &&
-        (checkIfNewsArticle(metadata.jsonld[0])
-          ? metadata.jsonld[0].headline
-          : metadata.jsonld.find(checkIfNewsArticle)?.headline)) ||
-      (metadata.headings &&
-        metadata.headings.find((h: { level: string }) => h.level === 'h1')?.text) ||
-      undefined;
+  const title =
+    extractMetadataValue(metadata, 'title', ['og:title', 'twitter:title']) ||
+    extractJsonLdValue(metadata.jsonld, ['headline'], [['name'], ['title']]) ||
+    metadata.headings?.find((h: { level: string }) => h.level === 'h1')?.text;
 
-    return typeof title === 'string' ? title : undefined;
-  })(metadata);
+  const author =
+    extractMetadataValue(metadata, 'author', ['og:author', 'twitter:creator']) ||
+    extractJsonLdValue(
+      metadata.jsonld,
+      ['author', 'name'],
+      [
+        ['author', 0, 'name'],
+        ['publisher', 'name']
+      ]
+    );
 
-  const author = ((metadata: urlMetadata.Result): string | undefined => {
-    const author =
-      metadata.author ||
-      metadata['og:author'] ||
-      (metadata.jsonld &&
-        typeof metadata.jsonld === 'object' &&
-        'author' in metadata.jsonld &&
-        metadata.jsonld.author) ||
-      (metadata.jsonld &&
-        Array.isArray(metadata.jsonld) &&
-        metadata.jsonld[1]?.author?.[0]?.name) ||
-      (metadata.jsonld &&
-        typeof metadata.jsonld.author === 'object' &&
-        metadata.jsonld.author.name) ||
-      (metadata.jsonld &&
-        typeof metadata.jsonld.publisher === 'object' &&
-        metadata.jsonld.publisher.name) ||
-      metadata['twitter:creator'] ||
-      undefined;
-    return typeof author === 'string' ? author : undefined;
-  })(metadata);
+  const description =
+    extractMetadataValue(metadata, 'description', ['og:description', 'twitter:description']) ||
+    extractJsonLdValue(metadata.jsonld, ['description'], [['abstract']]);
 
-  const description = ((metadata: urlMetadata.Result): string | undefined => {
-    const description =
-      metadata.description ||
-      metadata['og:description'] ||
-      metadata['twitter:description'] ||
-      undefined;
+  const image = normalizeUrl(
+    extractMetadataValue(metadata, 'image', [
+      'og:image',
+      'twitter:image',
+      'twitter:image:src',
+      'og:image:secure_url'
+    ]) || extractJsonLdValue(metadata.jsonld, ['image', 'url'], [['image', 0, 'url']]),
+    domain
+  );
 
-    return typeof description === 'string' ? description : undefined;
-  })(metadata);
+  return Result.ok({
+    title,
+    description,
+    image,
+    author,
+    readable: false
+  });
+}
 
-  const image = ((metadata: urlMetadata.Result): string | undefined => {
-    const image =
-      metadata.image ||
-      metadata['og:image'] ||
-      metadata['twitter:image'] ||
-      metadata['twitter:image:src'] ||
-      metadata['og:image:secure_url'] ||
-      (metadata.jsonld && Array.isArray(metadata.jsonld) && metadata.jsonld[1]?.image?.[0]?.url) ||
-      undefined;
+async function retrieveCachedArticleMetadata(
+  link: string
+): Promise<Result<ArticleMetadata | false, Error>> {
+  const redis = initializeRedisClient();
+  if (!redis) return Result.err(new Error('Redis client not initialized'));
 
-    return typeof image === 'string' ? image : undefined;
-  })(metadata);
-
-  // Validate image URL
-  let validImageUrl: string | undefined;
-
-  // Check if image is a relative path and add domain if needed
-  if (image && !image.startsWith('http')) {
-    if (domain) {
-      // Construct absolute URL using domain
-      const absoluteUrl = new URL(image, `https://${domain}`).href;
-      validImageUrl = absoluteUrl;
-    } else {
-      // If domain is not available, treat the image as is
-      validImageUrl = image;
+  try {
+    const cached = await redis.get(`article-metadata:${generateLinkHash(link)}`);
+    if (cached) {
+      return Result.ok(JSON.parse(cached));
     }
-  } else {
-    // If image is already an absolute URL, use it as is
-    validImageUrl = image;
+    return Result.ok(false);
+  } catch (e) {
+    const error = normalizeError(e);
+    console.error('Error occurred while retrieving article metadata from cache:', error);
+    return Result.err(error);
   }
-
-  //Check if the string can be separated by comma
-  if (validImageUrl && validImageUrl.includes(',')) {
-    const imageArray = validImageUrl.split(',');
-    validImageUrl = imageArray[0];
-  }
-
-  if (!z.string().url().safeParse(validImageUrl).success) {
-    validImageUrl = undefined;
-  }
-
-  return { title, description, image: validImageUrl, author, readable: false };
 }
 
-// Helper function to check if the given data is a NewsArticle JSON-LD object
-function checkIfNewsArticle(
-  jsonldData: unknown
-): jsonldData is { '@type': 'NewsArticle'; headline: string } {
-  if (typeof jsonldData === 'object' && jsonldData !== null) {
-    const data = jsonldData as { '@type'?: string; headline?: string };
-    return data['@type'] === 'NewsArticle' && typeof data.headline === 'string';
-  }
-  return false;
-}
-
-async function retrieveCachedArticleMetadata(link: string): Promise<ArticleMetadata | null> {
+async function storeArticleMetadataInCache(
+  link: string,
+  article: ArticleMetadata
+): Promise<Result<true, Error>> {
   const redis = initializeRedisClient();
-  if (!redis) throw new Error('Redis client not initialized');
+  if (!redis) return Result.err(new Error('Redis client not initialized'));
 
   if (!link) {
-    return null;
-  }
-
-  const cached = await redis.get(`article-metadata:${generateLinkHash(link)}`);
-  if (cached) {
-    return JSON.parse(cached);
-  }
-  return null;
-}
-
-async function storeArticleMetadataInCache(link: string, article: ArticleMetadata): Promise<void> {
-  const redis = initializeRedisClient();
-  if (!redis) throw new Error('Redis client not initialized');
-
-  if (!link) {
-    throw new Error('Link is required');
+    return Result.err(new Error('Link is required'));
   }
 
   const expirationTime = 24 * 60 * 60; // 1 day
-  await redis.set(
-    `article-metadata:${generateLinkHash(link)}`,
-    JSON.stringify(article),
-    'EX',
-    expirationTime
-  );
+
+  try {
+    await redis.set(
+      `article-metadata:${generateLinkHash(link)}`,
+      JSON.stringify(article),
+      'EX',
+      expirationTime
+    );
+
+    return Result.ok(true);
+  } catch (e) {
+    const error = normalizeError(e);
+    console.error('Error occurred while storing article metadata in cache:', error);
+    return Result.err(error);
+  }
 }
 
-async function removeArticleMetadataFromCache(link: string): Promise<void> {
+async function removeArticleMetadataFromCache(link: string): Promise<Result<true, Error>> {
   const redis = initializeRedisClient();
-  if (!redis) throw new Error('Redis client not initialized');
+  if (!redis) return Result.err(new Error('Redis client not initialized'));
 
-  if (!link) {
-    throw new Error('Link is required');
+  try {
+    await redis.del(`article-metadata:${generateLinkHash(link)}`);
+    return Result.ok(true);
+  } catch (e) {
+    const error = normalizeError(e);
+    console.error('Error occurred while removing article metadata from cache:', error);
+    return Result.err(error);
   }
-
-  await redis.del(`article-metadata:${generateLinkHash(link)}`);
 }
 
 export default {
@@ -291,6 +313,5 @@ export default {
   storeArticleMetadataInCache,
   removeArticleMetadataFromCache,
   retrieveArticleMetadataDetails,
-  deriveArticleMetadata,
-  checkIfNewsArticle
+  deriveArticleMetadata
 };

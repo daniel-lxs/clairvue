@@ -1,8 +1,10 @@
 import DOMPurify from 'isomorphic-dompurify';
 import { JSDOM } from 'jsdom';
 import config from '../config';
+import { Result } from '@clairvue/types';
+import { normalizeError } from '../utils';
 
-async function tryGetFeedLink(url: string): Promise<string | undefined> {
+async function tryGetFeedUrl(url: string): Promise<Result<string, Error>> {
   try {
     const response = await fetch(url, {
       method: 'GET',
@@ -12,7 +14,7 @@ async function tryGetFeedLink(url: string): Promise<string | undefined> {
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      return Result.err(new Error(`HTTP error! status: ${response.status}`));
     }
 
     const html = await response.text();
@@ -33,28 +35,35 @@ async function tryGetFeedLink(url: string): Promise<string | undefined> {
 
     if (rssLinkElement) {
       const rssLink = rssLinkElement.getAttribute('href');
-      if (rssLink && !rssLink.startsWith('http')) {
-        //Assume relative URL
-        return new URL(rssLink, url).toString();
-      } else {
-        return rssLink ?? undefined;
+      if (rssLink) {
+        if (!rssLink.startsWith('http')) {
+          //Assume relative URL
+          return Result.ok(new URL(rssLink, url).toString());
+        } else {
+          return Result.ok(rssLink);
+        }
       }
+      return Result.err(new Error('Invalid RSS link'));
     }
 
     if (atomLinkElement) {
       const atomLink = atomLinkElement.getAttribute('href');
-      if (atomLink && !atomLink.startsWith('http')) {
-        return new URL(atomLink, url).toString();
-      } else {
-        return atomLink ?? undefined;
+      if (atomLink) {
+        if (!atomLink.startsWith('http')) {
+          return Result.ok(new URL(atomLink, url).toString());
+        } else {
+          return Result.ok(atomLink);
+        }
       }
+      return Result.err(new Error('Invalid Atom link'));
     }
 
-    return undefined;
-  } catch (error) {
-    console.error('Could not parse link: ', error);
-    return undefined;
+    return Result.err(new Error('No valid feed found'));
+  } catch (e) {
+    const error = normalizeError(e);
+    console.error('Error occurred while getting feed link:', error);
+    return Result.err(error);
   }
 }
 
-export default { tryGetFeedLink };
+export default { tryGetFeedUrl };

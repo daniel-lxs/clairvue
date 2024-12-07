@@ -40,29 +40,47 @@ export function startArticleUpdatedWorker(connection: ConnectionOptions, config?
         throw new Error('Invalid link');
       }
 
-      const { response, mimeType } = await httpService.fetchArticle(url);
+      const articleResponseResult = await httpService.fetchArticle(url);
 
-      if (!response || !isHtmlMimeType(mimeType)) {
+      if (articleResponseResult.isErr()) {
+        console.error(
+          `[${job.id}] Error fetching article: ${articleResponseResult.unwrapErr().message}`
+        );
+        throw articleResponseResult.unwrapErr();
+      }
+
+      if (
+        articleResponseResult.isOkAnd(
+          (articleResponse) => !articleResponse || !isHtmlMimeType(articleResponse.mimeType)
+        )
+      ) {
         console.warn(`[${job.id}] Invalid response or content type for ${url}`);
         throw new Error('Invalid response');
       }
 
-      try {
-        console.info(`[${job.id}] Updating article ${slug} from ${url}`);
-        const updatedArticle = await readableArticleService.refreshReadableArticle(url, response);
+      const { response } = articleResponseResult.unwrap();
 
-        if (!updatedArticle) {
-          console.warn(`[${job.id}] No updated content found for article ${slug}`);
-          return undefined;
+      console.info(`[${job.id}] Updating article ${slug} from ${url}`);
+
+      const updatedArticleResult = await readableArticleService.refreshReadableArticle(
+        url,
+        response
+      );
+
+      return updatedArticleResult.match({
+        ok: async (readableArticle) => {
+          if (!readableArticle) {
+            console.warn(`[${job.id}] No updated content found for article ${slug}`);
+            return undefined;
+          }
+
+          return readableArticle;
+        },
+        err: (error) => {
+          console.error(`[${job.id}] Error updating article: ${error.message}`);
+          throw error;
         }
-
-        return updatedArticle;
-      } catch (error) {
-        console.error(
-          `[${job.id}] Failed to update article ${slug}: ${error instanceof Error ? error.message : error}`
-        );
-        throw error;
-      }
+      });
     },
     {
       connection,
