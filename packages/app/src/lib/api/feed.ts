@@ -1,10 +1,10 @@
 import type { CreateFeedDto } from '@/server/dto/feed.dto';
-import type { CreateFeedResult, FeedInfo } from '@clairvue/types';
+import type { FeedInfo } from '@clairvue/types';
 import { Result } from '@clairvue/types';
 import type { Feed } from '@/server/data/schema';
 import { normalizeError } from '@/utils';
 
-async function createFeeds(feeds: CreateFeedDto[]): Promise<Result<CreateFeedResult[], Error>> {
+async function createFeeds(feeds: CreateFeedDto[]): Promise<Result<Feed[], Error>> {
   try {
     const response = await fetch('/api/feed', {
       method: 'POST',
@@ -18,7 +18,7 @@ async function createFeeds(feeds: CreateFeedDto[]): Promise<Result<CreateFeedRes
       return Result.err(new Error(`Failed to create feeds: ${response.statusText}`));
     }
 
-    const results: CreateFeedResult[] = await response.json();
+    const results: Feed[] = await response.json();
     if (results.length !== feeds.length) {
       return Result.err(new Error('Failed to create all feeds'));
     }
