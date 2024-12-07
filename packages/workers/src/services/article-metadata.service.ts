@@ -33,11 +33,9 @@ async function retrieveFeedData(url: string): Promise<Result<Parser.Output<Parse
 
   try {
     return Result.ok(await parser.parseURL(url));
-  } catch (error) {
-    console.error(
-      `Feed with url: ${url} could not be parsed, trying to find RSS or Atom feed link`,
-      error
-    );
+  } catch (e) {
+    const error = normalizeError(e);
+    console.error(`Error ${error.message} occurred while parsing feed, trying to get feed URL`);
 
     const urlResult = await feedService.tryGetFeedUrl(url);
 
