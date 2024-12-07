@@ -9,7 +9,7 @@ import {
 } from '../schema';
 import { count, desc, eq, lt, sql, and, gt } from 'drizzle-orm';
 import { Result } from '@clairvue/types';
-import type { NewArticle, PaginatedList } from '@clairvue/types';
+import type { ArticleWithFeed, NewArticle, PaginatedList } from '@clairvue/types';
 import { normalizeError } from '@/utils';
 
 async function create(newArticles: NewArticle | NewArticle[]): Promise<Result<string[], Error>> {
@@ -17,8 +17,8 @@ async function create(newArticles: NewArticle | NewArticle[]): Promise<Result<st
   const { randomUUID } = new ShortUniqueId({ length: 8 });
 
   const toCreate = Array.isArray(newArticles)
-    ? newArticles.map((article) => ({ slug: randomUUID(), ...article }))
-    : [{ slug: randomUUID(), ...newArticles }];
+    ? newArticles.map((article) => ({ id: randomUUID(), slug: randomUUID(), ...article }))
+    : [{ id: randomUUID(), slug: randomUUID(), ...newArticles }];
 
   try {
     const result = await db
@@ -112,7 +112,7 @@ async function findByCollectionId(
   collectionId: string,
   beforePublishedAt: string = new Date().toISOString(),
   take = 5
-): Promise<Result<PaginatedList<Article> | false, Error>> {
+): Promise<Result<PaginatedList<ArticleWithFeed> | false, Error>> {
   try {
     const db = getClient();
 
@@ -172,7 +172,13 @@ async function findByCollectionId(
     }
 
     return Result.ok({
-      items: queryResult,
+      items: queryResult.map((r) => ({
+        ...r,
+        description: r.description ?? undefined,
+        image: r.image ?? undefined,
+        author: r.author ?? undefined,
+        feed: r.feed ?? undefined
+      })),
       totalCount: queryResult.length
     });
   } catch (e) {

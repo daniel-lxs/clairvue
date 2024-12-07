@@ -3,7 +3,7 @@ import { sessionSchema, userSchema } from '../schema/user.schema';
 import { eq } from 'drizzle-orm';
 import type { Session, User } from '../schema/user.schema';
 import { encodeHexLowerCase } from '@oslojs/encoding';
-import { Result } from '@clairvue/types';
+import { Result, type SessionValidationResult } from '@clairvue/types';
 import { normalizeError } from '@/utils';
 import { sha256 } from '@oslojs/crypto/sha2';
 
@@ -56,7 +56,7 @@ async function createSession(session: Session): Promise<Result<Session, Error>> 
 
 async function validateSession(
   token: string
-): Promise<Result<{ session: Session; user: User } | false, Error>> {
+): Promise<Result<SessionValidationResult | false, Error>> {
   try {
     const db = getClient();
     const sessionId = encodeHexLowerCase(sha256(new TextEncoder().encode(token)));
@@ -72,6 +72,10 @@ async function validateSession(
     }
 
     const { user, session } = result[0];
+
+    if (!user || !session) {
+      return Result.ok(false);
+    }
 
     if (Date.now() >= session.expiresAt.getTime()) {
       await db.delete(sessionSchema).where(eq(sessionSchema.id, session.id));

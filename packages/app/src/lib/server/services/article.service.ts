@@ -1,6 +1,6 @@
 import articleRepository from '@/server/data/repositories/article.repository';
 import type { Article } from '@/server/data/schema';
-import type { NewArticle, PaginatedList } from '@clairvue/types';
+import type { ArticleWithFeed, NewArticle, PaginatedList } from '@clairvue/types';
 import { createArticlesDto } from '../dto/article.dto';
 import { Result } from '@clairvue/types';
 import feedService from './feed.service';
@@ -14,7 +14,7 @@ async function createFromJobResult(
   feedId: string,
   jobResult: any
 ): Promise<Result<string[], Error>> {
-  const result = await feedService.findFeedById(feedId);
+  const result = await feedService.findById(feedId);
 
   if (result.isOk()) {
     const feed = result.unwrap();
@@ -57,7 +57,7 @@ async function findByCollectionId(
   collectionId: string,
   beforePublishedAt?: string,
   take: number = 5
-): Promise<Result<PaginatedList<Article> | false, Error>> {
+): Promise<Result<PaginatedList<ArticleWithFeed> | false, Error>> {
   return await articleRepository.findByCollectionId(collectionId, beforePublishedAt, take);
 }
 

@@ -9,6 +9,8 @@ export const createFeedDto = z.object({
 
 export type CreateFeedDto = z.infer<typeof createFeedDto>;
 
+export const createFeedsDto = z.array(createFeedDto);
+
 export const updateFeedDto = z.object({
   id: z.string().length(8, { message: 'Invalid Feed ID' }),
   name: z.string().min(4).max(255),
