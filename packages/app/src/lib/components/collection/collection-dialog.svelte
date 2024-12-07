@@ -39,32 +39,65 @@
     }
 
     isLoading = true;
-    try {
-      const isEditing = !!collection;
 
-      if (isEditing) {
-        const currentFeeds = collection.feeds?.map((feed) => feed.id);
-        const feedsToAdd = selectedFeeds.filter((feedId) => !currentFeeds?.includes(feedId));
-        const feedsToRemove = currentFeeds?.filter((feedId) => !selectedFeeds.includes(feedId));
+    const isEditing = !!collection;
 
-        await collectionApi.updateCollection(collection.id, {
-          name,
-          feedsToAdd,
-          feedsToRemove
-        });
-        onSave(collection);
-        open = false;
-        return;
-      } else {
-        const result = await collectionApi.createCollection(name, selectedFeeds);
-        onSave(result);
-        open = false;
-      }
-    } catch (error) {
-      hasError = true;
-      errorMessage = error instanceof Error ? error.message : 'Failed to save collection';
-    } finally {
-      isLoading = false;
+    if (isEditing) {
+      await edit();
+    } else {
+      const collectionResult = await collectionApi.createCollection(name, selectedFeeds);
+
+      return collectionResult.match({
+        ok: (value) => {
+          if (value.assignmentErrors.length > 0 || value.validationErrors.length > 0) {
+            hasError = true;
+            errorMessage = 'Something went wrong';
+          }
+
+          onSave(value.collection);
+          open = false;
+          isLoading = false;
+          return;
+        },
+        err: (error) => {
+          hasError = true;
+          isLoading = false;
+          errorMessage = error.message;
+        }
+      });
+    }
+  }
+
+  async function edit() {
+    if (collection) {
+      const currentFeeds = collection.feeds?.map((feed) => feed.id);
+      const feedsToAdd = selectedFeeds.filter((feedId) => !currentFeeds?.includes(feedId));
+      const feedsToRemove = currentFeeds?.filter((feedId) => !selectedFeeds.includes(feedId));
+
+      const collectionResult = await collectionApi.updateCollection(collection.id, {
+        name,
+        feedsToAdd,
+        feedsToRemove
+      });
+
+      return collectionResult.match({
+        ok: (errors) => {
+          if (errors.assignmentErrors.length > 0 || errors.removalErrors.length > 0) {
+            hasError = true;
+            errorMessage = 'Something went wrong';
+          }
+
+          onSave(collection);
+          open = false;
+          isLoading = false;
+          return;
+        },
+        err: (error) => {
+          hasError = true;
+          isLoading = false;
+          errorMessage = error.message;
+        }
+      });
     }
   }
 

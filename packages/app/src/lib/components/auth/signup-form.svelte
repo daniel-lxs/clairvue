@@ -7,32 +7,41 @@
   import { AlertOctagon } from 'lucide-svelte';
 
   interface Props {
-    form: { errors: Record<string, string[]> | undefined } | null;
+    form: { message: string } | null;
+    errors?: {
+      other?: string[];
+      username?: string[];
+      password?: string[];
+    };
   }
 
-  let { form = $bindable() }: Props = $props();
+  let { form, errors }: Props = $props();
+
+  if (form?.message) {
+    errors = { other: [form.message] };
+  }
 
   let password: string = $state('');
   let confirmPassword: string = $state('');
 
   function checkPassword() {
     if ((password || confirmPassword) && password !== confirmPassword) {
-      if (!form) {
-        form = { errors: { password: ['Passwords do not match!'] } };
+      if (!errors) {
+        errors = { password: ['Passwords do not match!'] };
       }
-      if (form.errors) {
-        form.errors.password = ['Passwords do not match!'];
+      if (errors.password) {
+        errors.password = ['Passwords do not match!'];
       }
-    } else if (form) {
-      delete form.errors?.password;
-      form = form;
+    } else if (errors) {
+      delete errors.password;
+      errors = errors;
     }
   }
 </script>
 
 <Card.Root class="relative flex flex-col items-center justify-center space-y-4 p-6 text-center">
   <Card.Header>
-    <Card.Title tag="h1" class="text-3xl font-bold">Register a New Clairvue Account</Card.Title>
+    <Card.Title tag="h1" class="text-3xl font-bold">Register a New clairvue Account</Card.Title>
   </Card.Header>
   <Card.Content class="flex w-full items-center justify-center">
     <div class="flex w-full max-w-sm flex-col text-left">
@@ -65,12 +74,12 @@
       </form>
 
       <p
-        class="mt-3 flex items-center gap-2 text-sm font-bold text-red-500 opacity-0 {form?.errors &&
-        Object.keys(form?.errors).length > 0
+        class="mt-3 flex items-center gap-2 text-sm font-bold text-red-500 opacity-0 {errors &&
+        Object.keys(errors).length > 0
           ? 'opacity-100 transition-opacity'
           : ''}"
       >
-        <AlertOctagon />{form?.errors?.['username']?.[0] || form?.errors?.['password']?.[0]}
+        <AlertOctagon />{errors?.['username']?.[0] || errors?.['password']?.[0]}
       </p>
     </div>
   </Card.Content>

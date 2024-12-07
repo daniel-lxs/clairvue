@@ -1,14 +1,13 @@
 <script lang="ts">
   import * as Card from '@/components/ui/card';
-  import type { Article } from '@/server/data/schema';
+  import type { ArticleWithFeed } from '@clairvue/types';
   import { calculateAge, truncateDescription } from '@/utils';
   import ArticleCardImage from './article-card-image.svelte';
   import { Skeleton } from '../ui/skeleton';
   import { BookOpen } from 'lucide-svelte';
-  import { onMount } from 'svelte';
 
   interface Props {
-    article: Article;
+    article: ArticleWithFeed;
   }
 
   let { article }: Props = $props();
@@ -76,13 +75,13 @@
               <Card.Header class="p-0">
                 <a
                   href="/f/{article.feedId}"
-                  class="text-xs font-bold transition-colors hover:text-primary sm:text-sm"
+                  class="hover:text-primary text-xs font-bold transition-colors sm:text-sm"
                   >{article.feed?.name}</a
                 >
                 <div class="flex flex-col gap-2">
                   <Card.Title
                     tag="h1"
-                    class="text-xl font-bold transition-colors hover:text-primary"
+                    class="hover:text-primary text-xl font-bold transition-colors"
                   >
                     <a href={article.readable ? `/article/${article.slug}` : article.link}
                       >{article.title}</a
@@ -90,7 +89,7 @@
                   </Card.Title>
                   <Card.Description class="sm:text-md text-sm">
                     <div class="flex flex-col items-start sm:flex-row sm:items-center">
-                      <a href={article.link} class="mb-1 hover:text-primary sm:mb-0"
+                      <a href={article.link} class="hover:text-primary mb-1 sm:mb-0"
                         >({article.siteName})</a
                       >
                       <div class="mt-1 flex items-center sm:ml-1 sm:mt-0">

@@ -5,7 +5,7 @@
   import { Label } from '@/components/ui/label';
   import feedApi from '@/api/feed';
   import { Loader2, PlusCircle } from 'lucide-svelte';
-  import type { NewFeed } from '@clairvue/types';
+  import { Result, type FeedInfo, type NewFeed } from '@clairvue/types';
   import { z } from 'zod';
 
   let {
@@ -42,21 +42,25 @@
       return;
     }
 
-    const feedInfo = await feedApi.getFeedInfo(parsedLink.data);
+    const result = await feedApi.getFeedInfo(parsedLink.data);
 
-    if (feedInfo) {
-      newFeed.name = feedInfo.title.trim();
-      newFeed.description = feedInfo.description?.trim();
-      newFeed.link = feedInfo.link;
-
-      open = false;
-      isLoading = false;
-      hasError = false;
-      link = '';
-
-      onSave(newFeed);
-      return;
-    }
+    result.match({
+      ok: (feedInfo) => {
+        newFeed = {
+          id: '',
+          name: feedInfo.title,
+          description: feedInfo.description ?? null,
+          link: parsedLink.data
+        };
+        onSave(newFeed);
+        open = false;
+        isLoading = false;
+      },
+      err: () => {
+        hasError = true;
+        isLoading = false;
+      }
+    });
 
     hasError = true;
     isLoading = false;

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Article } from '@/server/data/schema';
+  import type { Article } from '@clairvue/types';
 
   interface Props {
     article: Article;
@@ -22,7 +22,7 @@
       src={article.image}
       alt={article.title}
       loading="lazy"
-      class="h-full w-full bg-muted object-contain {type === 'square'
+      class="bg-muted h-full w-full object-contain {type === 'square'
         ? 'max-h-36 min-h-24 min-w-24 max-w-52'
         : ''}"
       onload={() => {
