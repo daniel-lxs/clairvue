@@ -1,6 +1,6 @@
 import { Redis } from 'ioredis';
 import config from '@/config';
-import type { ReadableArticle } from '@clairvue/types';
+import { Result, type ReadableArticle } from '@clairvue/types';
 import { getQueueEvents, getUpdatedArticleQueue } from '../queue/articles';
 import { createHash } from 'crypto';
 
@@ -26,22 +26,24 @@ function getRedisClient(): Redis | null {
   return redisClient;
 }
 
-async function getCachedReadableArticle(link: string): Promise<ReadableArticle | undefined> {
+async function getCachedReadableArticle(
+  link: string
+): Promise<Result<ReadableArticle | false, Error>> {
   const redis = getRedisClient();
-  if (!redis) return undefined;
+  if (!redis) return Result.err(new Error('Redis client not initialized'));
 
   const cached = await redis.get(`readable-article:${hashLink(link)}`);
   if (cached) {
-    return JSON.parse(cached);
+    return Result.ok(JSON.parse(cached));
   }
 
-  return undefined;
+  return Result.ok(false);
 }
 
 async function getUpdatedReadableArticle(
   slug: string,
   link: string
-): Promise<ReadableArticle | undefined> {
+): Promise<Result<ReadableArticle | false, Error>> {
   const promiseTtl = 1000 * 60 * 1; // 1 minute
   const queueName = 'get-updated-article';
 
@@ -61,13 +63,13 @@ async function getUpdatedReadableArticle(
   );
 
   if (!job || !job.id) {
-    return undefined;
+    return Result.ok(false);
   }
 
   try {
     return await job.waitUntilFinished(getQueueEvents(queueName), promiseTtl);
   } catch (error) {
-    return undefined;
+    return Result.err(error as Error);
   }
 }
 
