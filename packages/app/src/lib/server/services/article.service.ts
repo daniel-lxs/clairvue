@@ -1,6 +1,5 @@
 import articleRepository from '@/server/data/repositories/article.repository';
-import type { Article } from '@/server/data/schema';
-import type { ArticleWithFeed, NewArticle, PaginatedList } from '@clairvue/types';
+import type { Article, ArticleWithFeed, NewArticle, PaginatedList } from '@clairvue/types';
 import { createArticlesDto } from '../dto/article.dto';
 import { Result } from '@clairvue/types';
 import feedService from './feed.service';

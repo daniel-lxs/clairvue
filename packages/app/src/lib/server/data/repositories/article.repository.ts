@@ -1,15 +1,9 @@
 import ShortUniqueId from 'short-unique-id';
 import { getClient } from '../db';
-import {
-  articleSchema,
-  type Article,
-  feedSchema,
-  collectionSchema,
-  collectionsToFeeds
-} from '../schema';
+import { articleSchema, feedSchema, collectionSchema, collectionsToFeeds } from '../schema';
 import { count, desc, eq, lt, sql, and, gt } from 'drizzle-orm';
 import { Result } from '@clairvue/types';
-import type { ArticleWithFeed, NewArticle, PaginatedList } from '@clairvue/types';
+import type { Article, ArticleWithFeed, NewArticle, PaginatedList } from '@clairvue/types';
 import { normalizeError } from '@/utils';
 
 async function create(newArticles: NewArticle | NewArticle[]): Promise<Result<string[], Error>> {
@@ -49,7 +43,12 @@ async function findBySlug(slug: string): Promise<Result<Article | false, Error>>
       .where(eq(articleSchema.slug, slug))
       .execute();
     if (!result || result.length === 0) return Result.ok(false);
-    return Result.ok(result[0]);
+    return Result.ok({
+      ...result[0],
+      description: result[0].description ?? undefined,
+      image: result[0].image ?? undefined,
+      author: result[0].author ?? undefined
+    });
   } catch (e) {
     const error = normalizeError(e);
     console.error('Error occurred while finding Article by slug:', error);
@@ -98,7 +97,12 @@ async function findByFeedId(
     if (!result || result.length === 0) return Result.ok(false);
 
     return Result.ok({
-      items: result,
+      items: result.map((r) => ({
+        ...r,
+        description: r.description ?? undefined,
+        image: r.image ?? undefined,
+        author: r.author ?? undefined
+      })),
       totalCount: result.length
     });
   } catch (e) {
