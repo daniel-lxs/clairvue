@@ -1,29 +1,30 @@
 import type { PaginatedList, Article } from '@clairvue/types';
 import { z } from 'zod';
 import { Result } from '@clairvue/types';
-import { normalizeError } from '@/utils';
+import { normalizeError, validateDateString } from '@/utils';
 
 export async function getArticlesByCollectionId(
   collectionId: string,
   beforePublishedAt?: Date | string,
   take = 5
 ): Promise<Result<PaginatedList<Article>, Error>> {
-  let validatedDate: Date | undefined;
-
-  if (beforePublishedAt && typeof beforePublishedAt === 'string') {
-    validatedDate = z.date().safeParse(beforePublishedAt).success
-      ? z.date().safeParse(beforePublishedAt).data
-      : undefined;
-  }
 
   try {
     const url = new URL(`/api/article?collectionId=${collectionId}`, location.origin);
     url.searchParams.set('take', take.toString());
 
-    if (validatedDate) {
-      url.searchParams.set('beforePublishedAt', validatedDate.toISOString());
-    }
+    if (beforePublishedAt) {
+      if (typeof beforePublishedAt === 'string') {
+        const isDateValid = validateDateString(beforePublishedAt);
 
+        if (!isDateValid) {
+          return Result.err(new Error('Invalid date format'));
+        }
+        url.searchParams.set('beforePublishedAt', beforePublishedAt);
+      } else {
+        url.searchParams.set('beforePublishedAt', beforePublishedAt.toISOString());
+      }
+    }
     const response = await fetch(url.toString());
 
     if (!response.ok) {
@@ -43,20 +44,21 @@ export async function getArticlesByFeedId(
   beforePublishedAt?: Date | string,
   take = 5
 ): Promise<Result<PaginatedList<Article>, Error>> {
-  let validatedDate: Date | undefined;
-
-  if (beforePublishedAt && typeof beforePublishedAt === 'string') {
-    validatedDate = z.date().safeParse(beforePublishedAt).success
-      ? z.date().safeParse(beforePublishedAt).data
-      : undefined;
-  }
-
   try {
     const url = new URL(`/api/article?feedId=${feedId}`, location.origin);
     url.searchParams.set('take', take.toString());
 
-    if (validatedDate) {
-      url.searchParams.set('beforePublishedAt', validatedDate.toISOString());
+    if (beforePublishedAt) {
+      if (typeof beforePublishedAt === 'string') {
+        const isDateValid = validateDateString(beforePublishedAt);
+
+        if (!isDateValid) {
+          return Result.err(new Error('Invalid date format'));
+        }
+        url.searchParams.set('beforePublishedAt', beforePublishedAt);
+      } else {
+        url.searchParams.set('beforePublishedAt', beforePublishedAt.toISOString());
+      }
     }
 
     const response = await fetch(url.toString());
@@ -78,20 +80,20 @@ export async function countArticles(
   feedId?: string,
   collectionId?: string
 ): Promise<Result<number, Error>> {
-  let validatedDate: Date | undefined;
+  if (typeof afterPublishedAt === 'string') {
+    const isDateValid = validateDateString(afterPublishedAt);
 
-  if (afterPublishedAt && typeof afterPublishedAt === 'string') {
-    validatedDate = z.date().safeParse(afterPublishedAt).success
-      ? z.date().safeParse(afterPublishedAt).data
-      : undefined;
+    if (!isDateValid) {
+      return Result.err(new Error('Invalid date format'));
+    }
+  } else {
+    afterPublishedAt = afterPublishedAt.toISOString();
   }
 
   try {
     const url = new URL(`/api/article/count`, location.origin);
 
-    if (validatedDate) {
-      url.searchParams.set('afterPublishedAt', validatedDate.toISOString());
-    }
+    url.searchParams.set('afterPublishedAt', afterPublishedAt);
 
     if (feedId) {
       url.searchParams.set('feedId', feedId);
