@@ -5,7 +5,7 @@
   import { Label } from '@/components/ui/label';
   import collectionApi from '@/api/collection';
   import feedApi from '@/api/feed';
-  import {showToast} from '@/utils';
+  import { showToast } from '@/utils';
   import type { NewFeed } from '@clairvue/types';
   import type { Collection, Feed } from '@/server/data/schema';
   import * as Breadcrumb from '@/components/ui/breadcrumb';
@@ -104,9 +104,11 @@
       <div class="mb-4 mt-1">
         <Breadcrumb.Root>
           <Breadcrumb.List>
-            <Breadcrumb.Link href="/feeds">Feeds</Breadcrumb.Link>
-            <Breadcrumb.Separator />
-            <Breadcrumb.Page>{pageTitle}</Breadcrumb.Page>
+            <Breadcrumb.Link href="/feeds/all-feeds">Feeds</Breadcrumb.Link>
+            {#if !isDefaultSelected}
+              <Breadcrumb.Separator />
+              <Breadcrumb.Page>{pageTitle}</Breadcrumb.Page>
+            {/if}
           </Breadcrumb.List>
         </Breadcrumb.Root>
       </div>

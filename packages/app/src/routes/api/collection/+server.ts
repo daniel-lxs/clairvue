@@ -89,7 +89,10 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
         return new Response(
           JSON.stringify({
             collection,
-            assignmentError: feedAssignmentsResult.unwrapErr().message
+            assignmentErrors: {
+              validationErrors: [],
+              insertErrors: [feedAssignmentsResult.unwrapErr().message]
+            }
           }),
           { status: 201 }
         );
@@ -140,8 +143,11 @@ export const PATCH: RequestHandler = async ({ request, cookies }) => {
 
 export const PUT: RequestHandler = async ({ url, request, cookies }) => {
   const collectionId = url.searchParams.get('id');
-  const { name, feedsToAdd, feedsToRemove }: { name?: string; feedsToAdd?: string[]; feedsToRemove?: string[] } =
-    await request.json();
+  const {
+    name,
+    feedsToAdd,
+    feedsToRemove
+  }: { name?: string; feedsToAdd?: string[]; feedsToRemove?: string[] } = await request.json();
 
   if (!collectionId) {
     return new Response('Missing collection ID', { status: 400 });
@@ -159,7 +165,7 @@ export const PUT: RequestHandler = async ({ url, request, cookies }) => {
     let feedRemovalErrors: Error[] = [];
 
     if (name) {
-      const result = await collectionService.update(collectionId, {name});
+      const result = await collectionService.update(collectionId, { name });
       if (result.isErr()) {
         return new Response(result.unwrapErr().message, { status: 500 });
       }
