@@ -83,9 +83,11 @@
                     tag="h1"
                     class="hover:text-primary text-xl font-bold transition-colors"
                   >
-                    <a href={article.readable ? `/article/${article.slug}` : article.link}
-                      >{article.title}</a
-                    >
+                    {#if article.readable}
+                      <a href={`/article/${article.slug}`}>{article.title}</a>
+                    {:else}
+                      <a href={article.link} target="_blank">{article.title}</a>
+                    {/if}
                   </Card.Title>
                   <Card.Description class="sm:text-md text-sm">
                     <div class="flex flex-col items-start sm:flex-row sm:items-center">
