@@ -10,7 +10,7 @@
   import MoreHorizontal from 'lucide-svelte/icons/more-horizontal';
   import * as Tooltip from '@/components/ui/tooltip';
   import { onMount } from 'svelte';
-  import { Result, type PaginatedList, type Article } from '@clairvue/types';
+  import { type PaginatedList, type Article } from '@clairvue/types';
   import showToast from '@/utils';
 
   interface Props {
@@ -24,7 +24,7 @@
   const perPage = 10;
   let isLoadingMore = $state(false);
   let currentPage = 2; // Since we load 20 articles at first, we are starting at page 2
-  let articles: Article[] = $state([]);
+  let articles: Article[] = $state(data.articles.items);
   let savedScrollPosition = 0;
   let hasReachedEnd = false;
 
@@ -68,28 +68,11 @@
         }, 0);
       }
     } else if (type === 'enter') {
-      getArticles();
       sessionStorage.removeItem('collection_articles_' + data.collection.id);
       sessionStorage.removeItem('collection_scroll_' + data.collection.id);
       sessionStorage.removeItem('collection_reached_end_' + data.collection.id);
     }
   });
-
-  const getArticles = async () => {
-    const dehydratedResult = await data.streamed.articles;
-    const articlesResult: Result<Article[] | false, string> = Result.fromString(
-      JSON.stringify(dehydratedResult)
-    );
-    articlesResult.match({
-      ok: (a) => {
-        articles = a || [];
-      },
-      err: (error) => {
-        console.error('Error fetching articles:', error);
-        isLoading = false;
-      }
-    });
-  };
 
   const fetchArticles = async (
     limit: number,
@@ -171,10 +154,7 @@
     const savedArticles = sessionStorage.getItem('collection_articles_' + data.collection.id);
     if (savedArticles) {
       articles = JSON.parse(savedArticles);
-      isLoading = false;
       checkNewArticles();
-    } else {
-      getArticles();
     }
 
     // Check for new articles every minute
@@ -182,6 +162,8 @@
 
     // Set up scroll event listener
     window.addEventListener('scroll', handleScroll);
+
+    isLoading = false;
 
     // Clean up event listeners on component unmount
     return () => {

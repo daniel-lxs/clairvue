@@ -23,14 +23,23 @@ export const load: PageServerLoad = async ({ params: { slug: feedId }, cookies }
       if (feedResult.isOkAnd((feed) => !feed)) {
         return error(404, 'Feed not found');
       }
-
       const limitPerPage = 20;
-      return {
-        feed: feedResult.unwrap() as Feed,
-        streamed: {
-          articles: articleService.findByFeedId(feedId, undefined, limitPerPage)
+      const articleResult = await articleService.findByFeedId(feedId, undefined, limitPerPage);
+
+      return articleResult.match({
+        ok: (articles) => {
+          if (!articles) {
+            return error(404, 'Articles not found');
+          }
+          return {
+            feed: feedResult.unwrap() as Feed,
+            articles
+          };
+        },
+        err: (e) => {
+          return error(500, e.message);
         }
-      };
+      });
     },
     err: () => {
       redirect(302, '/auth/login');

@@ -7,7 +7,7 @@
   import ArticleCardSkeleton from '@/components/article/article-card-skeleton.svelte';
   import NewArticlesButton from '@/components/collection/new-articles-button.svelte';
   import { afterNavigate, beforeNavigate } from '$app/navigation';
-  import { Result, type PaginatedList, type Article } from '@clairvue/types';
+  import { type Article } from '@clairvue/types';
   import showToast from '@/utils';
 
   interface Props {
@@ -21,7 +21,7 @@
   const perPage = 10;
   let isLoadingMore = $state(false);
   let currentPage = 2; // Since we load 20 articles at first, we are starting at page 2
-  let articles: Article[] = $state([]);
+  let articles: Article[] = $state(data.articles.items);
   let savedScrollPosition = 0;
   let hasReachedEnd = false;
   let feedDomain = $derived(
@@ -60,29 +60,11 @@
         }, 0);
       }
     } else if (type === 'enter') {
-      getArticles();
       sessionStorage.removeItem('feed_articles_' + data.feed.id);
       sessionStorage.removeItem('feed_scroll_' + data.feed.id);
       sessionStorage.removeItem('feed_reached_end_' + data.feed.id);
     }
   });
-
-  const getArticles = async () => {
-    const dehydratedResult = JSON.stringify(await data.streamed.articles);
-    const result = Result.fromString(dehydratedResult) as Result<PaginatedList<Article>, Error>;
-
-    result.match({
-      ok: (a) => {
-        if (a.items.length) {
-          articles = a.items;
-        }
-      },
-      err: (error) => {
-        showToast('There was an error', error.message, 'error');
-      }
-    });
-    isLoading = false;
-  };
 
   const fetchArticles = async (limit: number, beforePublishedAt: Date | string = new Date()) => {
     const result = await getArticlesByFeedId(data.feed.id, beforePublishedAt, limit);
@@ -157,11 +139,10 @@
     const savedArticles = sessionStorage.getItem('feed_articles_' + data.feed.id);
     if (savedArticles) {
       articles = JSON.parse(savedArticles);
-      isLoading = false;
       checkNewArticles();
-    } else {
-      getArticles();
     }
+
+    isLoading = false;
 
     // Check for new articles every minute
     const intervalId = setInterval(checkNewArticles, 60 * 1000);
