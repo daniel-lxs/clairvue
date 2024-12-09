@@ -3,6 +3,7 @@ import authService from '@/server/services/auth.service';
 import type { PageServerLoad } from './$types';
 import collectionService from '@/server/services/collection.service';
 import articleService from '@/server/services/article.service';
+import type { ArticleWithFeed, PaginatedList, Result } from '@clairvue/types';
 
 export const load: PageServerLoad = async ({ params: { slug }, cookies }) => {
   const authSessionResult = await authService.validateAuthSession(cookies);
@@ -33,26 +34,34 @@ export const load: PageServerLoad = async ({ params: { slug }, cookies }) => {
 
       const limitPerPage = 20;
 
-      const articlesResult = await articleService.findByCollectionId(
+      const articlesResult = articleService.findByCollectionId(
         collection.id,
         undefined,
         limitPerPage
       );
 
-      return articlesResult.match({
-        err: (e) => {
-          error(500, e.message);
-        },
-        ok: (articles) => {
-          if (!articles) {
-            error(404, 'Articles not found');
-          }
-          return {
-            collection,
-            articles
-          };
+      const unwrapPromise = async (
+        resultPromise: Promise<Result<false | PaginatedList<ArticleWithFeed>, Error>>
+      ) => {
+        const result = await resultPromise;
+
+        if (result.isErr()) {
+          error(500, result.unwrapErr().message);
         }
-      });
+
+        if (result.isOkAnd((value) => value === false)) {
+          error(404, 'Articles not found');
+        }
+
+        return result.unwrap() as PaginatedList<ArticleWithFeed>;
+      };
+
+      return {
+        collection,
+        streamed: {
+          articles: unwrapPromise(articlesResult)
+        }
+      };
     }
   });
 };

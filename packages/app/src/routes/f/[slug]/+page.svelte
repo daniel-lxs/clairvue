@@ -8,7 +8,7 @@
   import NewArticlesButton from '@/components/collection/new-articles-button.svelte';
   import { afterNavigate, beforeNavigate } from '$app/navigation';
   import { type Article } from '@clairvue/types';
-  import showToast from '@/utils';
+  import { showToast, normalizeError } from '@/utils';
 
   interface Props {
     data: PageData;
@@ -21,7 +21,7 @@
   const perPage = 10;
   let isLoadingMore = $state(false);
   let currentPage = 2; // Since we load 20 articles at first, we are starting at page 2
-  let articles: Article[] = $state(data.articles.items);
+  let articles: Article[] = $state([]);
   let savedScrollPosition = 0;
   let hasReachedEnd = false;
   let feedDomain = $derived(
@@ -60,11 +60,24 @@
         }, 0);
       }
     } else if (type === 'enter') {
+      getArticles();
       sessionStorage.removeItem('feed_articles_' + data.feed.id);
       sessionStorage.removeItem('feed_scroll_' + data.feed.id);
       sessionStorage.removeItem('feed_reached_end_' + data.feed.id);
     }
   });
+
+  const getArticles = async () => {
+    try {
+      articles = (await data.streamed.articles).items;
+    } catch (e) {
+      const errror = normalizeError(e);
+      console.error('Error occurred while getting articles:', errror);
+      showToast('There was an error', errror.message, 'error');
+    } finally {
+      isLoading = false;
+    }
+  };
 
   const fetchArticles = async (limit: number, beforePublishedAt: Date | string = new Date()) => {
     const result = await getArticlesByFeedId(data.feed.id, beforePublishedAt, limit);
@@ -140,9 +153,10 @@
     if (savedArticles) {
       articles = JSON.parse(savedArticles);
       checkNewArticles();
+      isLoading = false;
+    } else {
+      getArticles();
     }
-
-    isLoading = false;
 
     // Check for new articles every minute
     const intervalId = setInterval(checkNewArticles, 60 * 1000);

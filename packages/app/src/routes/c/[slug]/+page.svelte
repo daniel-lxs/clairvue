@@ -11,7 +11,7 @@
   import * as Tooltip from '@/components/ui/tooltip';
   import { onMount } from 'svelte';
   import { type PaginatedList, type Article } from '@clairvue/types';
-  import showToast from '@/utils';
+  import { showToast, normalizeError } from '@/utils';
 
   interface Props {
     data: PageData;
@@ -24,7 +24,7 @@
   const perPage = 10;
   let isLoadingMore = $state(false);
   let currentPage = 2; // Since we load 20 articles at first, we are starting at page 2
-  let articles: Article[] = $state(data.articles.items);
+  let articles: Article[] = $state([]);
   let savedScrollPosition = 0;
   let hasReachedEnd = false;
 
@@ -68,11 +68,24 @@
         }, 0);
       }
     } else if (type === 'enter') {
+      getArticles();
       sessionStorage.removeItem('collection_articles_' + data.collection.id);
       sessionStorage.removeItem('collection_scroll_' + data.collection.id);
       sessionStorage.removeItem('collection_reached_end_' + data.collection.id);
     }
   });
+
+  const getArticles = async () => {
+    try {
+      articles = (await data.streamed.articles).items;
+    } catch (e) {
+      const errror = normalizeError(e);
+      console.error('Error occurred while getting articles:', errror);
+      showToast('There was an error', errror.message, 'error');
+    } finally {
+      isLoading = false;
+    }
+  };
 
   const fetchArticles = async (
     limit: number,
@@ -155,6 +168,9 @@
     if (savedArticles) {
       articles = JSON.parse(savedArticles);
       checkNewArticles();
+      isLoading = false;
+    } else {
+      getArticles();
     }
 
     // Check for new articles every minute
@@ -162,8 +178,6 @@
 
     // Set up scroll event listener
     window.addEventListener('scroll', handleScroll);
-
-    isLoading = false;
 
     // Clean up event listeners on component unmount
     return () => {
