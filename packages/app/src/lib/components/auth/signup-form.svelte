@@ -15,28 +15,41 @@
     };
   }
 
-  let { form, errors }: Props = $props();
+  let { form }: Props = $props();
 
-  if (form?.message) {
-    errors = { other: [form.message] };
-  }
+  let errors: {
+    other?: string[];
+    username?: string[];
+    password?: string[];
+  } = $state({
+    other: [],
+    username: [],
+    password: []
+  });
 
   let password: string = $state('');
   let confirmPassword: string = $state('');
 
   function checkPassword() {
     if ((password || confirmPassword) && password !== confirmPassword) {
-      if (!errors) {
-        errors = { password: ['Passwords do not match!'] };
-      }
       if (errors.password) {
         errors.password = ['Passwords do not match!'];
       }
     } else if (errors) {
-      delete errors.password;
-      errors = errors;
+      errors.password = [];
     }
   }
+
+  function hasErrors() {
+    const entries = Object.entries(errors);
+    return entries.some((entry) => entry[1]?.length > 0);
+  }
+
+  $effect(() => {
+    if (form?.message) {
+      errors.other = [form.message];
+    }
+  });
 </script>
 
 <Card.Root class="relative flex flex-col items-center justify-center space-y-4 p-6 text-center">
@@ -75,7 +88,7 @@
 
       <p
         class="mt-3 flex items-center gap-2 text-sm font-bold text-red-500 opacity-0 {errors &&
-        Object.keys(errors).length > 0
+        hasErrors()
           ? 'opacity-100 transition-opacity'
           : ''}"
       >
