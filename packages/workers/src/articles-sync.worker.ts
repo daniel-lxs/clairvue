@@ -1,5 +1,5 @@
 import { Worker, type ConnectionOptions } from 'bullmq';
-import type { ArticleMetadata, Feed } from '@clairvue/types';
+import type { ArticleMetadata, Feed, ReadableArticle } from '@clairvue/types';
 import articleMetadataService from './services/article-metadata.service';
 import readableArticleService from './services/readable-article.service';
 import { isHtmlMimeType, isValidLink } from './utils';
@@ -125,19 +125,15 @@ export function startSyncArticlesWorker(
 
             let readable = false;
 
-            readableArticleResult.match({
-              ok: async (readableArticle) => {
-                if (readableArticle) {
-                  await readableArticleService.createReadableArticleCache(link, readableArticle);
-                  readable = true;
-                } else {
-                  console.warn(`[${job.id}] Readable article not found: ${link}`);
-                }
-              },
-              err: (error) => {
-                console.error(`[${job.id}] Error processing article: ${error.message}`);
-              }
-            });
+            if (readableArticleResult.isOkAnd((readableArticle) => !!readableArticle)) {
+              await readableArticleService.createReadableArticleCache(
+                link,
+                readableArticleResult.unwrap() as ReadableArticle
+              );
+              readable = true;
+            } else {
+              console.warn(`[${job.id}] Readable article not found: ${link}`);
+            }
 
             const metadataResult = await articleMetadataService.retrieveArticleMetadata(
               response.clone(),
