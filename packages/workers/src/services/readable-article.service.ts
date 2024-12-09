@@ -125,7 +125,8 @@ async function retrieveReadableArticle(
       const hash = createHash('sha256').update(parsedArticle.textContent).digest('hex');
       const readableArticle: ReadableArticle = {
         ...parsedArticle,
-        contentHash: hash
+        contentHash: hash,
+        createdAt: new Date().toISOString()
       };
 
       return Result.ok(readableArticle);

@@ -40,7 +40,10 @@
 
   async function checkUpdatedArticle() {
     const updatedArticle = await data.streamed?.updatedArticle;
-    if (updatedArticle) {
+    if (!updatedArticle) {
+      return;
+    }
+    if (!(updatedArticle instanceof Error)) {
       updatedReadableArticle = updatedArticle;
       showToast('Article updated', `This article has a new version.`, 'info', {
         label: 'Refresh',
@@ -48,6 +51,9 @@
           handleUpdate();
         }
       });
+    } else {
+      console.log(`Failed to get updated article.`, updatedArticle.message);
+      showToast('There was an error', `Failed to get updated article.`, 'error');
     }
   }
 
