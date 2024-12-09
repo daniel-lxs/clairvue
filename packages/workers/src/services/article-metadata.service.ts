@@ -7,6 +7,7 @@ import { createHash } from 'crypto';
 import Redis from 'ioredis';
 import { isValidLink, normalizeError } from '../utils';
 import { Result } from '@clairvue/types';
+import { z } from 'zod';
 
 let redisClient: Redis | null = null;
 
@@ -86,7 +87,7 @@ async function retrieveArticleMetadata(
   response: Response,
   article: Parser.Item,
   readable: boolean = false
-): Promise<Result<ArticleMetadata, Error>> {
+): Promise<Result<Partial<ArticleMetadata>, Error>> {
   const { link, title } = article;
   const pubDate = article.pubDate ?? article.isoDate;
 
@@ -98,24 +99,38 @@ async function retrieveArticleMetadata(
 
   console.info(`Processing article: ${link}`);
 
-  const metadataResult = await retrieveArticleMetadataDetails(link, response);
+  const partialMetadataResult = await retrieveArticleMetadataDetails(link, response);
 
-  return metadataResult.match({
+  return partialMetadataResult.match({
     ok: async (partialMetadata) => {
-      const metadata = {
-        ...partialMetadata,
-        title: title ?? partialMetadata.title ?? 'Untitled',
-        readable,
-        publishedAt: pubDate ? new Date(pubDate) : new Date(),
-        link,
-        siteName
-      };
-      await storeArticleMetadataInCache(link, metadata);
-      return Result.ok(metadata);
+      let articleMetadata: ArticleMetadata;
+      if (!partialMetadata) {
+        articleMetadata = {
+          title: title ?? 'Untitled',
+          readable,
+          publishedAt: pubDate ? new Date(pubDate) : new Date(),
+          link,
+          siteName
+        };
+      } else {
+        articleMetadata = {
+          ...partialMetadata,
+          title: title ?? partialMetadata?.title ?? 'Untitled',
+          readable,
+          publishedAt: pubDate ? new Date(pubDate) : new Date(),
+          link,
+          siteName
+        };
+      }
+
+      await storeArticleMetadataInCache(link, articleMetadata);
+
+      return Result.ok(articleMetadata);
     },
     err: (e) => {
-      console.error('Error occurred while retrieving article metadata:', e);
-      return Result.err(e);
+      const error = normalizeError(e);
+      console.error('Error occurred while retrieving article metadata:', error);
+      return Result.err(error);
     }
   });
 }
@@ -123,17 +138,13 @@ async function retrieveArticleMetadata(
 async function retrieveArticleMetadataDetails(
   link: string,
   response: Response
-): Promise<Result<Partial<ArticleMetadata>, Error>> {
+): Promise<Result<Partial<ArticleMetadata> | false, Error>> {
   try {
     const metadata = await urlMetadata(null, {
       parseResponseObject: response
     });
 
-    if (!metadata) {
-      return Result.err(new Error('Metadata not found'));
-    }
-
-    return deriveArticleMetadata(metadata, new URL(link).hostname);
+    return Result.ok(deriveArticleMetadata(metadata, new URL(link).hostname) ?? false);
   } catch (e) {
     const error = normalizeError(e);
     console.error('Error occurred while retrieving article metadata:', error);
@@ -141,105 +152,116 @@ async function retrieveArticleMetadataDetails(
   }
 }
 
-function extractMetadataValue(
-  metadata: urlMetadata.Result,
-  primaryKey: string,
-  alternateKeys: string[] = [],
-  transformer?: (value: any) => string | undefined
-): string | undefined {
-  const possibleValues = [metadata[primaryKey], ...alternateKeys.map((key) => metadata[key])];
-
-  const value = possibleValues.find((v) => typeof v === 'string');
-  return transformer ? transformer(value) : value;
-}
-
-function extractJsonLdValue(
-  jsonld: any,
-  primaryPath: (string | number)[],
-  fallbackPaths: (string | number)[][] = []
-): string | undefined {
-  if (Array.isArray(jsonld)) {
-    const primaryMatch = jsonld.find((item) => primaryPath.every((path) => path in item));
-
-    if (primaryMatch) {
-      return primaryPath.reduce((obj, key) => obj?.[key], primaryMatch);
-    }
-
-    for (const fallbackPath of fallbackPaths) {
-      const fallbackMatch = jsonld.find((item) => fallbackPath.every((path) => path in item));
-
-      if (fallbackMatch) {
-        return fallbackPath.reduce((obj, key) => obj?.[key], fallbackMatch);
-      }
-    }
-  }
-
-  return undefined;
-}
-
-function normalizeUrl(url: string | undefined, domain: string): string | undefined {
-  if (!url) return undefined;
-
-  try {
-    if (!url.startsWith('http')) {
-      url = new URL(url, `https://${domain}`).href;
-    }
-
-    if (url.includes(',')) {
-      url = url.split(',')[0].trim();
-    }
-
-    new URL(url);
-    return url;
-  } catch {
+function deriveArticleMetadata(
+  metadata: urlMetadata.Result | undefined,
+  domain: string
+): Partial<ArticleMetadata> | undefined {
+  if (!metadata) {
     return undefined;
   }
+
+  const title = ((metadata: urlMetadata.Result): string | undefined => {
+    const title =
+      metadata.title ||
+      metadata['og:title'] ||
+      metadata['twitter:title'] ||
+      (Array.isArray(metadata.jsonld) &&
+        metadata.jsonld.length > 0 &&
+        (checkIfNewsArticle(metadata.jsonld[0])
+          ? metadata.jsonld[0].headline
+          : metadata.jsonld.find(checkIfNewsArticle)?.headline)) ||
+      (metadata.headings &&
+        metadata.headings.find((h: { level: string }) => h.level === 'h1')?.text) ||
+      undefined;
+
+    return typeof title === 'string' ? title : undefined;
+  })(metadata);
+
+  const author = ((metadata: urlMetadata.Result): string | undefined => {
+    const author =
+      metadata.author ||
+      metadata['og:author'] ||
+      (metadata.jsonld &&
+        typeof metadata.jsonld === 'object' &&
+        'author' in metadata.jsonld &&
+        metadata.jsonld.author) ||
+      (metadata.jsonld &&
+        Array.isArray(metadata.jsonld) &&
+        metadata.jsonld[1]?.author?.[0]?.name) ||
+      (metadata.jsonld &&
+        typeof metadata.jsonld.author === 'object' &&
+        metadata.jsonld.author.name) ||
+      (metadata.jsonld &&
+        typeof metadata.jsonld.publisher === 'object' &&
+        metadata.jsonld.publisher.name) ||
+      metadata['twitter:creator'] ||
+      undefined;
+    return typeof author === 'string' ? author : undefined;
+  })(metadata);
+
+  const description = ((metadata: urlMetadata.Result): string | undefined => {
+    const description =
+      metadata.description ||
+      metadata['og:description'] ||
+      metadata['twitter:description'] ||
+      undefined;
+
+    return typeof description === 'string' ? description : undefined;
+  })(metadata);
+
+  const image = ((metadata: urlMetadata.Result): string | undefined => {
+    const image =
+      metadata.image ||
+      metadata['og:image'] ||
+      metadata['twitter:image'] ||
+      metadata['twitter:image:src'] ||
+      metadata['og:image:secure_url'] ||
+      (metadata.jsonld && Array.isArray(metadata.jsonld) && metadata.jsonld[1]?.image?.[0]?.url) ||
+      undefined;
+
+    return typeof image === 'string' ? image : undefined;
+  })(metadata);
+
+  // Validate image URL
+  let validImageUrl: string | undefined;
+
+  // Check if image is a relative path and add domain if needed
+  if (image && !image.startsWith('http')) {
+    if (domain) {
+      // Construct absolute URL using domain
+      const absoluteUrl = new URL(image, `https://${domain}`).href;
+      validImageUrl = absoluteUrl;
+    } else {
+      // If domain is not available, treat the image as is
+      validImageUrl = image;
+    }
+  } else {
+    // If image is already an absolute URL, use it as is
+    validImageUrl = image;
+  }
+
+  //Check if the string can be separated by comma
+  if (validImageUrl && validImageUrl.includes(',')) {
+    const imageArray = validImageUrl.split(',');
+    validImageUrl = imageArray[0];
+  }
+
+  if (!z.string().url().safeParse(validImageUrl).success) {
+    validImageUrl = undefined;
+  }
+
+  return { title, description, image: validImageUrl, author, readable: false };
 }
 
-function deriveArticleMetadata(
-  metadata: urlMetadata.Result,
-  domain: string,
-  logger?: (message: string) => void
-): Result<Partial<ArticleMetadata>, Error> {
-  logger?.(`Extracting metadata for domain: ${domain}`);
-
-  const title =
-    extractMetadataValue(metadata, 'title', ['og:title', 'twitter:title']) ||
-    extractJsonLdValue(metadata.jsonld, ['headline'], [['name'], ['title']]) ||
-    metadata.headings?.find((h: { level: string }) => h.level === 'h1')?.text;
-
-  const author =
-    extractMetadataValue(metadata, 'author', ['og:author', 'twitter:creator']) ||
-    extractJsonLdValue(
-      metadata.jsonld,
-      ['author', 'name'],
-      [
-        ['author', 0, 'name'],
-        ['publisher', 'name']
-      ]
-    );
-
-  const description =
-    extractMetadataValue(metadata, 'description', ['og:description', 'twitter:description']) ||
-    extractJsonLdValue(metadata.jsonld, ['description'], [['abstract']]);
-
-  const image = normalizeUrl(
-    extractMetadataValue(metadata, 'image', [
-      'og:image',
-      'twitter:image',
-      'twitter:image:src',
-      'og:image:secure_url'
-    ]) || extractJsonLdValue(metadata.jsonld, ['image', 'url'], [['image', 0, 'url']]),
-    domain
-  );
-
-  return Result.ok({
-    title,
-    description,
-    image,
-    author,
-    readable: false
-  });
+// Helper function to check if the given data is a NewsArticle JSON-LD object
+function checkIfNewsArticle(
+  jsonldData: unknown
+): jsonldData is { '@type': 'NewsArticle'; headline: string } {
+  if (typeof jsonldData === 'object' && jsonldData !== null) {
+    const data = jsonldData as { '@type'?: string; headline?: string };
+    return data['@type'] === 'NewsArticle' && typeof data.headline === 'string';
+  }
+  return false;
 }
 
 async function retrieveCachedArticleMetadata(
@@ -303,7 +325,6 @@ async function removeArticleMetadataFromCache(link: string): Promise<Result<true
     return Result.err(error);
   }
 }
-
 export default {
   retrieveArticleMetadata,
   retrieveCachedArticleMetadata,
@@ -311,5 +332,6 @@ export default {
   storeArticleMetadataInCache,
   removeArticleMetadataFromCache,
   retrieveArticleMetadataDetails,
-  deriveArticleMetadata
+  deriveArticleMetadata,
+  checkIfNewsArticle
 };
