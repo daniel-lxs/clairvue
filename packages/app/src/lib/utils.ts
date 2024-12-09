@@ -5,6 +5,7 @@ import type { TransitionConfig } from 'svelte/transition';
 import { generateRandomString } from '@oslojs/crypto/random';
 import type { RandomReader } from '@oslojs/crypto/random';
 import { toast } from 'svelte-sonner';
+import { z } from 'zod';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -143,4 +144,8 @@ export function normalizeError(error: unknown): Error {
 
 export function parseErrorMessages(errors: Error[]): string[] {
   return errors.map((error) => error.message);
+}
+
+export function validateDateString(dateString: string): boolean {
+  return z.string().date().safeParse(dateString).success;
 }
