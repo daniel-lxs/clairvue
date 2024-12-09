@@ -3,8 +3,6 @@ import authService from '@/server/services/auth.service';
 import type { PageServerLoad } from './$types';
 import collectionService from '@/server/services/collection.service';
 import articleService from '@/server/services/article.service';
-import { serializePromise } from '@/utils';
-import type { Article, PaginatedList, Result } from '@clairvue/types';
 
 export const load: PageServerLoad = async ({ params: { slug }, cookies }) => {
   const authSessionResult = await authService.validateAuthSession(cookies);
