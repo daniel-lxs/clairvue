@@ -123,7 +123,7 @@ export function generateId(length: number): string {
   return generateRandomString(random, alphabet, length);
 }
 
-export default function showToast(
+export function showToast(
   title: string,
   description: string,
   toastState: 'error' | 'success' | 'info' | 'warning' | 'loading' = 'success',

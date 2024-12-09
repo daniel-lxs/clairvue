@@ -3,7 +3,7 @@
   import type { PageData } from './$types';
   import { BookOpen } from 'lucide-svelte';
   import { fontSize } from '@/stores/font-size';
-  import showToast from '@/utils';
+  import { showToast } from '@/utils';
   import type { ReadableArticle } from '@clairvue/types';
   import ArticlePageSkeleton from '@/components/article/article-page-skeleton.svelte';
 
