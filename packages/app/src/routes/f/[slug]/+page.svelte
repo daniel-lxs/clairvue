@@ -9,12 +9,19 @@
   import { afterNavigate, beforeNavigate } from '$app/navigation';
   import { type Article } from '@clairvue/types';
   import { showToast, normalizeError } from '@/utils';
+  import { collectionsStore } from '@/stores/collections';
+  import { feedsStore } from '@/stores/feeds';
+  import NavigationSidebar from '@/components/navigation/navigation-sidebar.svelte';
+  import PageSkeleton from '@/components/page-skeleton.svelte';
 
   interface Props {
     data: PageData;
   }
 
   let { data }: Props = $props();
+
+  let collections = $state($collectionsStore);
+  let feeds = $state($feedsStore);
 
   let isLoading = $state(true);
   let newArticlesCount = $state(0);
@@ -148,6 +155,16 @@
     });
   };
 
+  $effect(() => {
+    collectionsStore.subscribe((value) => {
+      collections = value;
+    });
+
+    feedsStore.subscribe((value) => {
+      feeds = value;
+    });
+  });
+
   onMount(() => {
     const savedArticles = sessionStorage.getItem('feed_articles_' + data.feed.id);
     if (savedArticles) {
@@ -176,31 +193,33 @@
   <title>{newArticlesCount > 0 ? `(${newArticlesCount}) ` : ''}{data.feed?.name} - Clairvue</title>
 </svelte:head>
 
-<main class="flex h-[calc(100vh-3.5rem)] w-full">
-  <div class="flex-1">
-    <Page.Container>
-      <div class="flex w-full flex-col">
-        {#if newArticlesCount > 0}
-          <NewArticlesButton on:click={showNewArticles} />
+{#snippet sidebar()}
+  <NavigationSidebar class="mt-2.5" {collections} {feeds} />
+{/snippet}
+
+{#snippet content()}
+  <div class="flex w-full flex-col sm:pt-2.5">
+    {#if newArticlesCount > 0}
+      <NewArticlesButton on:click={showNewArticles} />
+    {/if}
+    <Page.Header title={data.feed?.name || 'Unnamed'} subtitle={feedDomain} />
+    <div class="w-full space-y-4 sm:space-y-6 sm:px-0">
+      {#if isLoading}
+        {#each { length: perPage } as _}
+          <ArticleCardSkeleton />
+        {/each}
+      {:else if articles && articles.length > 0}
+        {#each articles as article}
+          <ArticleCard {article} />
+        {/each}
+        {#if isLoadingMore}
+          <ArticleCardSkeleton />
         {/if}
-        <Page.Header title={data.feed?.name || 'Unnamed'} subtitle={feedDomain} />
-        <div class="w-full space-y-4 sm:space-y-6 sm:px-0">
-          {#if isLoading}
-            {#each { length: perPage } as _}
-              <ArticleCardSkeleton />
-            {/each}
-          {:else if articles && articles.length > 0}
-            {#each articles as article}
-              <ArticleCard {article} />
-            {/each}
-            {#if isLoadingMore}
-              <ArticleCardSkeleton />
-            {/if}
-          {:else}
-            <p>No articles found</p>
-          {/if}
-        </div>
-      </div>
-    </Page.Container>
+      {:else}
+        <p>No articles found</p>
+      {/if}
+    </div>
   </div>
-</main>
+{/snippet}
+
+<PageSkeleton {sidebar} {content} />

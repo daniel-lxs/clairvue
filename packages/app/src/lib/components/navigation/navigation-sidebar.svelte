@@ -6,17 +6,15 @@
     class: className = undefined,
     collections,
     feeds,
-    currentFeedId,
-    onLoadMoreFeeds
+    currentFeedId
   }: {
     class?: string;
     collections: Collection[];
     feeds: Feed[];
     currentFeedId?: string;
-    onLoadMoreFeeds: (page: number) => void;
   } = $props();
 </script>
 
 <div class={className}>
-  <NavigationMenu {collections} {feeds} {currentFeedId} {onLoadMoreFeeds} />
+  <NavigationMenu {collections} {feeds} {currentFeedId} />
 </div>

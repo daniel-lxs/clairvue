@@ -16,6 +16,8 @@
   import CollectionDialog from '@/components/collection/collection-dialog.svelte';
   import type { Selected } from 'bits-ui';
   import { FolderPlus, MoreHorizontal, Plus, Pencil } from 'lucide-svelte';
+  import Button from '@/components/ui/button/button.svelte';
+  import PageSkeleton from '@/components/page-skeleton.svelte';
 
   interface Props {
     data: PageData;
@@ -73,6 +75,11 @@
     showToast('Collection updated', `Collection "${collection.name}" has been updated.`);
   }
 
+  async function handleEditCollection(collection: Collection) {
+    await invalidate('feeds');
+    showToast('Collection updated', `Collection "${collection.name}" has been updated.`);
+  }
+
   function handleCollectionChange(selected: Selected<unknown> | undefined) {
     if (!selected) return;
     const value = selected.value;
@@ -81,113 +88,113 @@
   }
 </script>
 
-<main class="flex min-h-screen flex-col items-center justify-center">
-  <CreateFeedDialog onSave={handleSaveFeed} bind:open={openFeedDialog} showButton={false} />
-  <CollectionDialog
-    feeds={data.defaultCollection.feeds}
-    collection={selectedCollection}
-    onSave={handleSaveCollection}
-    bind:open={openEditCollectionDialog}
-    showButton={false}
-  />
-  <div class="flex min-h-screen w-full pt-16 sm:pt-20">
-    <!-- Sidebar -->
-    <CollectionsSidebar
-      collections={data.collections}
-      {selectedCollection}
-      feeds={data.defaultCollection.feeds ?? []}
-      bind:openCollectionDialog
-    />
+<CreateFeedDialog onSave={handleSaveFeed} bind:open={openFeedDialog} showButton={false} />
+<CollectionDialog
+  feeds={data.defaultCollection.feeds}
+  collection={selectedCollection}
+  onSave={handleSaveCollection}
+  bind:open={openCollectionDialog}
+  showButton={false}
+/>
 
-    <!-- Main Content -->
-    <div class="flex-1 px-8">
-      <div class="mb-4 mt-1">
-        <Breadcrumb.Root>
-          <Breadcrumb.List>
-            <Breadcrumb.Link href="/feeds/all-feeds">Feeds</Breadcrumb.Link>
-            {#if !isDefaultSelected}
-              <Breadcrumb.Separator />
-              <Breadcrumb.Page>{pageTitle}</Breadcrumb.Page>
-            {/if}
-          </Breadcrumb.List>
-        </Breadcrumb.Root>
+{#snippet sidebar()}
+  <CollectionsSidebar
+    collections={data.collections}
+    {selectedCollection}
+    feeds={data.defaultCollection.feeds ?? []}
+    bind:openCollectionDialog
+  />
+{/snippet}
+
+{#snippet content()}
+  <div class="mb-4 mt-2">
+    <Breadcrumb.Root>
+      <Breadcrumb.List>
+        <Breadcrumb.Link href="/feeds/all-feeds">Feeds</Breadcrumb.Link>
+        {#if !isDefaultSelected}
+          <Breadcrumb.Separator />
+          <Breadcrumb.Page>{pageTitle}</Breadcrumb.Page>
+        {/if}
+      </Breadcrumb.List>
+    </Breadcrumb.Root>
+  </div>
+
+  <div class="space-y-4 sm:space-y-6">
+    <div class="flex justify-between sm:items-center">
+      <div class="space-y-1">
+        <Label class="text-lg sm:text-xl" href="/feeds/{selectedCollection.slug}">{pageTitle}</Label
+        >
+        <p class="text-muted-foreground text-sm">
+          {#if isDefaultSelected}
+            View and manage all your RSS feeds
+          {:else}
+            Feeds in {data.collection?.name}
+          {/if}
+        </p>
       </div>
 
-      <div class="space-y-4 sm:space-y-6">
-        <div class="flex justify-between sm:items-center">
-          <div class="space-y-1">
-            <Label class="text-lg sm:text-xl" href="/feeds/{selectedCollection.slug}"
-              >{pageTitle}</Label
-            >
-            <p class="text-muted-foreground text-sm">
-              {#if isDefaultSelected}
-                View and manage all your RSS feeds
-              {:else}
-                Feeds in {data.collection?.name}
+      <div>
+        <DropdownMenu.Root disableFocusFirstItem={true}>
+          <DropdownMenu.Trigger>
+            <Button variant="ghost" size="icon">
+              <MoreHorizontal class="h-6 w-6" />
+            </Button>
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Content>
+            <DropdownMenu.Group>
+              <DropdownMenu.Item on:click={() => (openCollectionDialog = true)}>
+                <FolderPlus class="mr-2 h-4 w-4" />
+                New collection
+              </DropdownMenu.Item>
+              {#if !isDefaultSelected}
+                <DropdownMenu.Item on:click={() => (openEditCollectionDialog = true)}>
+                  <Pencil class="mr-2 h-4 w-4" />
+                  Edit collection
+                </DropdownMenu.Item>
               {/if}
-            </p>
-          </div>
-
-          <div>
-            <DropdownMenu.Root disableFocusFirstItem={true}>
-              <DropdownMenu.Trigger>
-                <MoreHorizontal class="h-6 w-6" />
-              </DropdownMenu.Trigger>
-              <DropdownMenu.Content>
-                <DropdownMenu.Group>
-                  <DropdownMenu.Item on:click={() => (openCollectionDialog = true)}>
-                    <FolderPlus class="mr-2 h-4 w-4" />
-                    New collection
-                  </DropdownMenu.Item>
-                  {#if !isDefaultSelected}
-                    <DropdownMenu.Item on:click={() => (openEditCollectionDialog = true)}>
-                      <Pencil class="mr-2 h-4 w-4" />
-                      Edit collection
-                    </DropdownMenu.Item>
-                  {/if}
-                  <DropdownMenu.Item on:click={() => (openFeedDialog = true)}>
-                    <Plus class="mr-2 h-4 w-4" />
-                    Add Feed
-                  </DropdownMenu.Item>
-                </DropdownMenu.Group>
-              </DropdownMenu.Content>
-            </DropdownMenu.Root>
-          </div>
-        </div>
-
-        <div class="block w-full sm:hidden">
-          <Select.Root onSelectedChange={(value) => handleCollectionChange(value)}>
-            <Select.Trigger class="w-full">
-              <Select.Value placeholder={selectedCollection.name} />
-            </Select.Trigger>
-            <Select.Content>
-              {#each data.collections as collection}
-                <Select.Item value={collection.slug}>{collection.name}</Select.Item>
-              {/each}
-            </Select.Content>
-            <Select.Input name="collection" />
-          </Select.Root>
-        </div>
-
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {#if data.collection.feeds.length}
-            {#each data.collection.feeds as feed}
-              <FeedListItem
-                {feed}
-                onRemove={handleRemoveFeed}
-                allowRemove={!feed.link.startsWith('default-') && !isDefaultSelected}
-              />
-            {/each}
-          {:else}
-            <div
-              class="flex flex-col items-center justify-center space-y-4 rounded-lg border p-8 text-center"
-            >
-              <h3 class="text-lg font-medium">No feeds yet</h3>
-              <p class="text-muted-foreground">Add your first feed to start reading articles.</p>
-            </div>
-          {/if}
-        </div>
+              <DropdownMenu.Item on:click={() => (openFeedDialog = true)}>
+                <Plus class="mr-2 h-4 w-4" />
+                Add Feed
+              </DropdownMenu.Item>
+            </DropdownMenu.Group>
+          </DropdownMenu.Content>
+        </DropdownMenu.Root>
       </div>
     </div>
+
+    <div class="block w-full sm:hidden">
+      <Select.Root onSelectedChange={(value) => handleCollectionChange(value)}>
+        <Select.Trigger class="w-full">
+          <Select.Value placeholder={selectedCollection.name} />
+        </Select.Trigger>
+        <Select.Content>
+          {#each data.collections as collection}
+            <Select.Item value={collection.slug}>{collection.name}</Select.Item>
+          {/each}
+        </Select.Content>
+        <Select.Input name="collection" />
+      </Select.Root>
+    </div>
+
+    <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
+      {#if data.collection.feeds.length}
+        {#each data.collection.feeds as feed}
+          <FeedListItem
+            {feed}
+            onRemove={handleRemoveFeed}
+            allowRemove={!feed.link.startsWith('default-') && !isDefaultSelected}
+          />
+        {/each}
+      {:else}
+        <div
+          class="flex flex-col items-center justify-center space-y-4 rounded-lg border p-8 text-center"
+        >
+          <h3 class="text-lg font-medium">No feeds yet</h3>
+          <p class="text-muted-foreground">Add your first feed to start reading articles.</p>
+        </div>
+      {/if}
+    </div>
   </div>
-</main>
+{/snippet}
+
+<PageSkeleton {sidebar} {content} />

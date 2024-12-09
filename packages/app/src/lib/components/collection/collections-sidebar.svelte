@@ -24,14 +24,10 @@
   }
 </script>
 
-<aside class="hidden w-64 space-y-2 px-4 sm:block">
+<aside class="min-w-[200px] max-w-[250px] flex-shrink-0 space-y-2">
   <div class="flex items-center justify-between">
     <Label>Collections</Label>
-    <CollectionDialog
-      {feeds}
-      onSave={handleCreateCollection}
-      bind:open={openCollectionDialog}
-    >
+    <CollectionDialog {feeds} onSave={handleCreateCollection} bind:open={openCollectionDialog}>
       <Trigger class={buttonVariants({ variant: 'ghost', size: 'sm' })}>
         <FolderPlus class="h-4 w-4" color="hsl(var(--primary))" />
       </Trigger>

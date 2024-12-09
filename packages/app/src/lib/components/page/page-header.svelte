@@ -8,7 +8,7 @@
   let { title, children, subtitle }: Props = $props();
 </script>
 
-<div class="flex w-full flex-col items-start pb-6 sm:space-y-2 sm:py-4">
+<div class="flex w-full flex-col items-start pb-4 sm:space-y-2">
   {#if children}
     {@render children()}
   {:else if title}

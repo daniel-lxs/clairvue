@@ -12,12 +12,19 @@
   import { onMount } from 'svelte';
   import { type PaginatedList, type Article } from '@clairvue/types';
   import { showToast, normalizeError } from '@/utils';
+  import NavigationSidebar from '@/components/navigation/navigation-sidebar.svelte';
+  import { collectionsStore } from '@/stores/collections';
+  import { feedsStore } from '@/stores/feeds';
+  import PageSkeleton from '@/components/page-skeleton.svelte';
 
   interface Props {
     data: PageData;
   }
 
   let { data }: Props = $props();
+
+  let collections = $state($collectionsStore);
+  let feeds = $state($feedsStore);
 
   let isLoading = $state(true);
   let newArticlesCount = $state(0);
@@ -163,6 +170,16 @@
     });
   };
 
+  $effect(() => {
+    collectionsStore.subscribe((value) => {
+      collections = value;
+    });
+
+    feedsStore.subscribe((value) => {
+      feeds = value;
+    });
+  });
+
   onMount(() => {
     const savedArticles = sessionStorage.getItem('collection_articles_' + data.collection.id);
     if (savedArticles) {
@@ -193,54 +210,56 @@
   >
 </svelte:head>
 
-<main class="flex h-[calc(100vh-3.5rem)] w-full">
-  <div class="flex-1">
-    <Page.Container>
-      <div class="flex w-full flex-col">
-        {#if newArticlesCount > 0}
-          <NewArticlesButton on:click={showNewArticles} />
-        {/if}
-        <Page.Header>
-          <div class="flex w-full justify-between">
-            <h1 class="text-xl font-semibold sm:text-2xl">{data.collection?.name}</h1>
-            <Tooltip.Root>
-              <Button
-                title="Edit feed collection"
-                href="/feeds/{data.collection.slug}"
-                variant="ghost"
-                size="icon"
-              >
-                <MoreHorizontal class="h-6 w-6" />
-              </Button>
-              <Tooltip.Content>
-                <p class="text-xs leading-4">Edit feed collection</p>
-              </Tooltip.Content>
-            </Tooltip.Root>
-          </div>
-          <p class="sm:text-md text-md text-muted-foreground">
-            {data.collection.feeds
-              ? `Showing articles from ${data.collection.feeds.length} feeds`
-              : undefined}
-          </p></Page.Header
-        >
+{#snippet sidebar()}
+  <NavigationSidebar class="mt-2.5" {collections} {feeds} />
+{/snippet}
 
-        <div class="space-y-4 sm:space-y-2">
-          {#if isLoading}
-            {#each { length: perPage } as _}
-              <ArticleCardSkeleton />
-            {/each}
-          {:else if articles && articles.length > 0}
-            {#each articles as article}
-              <ArticleCard {article} />
-            {/each}
-            {#if isLoadingMore}
-              <ArticleCardSkeleton />
-            {/if}
-          {:else}
-            <p>No articles found</p>
-          {/if}
-        </div>
+{#snippet content()}
+  <div class="flex w-full flex-col sm:pt-2.5">
+    {#if newArticlesCount > 0}
+      <NewArticlesButton on:click={showNewArticles} />
+    {/if}
+    <Page.Header>
+      <div class="flex w-full justify-between">
+        <h1 class="text-xl font-semibold sm:text-2xl">{data.collection?.name}</h1>
+        <Tooltip.Root>
+          <Button
+            title="Edit feed collection"
+            href="/feeds/{data.collection.slug}"
+            variant="ghost"
+            size="icon"
+          >
+            <MoreHorizontal class="h-6 w-6" />
+          </Button>
+          <Tooltip.Content>
+            <p class="text-xs leading-4">Edit feed collection</p>
+          </Tooltip.Content>
+        </Tooltip.Root>
       </div>
-    </Page.Container>
+      <p class="sm:text-md text-md text-muted-foreground">
+        {data.collection.feeds
+          ? `Showing articles from ${data.collection.feeds.length} feeds`
+          : undefined}
+      </p></Page.Header
+    >
+
+    <div class="space-y-4 sm:space-y-2">
+      {#if isLoading}
+        {#each { length: perPage } as _}
+          <ArticleCardSkeleton />
+        {/each}
+      {:else if articles && articles.length > 0}
+        {#each articles as article}
+          <ArticleCard {article} />
+        {/each}
+        {#if isLoadingMore}
+          <ArticleCardSkeleton />
+        {/if}
+      {:else}
+        <p>No articles found</p>
+      {/if}
+    </div>
   </div>
-</main>
+{/snippet}
+
+<PageSkeleton {sidebar} {content} />

@@ -11,18 +11,14 @@
     collections,
     feeds,
     currentFeedId,
-    onLoadMoreFeeds,
     onNavigate
   }: {
     class?: string;
     collections: Collection[];
     feeds: Feed[];
     currentFeedId?: string;
-    onLoadMoreFeeds: (page: number) => void;
     onNavigate?: (slug: string) => void;
   } = $props();
-
-  console.log(className);
 
   let openCollections = $state(true);
   let openFeeds = $state(true);
@@ -55,7 +51,7 @@
       </Button>
     </Collapsible.Trigger>
     <Collapsible.Content class="pl-6">
-      <NavigationFeeds {feeds} {currentFeedId} onLoadMore={onLoadMoreFeeds} {onNavigate} />
+      <NavigationFeeds {feeds} {currentFeedId} {onNavigate} />
     </Collapsible.Content>
   </Collapsible.Root>
 </div>

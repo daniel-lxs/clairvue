@@ -66,7 +66,7 @@
   <title>{data.articleMetadata?.title}</title>
 </svelte:head>
 
-<main class="flex w-full max-w-full flex-col items-center overflow-x-hidden px-4 py-16 sm:px-0">
+<main class="flex w-full max-w-full flex-col items-center overflow-x-hidden px-4 py-14 sm:px-0">
   {#if !readableArticle}
     <ArticlePageSkeleton />
   {:else}
