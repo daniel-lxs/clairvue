@@ -1,10 +1,11 @@
-import { count, desc, eq, sql } from 'drizzle-orm';
+import { count, desc, eq, like, sql, and } from 'drizzle-orm';
 import ShortUniqueId from 'short-unique-id';
 import { getClient } from '../db';
 import { collectionsToFeeds, feedSchema, type Feed, articleSchema } from '../schema';
-import { Result } from '@clairvue/types';
+import { Result, type Collection } from '@clairvue/types';
 import { normalizeError } from '@/utils';
 import slugify from 'slugify';
+import collectionRepository from './collection.repository';
 
 async function create(
   newFeed: Pick<Feed, 'name' | 'description' | 'link'>
@@ -117,11 +118,20 @@ async function findByUserId(
     const db = getClient();
     take = take > 100 ? 100 : take;
 
+    const defaultCollectionResult = await collectionRepository.findDefaultByUserId(userId);
+
+    if (defaultCollectionResult.isErr()) return Result.err(defaultCollectionResult.unwrapErr());
+
+    if (defaultCollectionResult.isOkAnd((r) => !r))
+      return Result.err(new Error('Default collection not found'));
+
+    const defaultCollection = defaultCollectionResult.unwrap() as Collection;
+
     const result = await db
       .select()
       .from(feedSchema)
       .leftJoin(collectionsToFeeds, eq(collectionsToFeeds.feedId, feedSchema.id))
-      .where(eq(collectionsToFeeds.userId, userId))
+      .where(eq(collectionsToFeeds.collectionId, defaultCollection.id))
       .limit(take)
       .offset(skip)
       .execute();
