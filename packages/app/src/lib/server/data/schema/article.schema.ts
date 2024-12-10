@@ -7,7 +7,9 @@ export const articleSchema = pgTable('articles', {
   slug: varchar('slug').notNull(),
   title: text('title').notNull(),
   link: text('link').unique().notNull(),
-  feedId: text('feedId').notNull(),
+  feedId: text('feedId')
+    .notNull()
+    .references(() => feedSchema.id, { onDelete: 'cascade' }),
   description: text('description'),
   siteName: text('siteName').notNull(),
   image: text('image'),
