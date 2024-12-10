@@ -33,7 +33,7 @@ export const actions: Actions = {
         const sessionCookie = authService.generateSessionCookie(session.id);
         event.cookies.set(sessionCookie.name, token, sessionCookie.attributes);
 
-        return redirect(302, '/');
+        return redirect(302, '/feeds');
       },
       err: (error) => {
         return fail(400, {
