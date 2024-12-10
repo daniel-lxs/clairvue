@@ -1,23 +1,17 @@
 import type { RequestHandler } from '@sveltejs/kit';
 import articlesService from '@/server/services/article.service';
-import authService from '@/server/services/auth.service';
 
-export const GET: RequestHandler = async ({ url, cookies }) => {
+export const GET: RequestHandler = async ({ url, locals }) => {
+  const { authSession } = locals;
+
+  if (!authSession) {
+    return new Response('Unauthorized', { status: 401 });
+  }
+
   const collectionId = url.searchParams.get('collectionId');
   let take = Number(url.searchParams.get('take'));
   const beforePublishedAt = url.searchParams.get('beforePublishedAt') || undefined;
   const feedId = url.searchParams.get('feedId');
-
-  const authSessionResult = await authService.validateAuthSession(cookies);
-
-  if (authSessionResult.isErr()) {
-    return new Response('Internal server error', { status: 500 });
-  } else {
-    const authSession = authSessionResult.unwrap();
-    if (!authSession) {
-      return new Response('Unauthorized', { status: 401 });
-    }
-  }
 
   if (collectionId) {
     if (isNaN(take)) {
