@@ -64,7 +64,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
         return new Response(
           JSON.stringify({
             collection,
-            assignmentErrors: {
+            feedErrors: {
               validationErrors: parseErrorMessages(validationErrors),
               insertErrors: parseErrorMessages(insertErrors)
             }
@@ -76,7 +76,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
       return new Response(
         JSON.stringify({
           collection,
-          assignmentErrors: {
+          feedErrors: {
             validationErrors: [],
             insertErrors: [feedAssignmentsResult.unwrapErr().message]
           }

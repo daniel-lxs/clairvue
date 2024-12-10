@@ -49,7 +49,10 @@
 
       return collectionResult.match({
         ok: (value) => {
-          if (value.assignmentErrors.length > 0 || value.validationErrors.length > 0) {
+          if (
+            value.feedErrors.validationErrors.length > 0 ||
+            value.feedErrors.validationErrors.length > 0
+          ) {
             hasError = true;
             errorMessage = 'Something went wrong';
           }

@@ -9,8 +9,10 @@ async function createCollection(
   Result<
     {
       collection: Collection;
-      validationErrors: string[];
-      assignmentErrors: string[];
+      feedErrors: {
+        validationErrors: string[];
+        assignmentErrors: string[];
+      };
     },
     Error
   >
