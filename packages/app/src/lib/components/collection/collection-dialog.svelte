@@ -12,16 +12,20 @@
   let {
     feeds,
     onSave,
+    onEdit,
     children,
     open = $bindable(false),
     collection,
+    edit = false,
     showButton = true
   }: {
     feeds: Feed[];
     onSave: (collection: Collection | CollectionWithFeeds) => void;
+    onEdit: (collection: Collection | CollectionWithFeeds) => void;
     children?: import('svelte').Snippet;
     open?: boolean;
     collection?: CollectionWithFeeds;
+    edit?: boolean;
     showButton?: boolean;
   } = $props();
 
@@ -29,7 +33,9 @@
   let hasError = $state(false);
   let errorMessage = $state('');
   let name = $state(collection?.name ?? '');
-  let selectedFeeds = $state<string[]>(collection?.feeds?.map((feed) => feed.id) ?? []);
+  let selectedFeeds = $state<string[]>(
+    edit ? (collection?.feeds?.map((feed) => feed.id) ?? []) : []
+  );
 
   async function save() {
     if (!name.trim()) {
@@ -40,10 +46,8 @@
 
     isLoading = true;
 
-    const isEditing = !!collection;
-
-    if (isEditing) {
-      await edit();
+    if (edit) {
+      await editCollection();
     } else {
       const collectionResult = await collectionApi.createCollection(name, selectedFeeds);
 
@@ -71,7 +75,7 @@
     }
   }
 
-  async function edit() {
+  async function editCollection() {
     if (collection) {
       const currentFeeds = collection.feeds?.map((feed) => feed.id);
       const feedsToAdd = selectedFeeds.filter((feedId) => !currentFeeds?.includes(feedId));
@@ -90,7 +94,7 @@
             errorMessage = 'Something went wrong';
           }
 
-          onSave(collection);
+          onEdit(collection);
           open = false;
           isLoading = false;
           return;
@@ -110,12 +114,12 @@
       : [...selectedFeeds, feedId];
   }
 
-  $effect.pre(() => {
-    if (open === false) {
-      selectedFeeds = collection?.feeds?.map((feed) => feed.id) ?? [];
+  $effect(() => {
+    if (open === true) {
+      selectedFeeds = edit ? (collection?.feeds?.map((feed) => feed.id) ?? []) : [];
       hasError = false;
       errorMessage = '';
-      name = collection?.name ?? '';
+      name = edit ? (collection?.name ?? '') : '';
       isLoading = false;
     }
   });
@@ -136,9 +140,9 @@
 
   <Dialog.Content class="sm:max-w-[425px]">
     <Dialog.Header>
-      <Dialog.Title>{collection ? 'Edit collection' : 'Create new collection'}</Dialog.Title>
+      <Dialog.Title>{edit ? 'Edit collection' : 'Create new collection'}</Dialog.Title>
       <Dialog.Description>
-        {collection
+        {edit
           ? 'Edit your collection and manage its feeds.'
           : 'Create a new collection and select feeds to add to it.'}
       </Dialog.Description>
@@ -186,7 +190,7 @@
           <Loader2 class="mr-2 h-4 w-4 animate-spin" />
           Saving...
         {:else}
-          {collection ? 'Save changes' : 'Save'}
+          {edit ? 'Save changes' : 'Create'}
         {/if}
       </Button>
     </Dialog.Footer>

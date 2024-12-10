@@ -4,34 +4,25 @@
   import { Label } from '../ui/label';
   import type { Collection, Feed } from '@/server/data/schema';
   import { Trigger } from '@/components/ui/dialog';
-  import CollectionDialog from './collection-dialog.svelte';
-  import { goto } from '$app/navigation';
 
   let {
     collections,
     selectedCollection,
-    feeds,
-    openCollectionDialog = $bindable(false)
+    onCreateNewCollection
   }: {
     collections: Collection[];
     selectedCollection: Collection;
     feeds: Feed[];
-    openCollectionDialog: boolean;
+    onCreateNewCollection: () => void;
   } = $props();
-
-  async function handleCreateCollection(collection: Collection) {
-    goto(`/feeds/${collection.slug}`);
-  }
 </script>
 
 <aside class="min-w-[200px] max-w-[250px] flex-shrink-0 space-y-2">
   <div class="flex items-center justify-between">
     <Label>Collections</Label>
-    <CollectionDialog {feeds} onSave={handleCreateCollection} bind:open={openCollectionDialog}>
-      <Trigger class={buttonVariants({ variant: 'ghost', size: 'sm' })}>
-        <FolderPlus class="h-4 w-4" color="hsl(var(--primary))" />
-      </Trigger>
-    </CollectionDialog>
+    <Button variant="ghost" size="icon" on:click={onCreateNewCollection}>
+      <FolderPlus class="h-4 w-4" color="hsl(var(--primary))" />
+    </Button>
   </div>
   <div class="space-y-1">
     {#each collections as collection}
