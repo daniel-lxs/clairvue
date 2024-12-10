@@ -113,4 +113,17 @@ export const DELETE: RequestHandler = async ({ url, locals }) => {
   if (!authSession) {
     return new Response('Unauthorized', { status: 401 });
   }
+
+  const feedId = url.searchParams.get('feedId');
+
+  if (!feedId) {
+    return new Response('Missing feed ID', { status: 400 });
+  }
+
+  const deleteResult = await feedService.deleteForUser(authSession.user.id, feedId);
+
+  return deleteResult.match({
+    ok: () => new Response('OK', { status: 200 }),
+    err: (error) => new Response(error.message, { status: 500 })
+  });
 };

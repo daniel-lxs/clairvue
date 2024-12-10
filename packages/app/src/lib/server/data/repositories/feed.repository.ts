@@ -268,6 +268,57 @@ async function updateLastSync(id: string): Promise<Result<Feed, Error>> {
   }
 }
 
+async function deleteForUser(userId: string, feedId: string): Promise<Result<true, Error>> {
+  try {
+    const db = getClient();
+    const result = await db
+      .delete(collectionsToFeeds)
+      .where(and(eq(collectionsToFeeds.feedId, feedId), eq(collectionsToFeeds.userId, userId)))
+      .returning()
+      .execute();
+    if (!result || result.length === 0) return Result.err(new Error('Failed to delete feed'));
+    const isOrphanResult = await deleteIfOrphan(feedId);
+    if (isOrphanResult.isErr()) return Result.err(isOrphanResult.unwrapErr());
+    return Result.ok(true);
+  } catch (error) {
+    const err = normalizeError(error);
+    console.error('Error occurred while deleting feed for user:', err);
+    return Result.err(err);
+  }
+}
+
+async function isOrphan(feedId: string): Promise<Result<boolean, Error>> {
+  try {
+    const db = getClient();
+    const result = await db
+      .select()
+      .from(collectionsToFeeds)
+      .where(eq(collectionsToFeeds.feedId, feedId))
+      .execute();
+    return Result.ok(result.length === 0);
+  } catch (error) {
+    const err = normalizeError(error);
+    console.error('Error occurred while checking if feed is orphan:', err);
+    return Result.err(err);
+  }
+}
+
+async function deleteIfOrphan(feedId: string): Promise<Result<true, Error>> {
+  try {
+    const isOrphanResult = await isOrphan(feedId);
+    if (isOrphanResult.isErr()) return Result.err(isOrphanResult.unwrapErr());
+    if (isOrphanResult.isOkAnd((r) => r)) {
+      const deleteResult = await deleteForUser('default', feedId);
+      if (deleteResult.isErr()) return Result.err(deleteResult.unwrapErr());
+    }
+    return Result.ok(true);
+  } catch (error) {
+    const err = normalizeError(error);
+    console.error('Error occurred while deleting orphan feed:', err);
+    return Result.err(err);
+  }
+}
+
 export default {
   create,
   findById,
@@ -278,5 +329,6 @@ export default {
   findOutdated,
   countArticles,
   update,
-  updateLastSync
+  updateLastSync,
+  deleteForUser
 };

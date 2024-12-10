@@ -180,6 +180,10 @@ async function findByUserId(
   return await feedRepository.findByUserId(userId, take, skip);
 }
 
+async function deleteForUser(userId: string, feedId: string): Promise<Result<true, Error>> {
+  return await feedRepository.deleteForUser(userId, feedId);
+}
+
 export default {
   findById,
   findByUserId,
@@ -189,5 +193,6 @@ export default {
   countArticles,
   extractFeedUrl,
   fetchAndParseFeed,
-  updateLastSyncedAt
+  updateLastSyncedAt,
+  deleteForUser
 };
