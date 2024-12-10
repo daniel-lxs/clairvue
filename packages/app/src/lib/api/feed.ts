@@ -110,7 +110,7 @@ async function getFeeds(take: number = 10, skip: number = 0): Promise<Result<Fee
   }
 }
 
-async function deleteFeed(feedId: string): Promise<Result<void, Error>> {
+async function deleteFeed(feedId: string): Promise<Result<true, Error>> {
   try {
     const response = await fetch(`/api/feed?feedId=${feedId}`, {
       method: 'DELETE'
@@ -120,7 +120,7 @@ async function deleteFeed(feedId: string): Promise<Result<void, Error>> {
       return Result.err(new Error(`Failed to delete feed: ${response.statusText}`));
     }
 
-    return Result.ok(undefined);
+    return Result.ok(true);
   } catch (e) {
     const error = normalizeError(e);
     console.error('Error occurred while deleting feed:', error);

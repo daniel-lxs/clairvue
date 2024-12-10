@@ -33,17 +33,24 @@ export class Result<T, E> {
 
   /**
    * Creates a successful Result containing a value.
+   * Note: If the value is undefined, it will create an error Result instead.
    *
    * @param value The value to wrap in a successful Result
-   * @returns A new Result instance containing the success value
+   * @returns A new Result instance containing the success value, or an error if value is undefined
    *
    * @example
    * ```typescript
    * const result = Result.ok<number, string>(42);
-   * console.log(result.isOk); // true
+   * console.log(result.isOk()); // true
+   *
+   * const undefinedResult = Result.ok<number | undefined, string>(undefined);
+   * console.log(undefinedResult.isErr()); // true
    * ```
    */
   static ok<T, E = never>(value: T): Result<T, E> {
+    if (value === undefined) {
+      return new Result<T, E>(undefined, 'Result cannot be created with undefined value' as E);
+    }
     return new Result<T, E>(value, undefined);
   }
 
