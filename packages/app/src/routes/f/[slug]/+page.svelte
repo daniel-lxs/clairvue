@@ -144,13 +144,15 @@
   };
 
   const checkNewArticles = async () => {
-    newArticlesCount = (
-      await countArticles(articles[0].publishedAt, data.feed.id, undefined)
-    ).match({
-      ok: (count) => count,
+    const countArticlesResult = await countArticles(
+      articles[0].publishedAt,
+      data.feed.id,
+      undefined
+    );
+    countArticlesResult.match({
+      ok: (value) => (newArticlesCount = value.count),
       err: (error) => {
         showToast('There was an error', error.message, 'error');
-        return 0;
       }
     });
   };
