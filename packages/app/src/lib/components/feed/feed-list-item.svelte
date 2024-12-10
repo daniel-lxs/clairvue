@@ -7,29 +7,29 @@
 
   interface Props {
     feed: Feed;
-    allowRemove?: boolean;
+    disableActions?: boolean;
     onRemove: (feed: Feed) => void;
   }
 
-  let { feed, onRemove, allowRemove }: Props = $props();
+  let { feed, onRemove, disableActions }: Props = $props();
 </script>
 
 <div
-  class="flex items-center justify-between rounded-lg bg-muted p-4 transition-colors"
+  class="bg-muted flex items-center justify-between rounded-lg p-4 transition-colors"
   role="button"
   tabindex="0"
 >
   <div class="flex flex-col">
     <a
       href="/f/{feed.id}"
-      class="item-title truncate text-sm font-medium text-primary decoration-primary/30 underline-offset-4 transition-colors hover:text-primary/80 hover:underline"
+      class="item-title text-primary decoration-primary/30 hover:text-primary/80 truncate text-sm font-medium underline-offset-4 transition-colors hover:underline"
       >{feed.name}</a
     >
-    <div class="text-xs text-muted-foreground">
+    <div class="text-muted-foreground text-xs">
       Created {calculateAge(feed.createdAt, 'long')} • {feed.articleCount || 0} articles
     </div>
   </div>
-  {#if allowRemove}
+  {#if !disableActions}
     <DropdownMenu.Root>
       <DropdownMenu.Trigger asChild let:builder>
         <Button

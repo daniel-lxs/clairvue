@@ -303,15 +303,20 @@ async function isOrphan(feedId: string): Promise<Result<boolean, Error>> {
   }
 }
 
-async function deleteIfOrphan(feedId: string): Promise<Result<true, Error>> {
+async function deleteIfOrphan(feedId: string): Promise<Result<boolean, Error>> {
   try {
     const isOrphanResult = await isOrphan(feedId);
-    if (isOrphanResult.isErr()) return Result.err(isOrphanResult.unwrapErr());
-    if (isOrphanResult.isOkAnd((r) => r)) {
-      const deleteResult = await deleteForUser('default', feedId);
-      if (deleteResult.isErr()) return Result.err(deleteResult.unwrapErr());
-    }
-    return Result.ok(true);
+    return isOrphanResult.match({
+      ok: async (isOrphan) => {
+        if (isOrphan) {
+          const db = getClient();
+          await db.delete(feedSchema).where(eq(feedSchema.id, feedId)).execute();
+          return Result.ok(true);
+        }
+        return Result.ok(false);
+      },
+      err: () => Result.err(new Error('Failed to delete orphan feed'))
+    });
   } catch (error) {
     const err = normalizeError(error);
     console.error('Error occurred while deleting orphan feed:', err);

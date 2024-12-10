@@ -6,7 +6,6 @@ import {
   deleteFeedFromCollectionDto,
   updateCollectionDto
 } from '@/server/dto/collection.dto';
-import authService from '@/server/services/auth.service';
 import { parseErrorMessages } from '@/utils';
 
 export const GET: RequestHandler = async ({ url, locals }) => {
@@ -203,7 +202,7 @@ export const PUT: RequestHandler = async ({ url, request, locals }) => {
   );
 };
 
-export const DELETE: RequestHandler = async ({ url, cookies, locals }) => {
+export const DELETE: RequestHandler = async ({ url, locals }) => {
   const { authSession } = locals;
 
   if (!authSession) {
@@ -218,7 +217,7 @@ export const DELETE: RequestHandler = async ({ url, cookies, locals }) => {
   }
 
   const validationResult = deleteFeedFromCollectionDto.safeParse({
-    collectionId,
+    id: collectionId,
     feedId
   });
 

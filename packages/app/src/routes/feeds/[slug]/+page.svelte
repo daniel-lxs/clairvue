@@ -33,9 +33,23 @@
   let editCollection = $state(false);
 
   async function handleRemoveFeed(feed: Feed) {
-    if (data.collection) {
+    if (!data.collection.id.includes('default-')) {
       const result = await collectionApi.removeFeedFromCollection(data.collection.id, feed.id);
 
+      result.match({
+        ok: async () => {
+          await invalidate('feeds');
+          showToast(
+            'Feed deleted',
+            `Feed "${feed.name}" has been removed from "${data.collection.name}".`
+          );
+        },
+        err: (error) => {
+          showToast('Error', error.message || 'Failed to remove feed.', 'error');
+        }
+      });
+    } else {
+      const result = await feedApi.deleteFeed(feed.id);
       result.match({
         ok: async () => {
           await invalidate('feeds');
@@ -146,10 +160,12 @@
           </DropdownMenu.Trigger>
           <DropdownMenu.Content>
             <DropdownMenu.Group>
-              <DropdownMenu.Item on:click={() => {
-                editCollection = false;
-                openCollectionDialog = true
-              }}>
+              <DropdownMenu.Item
+                on:click={() => {
+                  editCollection = false;
+                  openCollectionDialog = true;
+                }}
+              >
                 <FolderPlus class="mr-2 h-4 w-4" />
                 New collection
               </DropdownMenu.Item>
@@ -194,7 +210,7 @@
           <FeedListItem
             {feed}
             onRemove={handleRemoveFeed}
-            allowRemove={!feed.link.startsWith('default-') && !isDefaultSelected}
+            disableActions={feed.link.startsWith('default-') && isDefaultSelected}
           />
         {/each}
       {:else}
