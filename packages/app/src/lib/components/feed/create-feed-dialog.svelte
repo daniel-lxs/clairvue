@@ -5,7 +5,7 @@
   import { Label } from '@/components/ui/label';
   import feedApi from '@/api/feed';
   import { Loader2, PlusCircle } from 'lucide-svelte';
-  import { Result, type FeedInfo, type NewFeed } from '@clairvue/types';
+  import { type NewFeed } from '@clairvue/types';
   import { z } from 'zod';
 
   let {
