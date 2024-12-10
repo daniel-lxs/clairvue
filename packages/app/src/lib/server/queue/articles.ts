@@ -29,7 +29,11 @@ export const listenArticlesQueue = () => {
       return;
     }
 
-    await articleService.createFromJobResult(job.data.feed.id, job.returnvalue);
+    const result = await articleService.createFromJobResult(job.data.feed.id, job.returnvalue);
+
+    if (result.isErr()) {
+      console.error(`Error processing job ${jobId}: ${result.unwrapErr().message}`);
+    }
   });
 };
 
