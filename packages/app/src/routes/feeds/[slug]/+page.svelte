@@ -30,7 +30,7 @@
 
   let openFeedDialog = $state(false);
   let openCollectionDialog = $state(false);
-  let openEditCollectionDialog = $state(false);
+  let editCollection = $state(false);
 
   async function handleRemoveFeed(feed: Feed) {
     if (data.collection) {
@@ -92,7 +92,9 @@
 <CollectionDialog
   feeds={data.defaultCollection.feeds}
   collection={selectedCollection}
+  edit={editCollection}
   onSave={handleSaveCollection}
+  onEdit={handleEditCollection}
   bind:open={openCollectionDialog}
   showButton={false}
 />
@@ -102,7 +104,9 @@
     collections={data.collections}
     {selectedCollection}
     feeds={data.defaultCollection.feeds ?? []}
-    bind:openCollectionDialog
+    onCreateNewCollection={() => {
+      openCollectionDialog = true;
+    }}
   />
 {/snippet}
 
@@ -142,12 +146,20 @@
           </DropdownMenu.Trigger>
           <DropdownMenu.Content>
             <DropdownMenu.Group>
-              <DropdownMenu.Item on:click={() => (openCollectionDialog = true)}>
+              <DropdownMenu.Item on:click={() => {
+                editCollection = false;
+                openCollectionDialog = true
+              }}>
                 <FolderPlus class="mr-2 h-4 w-4" />
                 New collection
               </DropdownMenu.Item>
               {#if !isDefaultSelected}
-                <DropdownMenu.Item on:click={() => (openEditCollectionDialog = true)}>
+                <DropdownMenu.Item
+                  on:click={() => {
+                    editCollection = true;
+                    openCollectionDialog = true;
+                  }}
+                >
                   <Pencil class="mr-2 h-4 w-4" />
                   Edit collection
                 </DropdownMenu.Item>
