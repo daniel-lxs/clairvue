@@ -8,7 +8,6 @@ export async function getArticlesByCollectionId(
   beforePublishedAt?: Date | string,
   take = 5
 ): Promise<Result<PaginatedList<Article>, Error>> {
-
   try {
     const url = new URL(`/api/article?collectionId=${collectionId}`, location.origin);
     url.searchParams.set('take', take.toString());
@@ -79,7 +78,7 @@ export async function countArticles(
   afterPublishedAt: Date | string,
   feedId?: string,
   collectionId?: string
-): Promise<Result<number, Error>> {
+): Promise<Result<{ count: number }, Error>> {
   if (typeof afterPublishedAt === 'string') {
     const isDateValid = validateDateString(afterPublishedAt);
 
