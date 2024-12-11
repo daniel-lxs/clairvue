@@ -80,11 +80,16 @@ async function countArticles(
   return await articleRepository.countArticles(afterPublishedAt, feedId, collectionId);
 }
 
+async function existsWithLink(link: string): Promise<Result<boolean, Error>> {
+  return await articleRepository.existsWithLink(link);
+}
+
 export default {
   findBySlug,
   countArticles,
   create,
   createFromJobResult,
   findByFeedId,
-  findByCollectionId
+  findByCollectionId,
+  existsWithLink
 };

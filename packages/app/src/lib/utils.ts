@@ -3,6 +3,7 @@ import { twMerge } from 'tailwind-merge';
 import { cubicOut } from 'svelte/easing';
 import type { TransitionConfig } from 'svelte/transition';
 import { generateRandomString } from '@oslojs/crypto/random';
+import { sha256 } from '@oslojs/crypto/sha2';
 import type { RandomReader } from '@oslojs/crypto/random';
 import { toast } from 'svelte-sonner';
 import { z } from 'zod';
@@ -149,4 +150,19 @@ export function parseErrorMessages(errors: Error[]): string[] {
 export function validateDateString(dateString: string): boolean {
   console.log({ dateString });
   return z.string().datetime().safeParse(dateString).success;
+}
+
+/**
+ * Synchronously hashes a string using the SHA-256 algorithm.
+ * @param input - The string to hash.
+ * @returns The first 16 characters of the hashed string in hexadecimal format.
+ */
+export function hashString(input: string): string {
+  const inputBuffer = new TextEncoder().encode(input);
+  const hash = sha256(inputBuffer);
+  const output = new Uint8Array(hash);
+  return output
+    .subarray(0, 16)
+    .reduce((acc, byte) => acc + byte.toString(16).padStart(2, '0'), '')
+    .substring(0, 16);
 }

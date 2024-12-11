@@ -40,3 +40,7 @@ export const listenArticlesQueue = () => {
 export const getUpdatedArticleQueue = () => {
   return new Queue('get-updated-article', { connection });
 };
+
+export const getArticleMetadataQueue = () => {
+  return new Queue('article-metadata', { connection });
+};

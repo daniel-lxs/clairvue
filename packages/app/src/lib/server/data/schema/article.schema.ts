@@ -1,4 +1,4 @@
-import { boolean, pgTable, serial, text, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { boolean, pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { feedSchema, type Feed } from './feed.schema';
 import { relations, type InferSelectModel } from 'drizzle-orm';
 

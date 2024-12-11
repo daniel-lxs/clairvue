@@ -1,5 +1,4 @@
 import type { PaginatedList, Article } from '@clairvue/types';
-import { z } from 'zod';
 import { Result } from '@clairvue/types';
 import { normalizeError, validateDateString } from '@/utils';
 
@@ -25,6 +24,13 @@ export async function getArticlesByCollectionId(
       }
     }
     const response = await fetch(url.toString());
+
+    if (response.status === 404) {
+      return Result.ok({
+        items: [],
+        totalCount: 0
+      });
+    }
 
     if (!response.ok) {
       return Result.err(new Error(`Failed to get articles: ${response.statusText}`));
@@ -61,6 +67,13 @@ export async function getArticlesByFeedId(
     }
 
     const response = await fetch(url.toString());
+
+    if (response.status === 404) {
+      return Result.ok({
+        items: [],
+        totalCount: 0
+      });
+    }
 
     if (!response.ok) {
       return Result.err(new Error(`Failed to get articles: ${response.statusText}`));
@@ -112,4 +125,25 @@ export async function countArticles(
     console.error('Error occurred while getting articles:', error);
     return Result.err(error);
   }
+}
+
+export async function createArticle(
+  feedId: string,
+  articleData: { title: string; url: string; makeReadable: boolean }
+): Promise<Result<string[], Error>> {
+  const response = await fetch('/api/article', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ feedId, ...articleData })
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    return Result.err(error);
+  }
+
+  const data = await response.json();
+  return Result.ok(data);
 }
