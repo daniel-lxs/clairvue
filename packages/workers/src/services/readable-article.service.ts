@@ -86,6 +86,15 @@ async function createReadableArticleCache(
   }
 }
 
+async function isReadable(url: string, response: Response): Promise<Result<boolean, Error>> {
+  const documentResult = await extractAndSanitizeDocument(url, response);
+
+  return documentResult.match({
+    ok: (document) => Result.ok(isProbablyReaderable(document)),
+    err: (error) => Result.err(error)
+  });
+}
+
 async function retrieveReadableArticle(
   link: string,
   response: Response
@@ -94,17 +103,24 @@ async function retrieveReadableArticle(
     return Result.err(new Error('Invalid link'));
   }
 
-  const documentResult = await extractAndSanitizeDocument(link, response);
+  const isReadableResult = await isReadable(link, response.clone());
+
+  if (isReadableResult.isErr()) {
+    return Result.err(isReadableResult.unwrapErr());
+  }
+
+  const articleIsReadable = isReadableResult.unwrap();
+
+  const documentResult = await extractAndSanitizeDocument(link, response.clone());
 
   if (documentResult.isErr()) {
     return Result.err(documentResult.unwrapErr());
   }
 
-  const document = documentResult.unwrap();
-
   try {
-    if (isProbablyReaderable(document)) {
+    if (articleIsReadable) {
       // Modify image paths to absolute URLs
+      const document = documentResult.unwrap();
       const images = document.querySelectorAll('img');
       images.forEach((imgElement) => {
         const imgSrc = imgElement.getAttribute('src');
@@ -193,5 +209,6 @@ export default {
   deleteReadableArticleCache,
   createReadableArticleCache,
   refreshReadableArticle,
-  retrieveReadableArticle
+  retrieveReadableArticle,
+  isReadable
 };
