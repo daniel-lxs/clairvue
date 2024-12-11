@@ -46,10 +46,6 @@ Clairvue uses a monorepo structure to organize its components for modularity and
 - **BullMQ**: For managing queues
 - **Redis**: For caching and queue management
 
-## Docker Setup
-
-To set up the application using Docker, you can use the provided [docker-compose.yml](https://github.com/username/repository/blob/main/docker-compose.yml) and [Dockerfile](https://github.com/username/repository/blob/main/Dockerfile).
-
 ### Build and Run
 
 ```bash
