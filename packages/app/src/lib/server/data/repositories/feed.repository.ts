@@ -3,7 +3,7 @@ import ShortUniqueId from 'short-unique-id';
 import { getClient } from '../db';
 import { collectionsToFeeds, feedSchema, type Feed, articleSchema } from '../schema';
 import { Result, type Collection } from '@clairvue/types';
-import { normalizeError } from '@/utils';
+import { normalizeError } from '$lib/utils';
 import slugify from 'slugify';
 import collectionRepository from './collection.repository';
 

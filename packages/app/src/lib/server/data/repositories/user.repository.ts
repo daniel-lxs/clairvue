@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm';
 import type { Session, User } from '../schema/user.schema';
 import { encodeHexLowerCase } from '@oslojs/encoding';
 import { Result, type SessionValidationResult } from '@clairvue/types';
-import { normalizeError } from '@/utils';
+import { normalizeError } from '$lib/utils';
 import { sha256 } from '@oslojs/crypto/sha2';
 
 async function findByUsername(username: string): Promise<Result<User | false, Error>> {

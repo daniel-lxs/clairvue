@@ -1,7 +1,7 @@
 <script lang="ts">
   import * as Card from '@/components/ui/card';
   import type { ArticleWithFeed } from '@clairvue/types';
-  import { calculateAge, truncateDescription } from '@/utils';
+  import { calculateAge, truncateDescription } from '$lib/utils';
   import ArticleCardImage from './article-card-image.svelte';
   import { Skeleton } from '../ui/skeleton';
   import { BookOpen } from 'lucide-svelte';

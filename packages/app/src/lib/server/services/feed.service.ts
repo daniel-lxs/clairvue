@@ -7,7 +7,7 @@ import collectionService from './collection.service';
 import config from '@/config';
 import { JSDOM } from 'jsdom';
 import { Result } from '@clairvue/types';
-import { normalizeError } from '@/utils';
+import { normalizeError } from '$lib/utils';
 import Parser from 'rss-parser';
 
 async function findById(id: string): Promise<Result<Feed | false, Error>> {

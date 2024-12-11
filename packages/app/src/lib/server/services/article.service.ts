@@ -3,7 +3,7 @@ import type { Article, ArticleWithFeed, NewArticle, PaginatedList } from '@clair
 import { createArticlesDto } from '../dto/article.dto';
 import { Result } from '@clairvue/types';
 import feedService from './feed.service';
-import { normalizeError } from '@/utils';
+import { normalizeError } from '$lib/utils';
 
 async function create(newArticles: NewArticle[]): Promise<Result<string[], Error>> {
   return await articleRepository.create(newArticles);

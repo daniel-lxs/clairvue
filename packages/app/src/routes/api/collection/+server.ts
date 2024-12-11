@@ -6,7 +6,7 @@ import {
   deleteFeedFromCollectionDto,
   updateCollectionDto
 } from '@/server/dto/collection.dto';
-import { parseErrorMessages } from '@/utils';
+import { parseErrorMessages } from '$lib/utils';
 
 export const GET: RequestHandler = async ({ url, locals }) => {
   const { authSession } = locals;
@@ -139,7 +139,7 @@ export const PUT: RequestHandler = async ({ url, request, locals }) => {
   }
 
   let feedAssignmentErrors: Error[] = [];
-  let feedRemovalErrors: Error[] = [];
+  const feedRemovalErrors: Error[] = [];
 
   if (name) {
     const result = await collectionService.update(collectionId, { name });

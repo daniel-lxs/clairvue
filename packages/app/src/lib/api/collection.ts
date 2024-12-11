@@ -1,5 +1,5 @@
 import type { Collection } from '@/server/data/schema';
-import { normalizeError } from '@/utils';
+import { normalizeError } from '$lib/utils';
 import { Result } from '@clairvue/types';
 
 async function createCollection(

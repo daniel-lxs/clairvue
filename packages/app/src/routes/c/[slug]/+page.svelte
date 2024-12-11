@@ -11,7 +11,7 @@
   import * as Tooltip from '@/components/ui/tooltip';
   import { onMount } from 'svelte';
   import { type PaginatedList, type Article } from '@clairvue/types';
-  import { showToast, normalizeError } from '@/utils';
+  import { showToast, normalizeError } from '$lib/utils';
   import NavigationSidebar from '@/components/navigation/navigation-sidebar.svelte';
   import { collectionsStore } from '@/stores/collections';
   import { feedsStore } from '@/stores/feeds';

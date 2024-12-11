@@ -4,7 +4,7 @@ import { articleSchema, feedSchema, collectionSchema, collectionsToFeeds } from 
 import { count, desc, eq, lt, sql, and, gt } from 'drizzle-orm';
 import { Result } from '@clairvue/types';
 import type { Article, ArticleWithFeed, NewArticle, PaginatedList } from '@clairvue/types';
-import { normalizeError } from '@/utils';
+import { normalizeError } from '$lib/utils';
 
 async function create(newArticles: NewArticle | NewArticle[]): Promise<Result<string[], Error>> {
   const db = getClient();

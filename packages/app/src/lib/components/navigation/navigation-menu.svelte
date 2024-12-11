@@ -4,7 +4,7 @@
   import * as Collapsible from '$lib/components/ui/collapsible';
   import { NavigationCollections, NavigationFeeds } from '.';
   import { Button } from '../ui/button';
-  import { cn } from '@/utils';
+  import { cn } from '$lib/utils';
 
   let {
     class: className = undefined,

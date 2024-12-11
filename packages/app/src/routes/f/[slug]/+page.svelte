@@ -8,7 +8,7 @@
   import NewArticlesButton from '@/components/collection/new-articles-button.svelte';
   import { afterNavigate, beforeNavigate } from '$app/navigation';
   import { type Article } from '@clairvue/types';
-  import { showToast, normalizeError } from '@/utils';
+  import { showToast, normalizeError } from '$lib/utils';
   import { collectionsStore } from '@/stores/collections';
   import { feedsStore } from '@/stores/feeds';
   import NavigationSidebar from '@/components/navigation/navigation-sidebar.svelte';

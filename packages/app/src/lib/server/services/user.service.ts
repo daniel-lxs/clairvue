@@ -3,7 +3,7 @@ import userRepository from '@/server/data/repositories/user.repository';
 import collectionService from './collection.service';
 import feedService from './feed.service';
 import argon2 from 'argon2';
-import { generateId } from '@/utils';
+import { generateId } from '$lib/utils';
 import {
   Result,
   type Collection,

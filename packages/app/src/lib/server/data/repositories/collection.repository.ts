@@ -11,7 +11,7 @@ import {
 import { and, eq, like } from 'drizzle-orm';
 import slugify from 'slugify';
 import { Result } from '@clairvue/types';
-import { normalizeError } from '@/utils';
+import { normalizeError } from '$lib/utils';
 import feedRepository from './feed.repository';
 import type { AddFeedsToCollectionResult } from '@clairvue/types';
 
@@ -64,7 +64,9 @@ async function addFeedsToCollection(
 ): Promise<Result<AddFeedsToCollectionResult, Error>> {
   const assignments = feedIds.map((feedId) => ({ id: collectionId, feedId }));
 
-  const validationResults = await Promise.all(assignments.map((assignment) => validateFeedAssignment(assignment)));
+  const validationResults = await Promise.all(
+    assignments.map((assignment) => validateFeedAssignment(assignment))
+  );
 
   const collectionExists = await findById(collectionId);
 

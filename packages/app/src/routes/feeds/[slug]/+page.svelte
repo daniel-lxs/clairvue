@@ -5,7 +5,7 @@
   import { Label } from '@/components/ui/label';
   import collectionApi from '@/api/collection';
   import feedApi from '@/api/feed';
-  import { showToast } from '@/utils';
+  import { showToast } from '$lib/utils';
   import type { NewFeed } from '@clairvue/types';
   import type { Collection, Feed } from '@/server/data/schema';
   import * as Breadcrumb from '@/components/ui/breadcrumb';

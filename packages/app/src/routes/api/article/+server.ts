@@ -2,7 +2,7 @@ import type { RequestHandler } from '@sveltejs/kit';
 import articlesService from '@/server/services/article.service';
 import { createArticleDto } from '@/server/dto/article.dto';
 import { getArticleMetadataQueue, getQueueEvents } from '@/server/queue/articles';
-import { hashString, normalizeError } from '@/utils';
+import { hashString, normalizeError } from '$lib/utils';
 import { z } from 'zod';
 
 export const GET: RequestHandler = async ({ url, locals }) => {
@@ -76,7 +76,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     const queueName = articleMetadataQueue.name;
     const ttl = 1000 * 60 * 1; // 1 minute
     const job = await articleMetadataQueue.add(
-      'article-metadata',
+      'import-article',
       { title, url, makeReadable },
       {
         deduplication: {

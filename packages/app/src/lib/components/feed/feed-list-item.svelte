@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Feed } from '@/server/data/schema';
-  import { calculateAge } from '@/utils';
+  import { calculateAge } from '$lib/utils';
   import { Button } from '../ui/button';
   import { Trash, MoreVertical } from 'lucide-svelte';
   import * as DropdownMenu from '../ui/dropdown-menu';
