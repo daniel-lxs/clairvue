@@ -1,6 +1,6 @@
-import type { PaginatedList, Article } from '@clairvue/types';
+import type { PaginatedList, Article, ArticleMetadata } from '@clairvue/types';
 import { Result } from '@clairvue/types';
-import { normalizeError, validateDateString } from '@/utils';
+import { normalizeError, validateDateString } from '$lib/utils';
 
 export async function getArticlesByCollectionId(
   collectionId: string,
@@ -137,6 +137,24 @@ export async function createArticle(
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({ feedId, ...articleData })
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    return Result.err(error);
+  }
+
+  const data = await response.json();
+  return Result.ok(data);
+}
+
+export async function getArticleMetadata(url: string): Promise<Result<ArticleMetadata, Error>> {
+  const response = await fetch(`/api/article/metadata`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ url })
   });
 
   if (!response.ok) {
