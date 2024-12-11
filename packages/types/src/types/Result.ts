@@ -291,6 +291,15 @@ export class Result<T, E> {
     return this.isOk() ? Result.ok(fn(this.value!)) : Result.err(this.error!);
   }
 
+  /**
+   * Maps a Result<T, E> to a value of type U.
+   * If the Result is Ok, applies the function to the value.
+   * If the Result is Err, applies the default function to the error.
+   *
+   * @param defaultFn Function to apply if the Result is Err
+   * @param fn Function to apply if the Result is Ok
+   * @returns The result of applying the function to the value or error
+   */
   mapOrElse<U>(defaultFn: (error: E) => U, fn: (value: T) => U): U {
     return this.isOk() ? fn(this.value!) : defaultFn(this.error!);
   }
