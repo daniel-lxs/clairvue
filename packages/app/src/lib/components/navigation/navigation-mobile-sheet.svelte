@@ -6,11 +6,10 @@
   import Logo from '../ui/logo/logo.svelte';
   import NavigationMenu from './navigation-menu.svelte';
 
-  let { collections, feeds, currentFeedId, onLoadMoreFeeds } = $props<{
+  let { collections, feeds, currentFeedId } = $props<{
     collections: Collection[];
     feeds: Feed[];
     currentFeedId?: string;
-    onLoadMoreFeeds: (page: number) => void;
   }>();
 
   let open = $state(false);
@@ -43,7 +42,6 @@
       {collections}
       {feeds}
       {currentFeedId}
-      {onLoadMoreFeeds}
       onNavigate={handleNavigate}
     />
   </Sheet.Content>
