@@ -99,6 +99,13 @@ async function retrieveArticleMetadata(
 
   console.info(`Processing article: ${link}`);
 
+  const cachedMetadataResult = await retrieveCachedArticleMetadata(link);
+
+  if (cachedMetadataResult.isOkAnd(Boolean)) {
+    console.info(`Cached metadata found for article: ${link}`);
+    return Result.ok(cachedMetadataResult.unwrap() as ArticleMetadata);
+  }
+
   const partialMetadataResult = await retrieveArticleMetadataDetails(link, response);
 
   return partialMetadataResult.match({
