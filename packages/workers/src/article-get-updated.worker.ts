@@ -34,7 +34,7 @@ export function startArticleUpdatedWorker(connection: ConnectionOptions, config?
       if (!processor) {
         throw new Error(`Processor for job ${job.name} not found`);
       }
-      return processor(job);
+      return (await processor(job)).unwrap(); //On purpose, we want to fail the job if the processor fails
     },
     {
       connection,

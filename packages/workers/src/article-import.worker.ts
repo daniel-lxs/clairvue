@@ -36,7 +36,7 @@ export function startArticleMetadataWorker(connection: ConnectionOptions, config
       if (!processor) {
         throw new Error(`Unknown job type: ${job.name}`);
       }
-      return processor(job);
+      return (await processor(job)).unwrap(); //On purpose, we want to fail the job if the processor fails
     },
     {
       ...finalConfig,

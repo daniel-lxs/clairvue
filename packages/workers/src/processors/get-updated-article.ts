@@ -2,7 +2,7 @@ import { Job } from 'bullmq';
 import httpService from '../services/http.service';
 import readableArticleService from '../services/readable-article.service';
 import { isValidLink, isHtmlMimeType } from '../utils';
-import { ReadableArticle } from '@clairvue/types';
+import { ReadableArticle, Result } from '@clairvue/types';
 
 export interface GetUpdatedArticleJob {
   slug: string;
@@ -11,50 +11,49 @@ export interface GetUpdatedArticleJob {
 
 export async function getUpdatedArticleProcessor(
   job: Job<GetUpdatedArticleJob>
-): Promise<ReadableArticle | undefined> {
+): Promise<Result<ReadableArticle | false, Error>> {
   const { slug, url } = job.data;
 
   if (!isValidLink(url)) {
     console.warn(`[${job.id}] Invalid link found: ${url}`);
-    throw new Error('Invalid link');
+    return Result.err(new Error('Invalid link'));
   }
 
   const articleResponseResult = await httpService.fetchArticle(url);
 
-  if (articleResponseResult.isErr()) {
-    console.error(
-      `[${job.id}] Error fetching article: ${articleResponseResult.unwrapErr().message}`
-    );
-    throw articleResponseResult.unwrapErr();
-  }
-
-  if (
-    articleResponseResult.isOkAnd(
-      (articleResponse) => !articleResponse || !isHtmlMimeType(articleResponse.mimeType)
-    )
-  ) {
-    console.warn(`[${job.id}] Invalid response or content type for ${url}`);
-    throw new Error('Invalid response');
-  }
-
-  const { response } = articleResponseResult.unwrap();
-
-  console.info(`[${job.id}] Updating article ${slug} from ${url}`);
-
-  const updatedArticleResult = await readableArticleService.refreshReadableArticle(url, response);
-
-  return updatedArticleResult.match({
-    ok: async (readableArticle) => {
-      if (!readableArticle) {
-        console.warn(`[${job.id}] No updated content found for article ${slug}`);
-        return undefined;
+  return articleResponseResult.match({
+    err: (error) => {
+      console.error(`[${job.id}] Error fetching article: ${error.message}`);
+      return Result.err(error);
+    },
+    ok: async (articleResponse) => {
+      if (!articleResponse || !isHtmlMimeType(articleResponse.mimeType)) {
+        console.warn(`[${job.id}] Invalid response or content type for ${url}`);
+        return Result.err(new Error('Invalid response'));
       }
 
-      return readableArticle;
-    },
-    err: (error) => {
-      console.error(`[${job.id}] Error updating article: ${error.message}`);
-      throw error;
+      const { response } = articleResponse;
+
+      console.info(`[${job.id}] Updating article ${slug} from ${url}`);
+
+      const updatedArticleResult = await readableArticleService.refreshReadableArticle(
+        url,
+        response
+      );
+
+      return updatedArticleResult.match({
+        ok: (readableArticle) => {
+          if (!readableArticle) {
+            console.warn(`[${job.id}] No updated content found for article ${slug}`);
+            return Result.ok(false);
+          }
+          return Result.ok(readableArticle);
+        },
+        err: (error) => {
+          console.error(`[${job.id}] Error updating article: ${error.message}`);
+          return Result.err(error);
+        }
+      });
     }
   });
 }

@@ -2,7 +2,7 @@ import { Job } from 'bullmq';
 import articleMetadataService from '../services/article-metadata.service';
 import httpService from '../services/http.service';
 import { isValidLink, isHtmlMimeType } from '../utils';
-import { ArticleMetadata } from '@clairvue/types';
+import { ArticleMetadata, Result } from '@clairvue/types';
 import readableService from '../services/readable-article.service';
 export interface GetArticleMetadataJob {
   url: string;
@@ -10,7 +10,7 @@ export interface GetArticleMetadataJob {
 
 export async function getArticleMetadata(
   job: Job<GetArticleMetadataJob>
-): Promise<ArticleMetadata | undefined> {
+): Promise<Result<ArticleMetadata, Error>> {
   console.info(`Job ${job.id} started...`);
 
   const { url } = job.data;
@@ -22,48 +22,57 @@ export async function getArticleMetadata(
 
   const articleResult = await httpService.fetchArticle(url);
 
-  if (articleResult.isErr()) {
-    console.warn(`[${job.id}] Error fetching article: ${url}`);
-    throw new Error('Error fetching article');
-  }
-
-  const { response, mimeType } = articleResult.unwrap();
-
-  if (!response || !isHtmlMimeType(mimeType)) {
-    console.warn(`[${job.id}] Article not HTML: ${url}`);
-    throw new Error('Article not HTML');
-  }
-
-  const isReadableResult = await readableService.isReadable(url, response.clone());
-
-  if (isReadableResult.isErr()) {
-    console.warn(
-      `[${job.id}] Something went wrong while checking if the article is readable: ${url}`
-    );
-    throw new Error(
-      `Error checking if article is readable: ${isReadableResult.unwrapErr().message}`
-    );
-  }
-
-  const articleData = {
-    link: url
-  };
-  const metadataResult = await articleMetadataService.retrieveArticleMetadata(
-    response.clone(),
-    articleData
-  );
-  return metadataResult.match({
-    ok: (metadata) => ({
-      ...metadata,
-      title: metadata.title ?? 'Untitled',
-      readable: isReadableResult.unwrap(),
-      link: url,
-      siteName: metadata.siteName ?? new URL(url).hostname.replace('www.', ''),
-      publishedAt: metadata.publishedAt ?? new Date()
-    }),
+  return articleResult.match({
     err: (error) => {
-      console.error(`[${job.id}] Error processing article: ${error.message}`);
-      throw error;
+      console.warn(`[${job.id}] Error fetching article: ${url} ${error.message}`);
+      return Result.err(error);
+    },
+
+    ok: async (article) => {
+      const { response, mimeType } = article;
+
+      if (!response || !isHtmlMimeType(mimeType)) {
+        console.warn(`[${job.id}] Article not HTML: ${url}`);
+        throw new Error('Article not HTML');
+      }
+
+      const isReadableResult = await readableService.isReadable(url, response.clone());
+
+      return isReadableResult.match({
+        err: (error) => {
+          console.warn(
+            `[${job.id}] Error checking if article is readable: ${url} ${error.message}`
+          );
+          return Result.err(error);
+        },
+
+        ok: async (isReadable) => {
+          const articleData = {
+            link: url
+          };
+          const metadataResult = await articleMetadataService.retrieveArticleMetadata(
+            response.clone(),
+            articleData
+          );
+
+          return metadataResult.match({
+            ok: (metadata) => {
+              return Result.ok({
+                ...metadata,
+                title: metadata.title ?? 'Untitled',
+                readable: isReadable,
+                link: url,
+                siteName: metadata.siteName ?? new URL(url).hostname.replace('www.', ''),
+                publishedAt: metadata.publishedAt ?? new Date()
+              });
+            },
+            err: (error) => {
+              console.error(`[${job.id}] Error processing article: ${error.message}`);
+              return Result.err(error);
+            }
+          });
+        }
+      });
     }
   });
 }

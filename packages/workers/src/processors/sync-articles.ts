@@ -1,4 +1,4 @@
-import { Feed, ArticleMetadata, ReadableArticle } from '@clairvue/types';
+import { Feed, ArticleMetadata, Result } from '@clairvue/types';
 import { Job } from 'bullmq';
 import articleMetadataService from '../services/article-metadata.service';
 import httpService from '../services/http.service';
@@ -19,131 +19,141 @@ const DEFAULT_CONFIG: JobConfig = {
   parallelDelay: 1000
 };
 
-export async function syncArticlesProcessor(job: Job<GetArticlesJob>): Promise<ArticleMetadata[]> {
+export async function syncArticlesProcessor(
+  job: Job<GetArticlesJob>
+): Promise<Result<ArticleMetadata[], Error>> {
   console.info(`Job ${job.id} started...`);
   const { feed } = job.data;
 
   if (!feed) {
-    throw new Error('Feed not found');
+    return Result.err(new Error('Feed not found'));
   }
 
   const rawArticlesResult = await articleMetadataService.retrieveArticlesFromFeed(feed.link);
 
-  if (rawArticlesResult.isErr()) {
-    console.error(
-      `[${job.id}] Error retrieving articles from feed ${feed.name}: ${rawArticlesResult.unwrapErr().message}`
-    );
-    return [];
-  }
+  return rawArticlesResult.match({
+    err: (error) => {
+      console.error(
+        `[${job.id}] Error retrieving articles from feed ${feed.name}: ${error.message}`
+      );
+      return Result.err(error);
+    },
+    ok: async (rawArticles) => {
+      if (!rawArticles || rawArticles.length === 0) {
+        console.info(`[${job.id}] No articles found in feed ${feed.name}.`);
+        return Result.err(new Error('No articles found'));
+      }
 
-  if (rawArticlesResult.isOkAnd((articles) => !articles || articles.length === 0)) {
-    console.info(`[${job.id}] No articles found in feed ${feed.name}.`);
-    return [];
-  }
+      console.info(`[${job.id}] Syncing ${rawArticles.length} articles from ${feed.name}...`);
 
-  const rawArticles = rawArticlesResult.unwrap();
+      const articlesMetadata: ArticleMetadata[] = [];
 
-  console.info(`[${job.id}] Syncing ${rawArticles.length} articles from ${feed.name}...`);
+      const chunks = Array.from(
+        { length: Math.ceil(rawArticles.length / DEFAULT_CONFIG.chunkSize) },
+        (_, i) =>
+          rawArticles.slice(
+            i * DEFAULT_CONFIG.chunkSize,
+            i * DEFAULT_CONFIG.chunkSize + DEFAULT_CONFIG.chunkSize
+          )
+      );
 
-  const articlesMetadata: ArticleMetadata[] = [];
+      for (const chunk of chunks) {
+        const chunkResults = await Promise.all(
+          chunk.map(async (article) => {
+            const { title, link } = article;
 
-  const chunks = Array.from(
-    { length: Math.ceil(rawArticles.length / DEFAULT_CONFIG.chunkSize) },
-    (_, i) =>
-      rawArticles.slice(
-        i * DEFAULT_CONFIG.chunkSize,
-        i * DEFAULT_CONFIG.chunkSize + DEFAULT_CONFIG.chunkSize
-      )
-  );
+            if (!isValidLink(link)) {
+              console.warn(`[${job.id}] Invalid link found: ${link}`);
+              return undefined;
+            }
 
-  for (const chunk of chunks) {
-    const chunkResults = await Promise.all(
-      chunk.map(async (article) => {
-        const { title, link } = article;
+            const existingArticleMetadataResult =
+              await articleMetadataService.retrieveCachedArticleMetadata(link);
 
-        if (!isValidLink(link)) {
-          console.warn(`[${job.id}] Invalid link found: ${link}`);
-          return undefined;
-        }
+            const defaultArticle = {
+              title: title ?? 'Untitled',
+              link,
+              readable: false,
+              publishedAt: new Date(),
+              siteName: new URL(link).hostname.replace('www.', '')
+            };
 
-        const existingArticleMetadataResult =
-          await articleMetadataService.retrieveCachedArticleMetadata(link);
+            // If the article already exists, skip it
+            return existingArticleMetadataResult.match({
+              ok: (existingArticle) => (existingArticle ? undefined : processArticle(link)),
+              err: () => processArticle(link)
+            });
 
-        if (existingArticleMetadataResult.isOkAnd((article) => !!article)) {
-          return undefined;
-        }
+            async function processArticle(link: string): Promise<ArticleMetadata> {
+              const articleResult = await httpService.fetchArticle(link);
 
-        const articleResult = await httpService.fetchArticle(link);
+              return articleResult.match({
+                err: () => {
+                  console.warn(`[${job.id}] Error fetching article: ${link}`);
+                  return defaultArticle;
+                },
+                ok: async ({ response, mimeType }) => {
+                  if (!response || !isHtmlMimeType(mimeType)) {
+                    console.warn(`[${job.id}] Article not HTML: ${link}`);
+                    return defaultArticle;
+                  }
 
-        if (articleResult.isErr()) {
-          console.warn(`[${job.id}] Error fetching article: ${link}`);
-          return {
-            title: title ?? 'Untitled',
-            link,
-            readable: false,
-            publishedAt: new Date(),
-            siteName: new URL(link).hostname.replace('www.', '')
-          };
-        }
+                  const readableArticleResult =
+                    await readableArticleService.retrieveReadableArticle(link, response.clone());
 
-        const { response, mimeType } = articleResult.unwrap();
+                  let readable = false;
 
-        if (!response || !isHtmlMimeType(mimeType)) {
-          console.warn(`[${job.id}] Article not HTML: ${link}`);
-          return {
-            title: title ?? 'Untitled',
-            link,
-            readable: false,
-            publishedAt: new Date(),
-            siteName: new URL(link).hostname.replace('www.', '')
-          };
-        }
+                  await readableArticleResult.match({
+                    ok: async (readableArticle) => {
+                      if (readableArticle) {
+                        const cacheResult = await readableArticleService.createReadableArticleCache(
+                          link,
+                          readableArticle
+                        );
+                        readable = cacheResult.isOk();
+                      }
+                    },
+                    err: () => {
+                      console.warn(`[${job.id}] Readable article not found: ${link}`);
+                    }
+                  });
 
-        const readableArticleResult = await readableArticleService.retrieveReadableArticle(
-          link,
-          response.clone()
+                  const metadataResult = await articleMetadataService.retrieveArticleMetadata(
+                    response.clone(),
+                    article,
+                    readable
+                  );
+
+                  return metadataResult.match({
+                    ok: (metadata) => ({
+                      ...defaultArticle,
+                      ...metadata
+                    }),
+                    err: (error) => {
+                      console.error(`[${job.id}] Error processing article: ${error.message}`);
+                      return defaultArticle;
+                    }
+                  });
+                }
+              });
+            }
+          })
         );
 
-        let readable = false;
-
-        if (readableArticleResult.isOkAnd((readableArticle) => !!readableArticle)) {
-          await readableArticleService.createReadableArticleCache(
-            link,
-            readableArticleResult.unwrap() as ReadableArticle
-          );
-          readable = true;
-        } else {
-          console.warn(`[${job.id}] Readable article not found: ${link}`);
-        }
-
-        const metadataResult = await articleMetadataService.retrieveArticleMetadata(
-          response.clone(),
-          article,
-          readable
+        articlesMetadata.push(
+          ...chunkResults.filter((article): article is ArticleMetadata => Boolean(article))
         );
 
-        return metadataResult.match({
-          ok: (metadata) => metadata,
-          err: (error) => {
-            console.error(`[${job.id}] Error processing article: ${error.message}`);
-            return undefined;
-          }
-        });
-      })
-    );
+        await new Promise((resolve) => setTimeout(resolve, DEFAULT_CONFIG.parallelDelay));
+      }
 
-    articlesMetadata.push(
-      ...chunkResults.filter((article): article is ArticleMetadata => Boolean(article))
-    );
+      if (!articlesMetadata || articlesMetadata.length === 0) {
+        console.info(`[${job.id}] No new articles found.`);
+        return Result.ok([]);
+      }
 
-    await new Promise((resolve) => setTimeout(resolve, DEFAULT_CONFIG.parallelDelay));
-  }
-
-  if (!articlesMetadata || articlesMetadata.length === 0) {
-    console.info(`[${job.id}] No new articles found.`);
-    return [];
-  }
-
-  console.info(`[${job.id}] ${articlesMetadata.length} new articles found.`);
-  return articlesMetadata;
+      console.info(`[${job.id}] ${articlesMetadata.length} new articles found.`);
+      return Result.ok(articlesMetadata);
+    }
+  });
 }
