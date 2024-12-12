@@ -89,7 +89,18 @@ async function retrieveArticleMetadata(
   readable: boolean = false
 ): Promise<Result<Partial<ArticleMetadata>, Error>> {
   const { link, title } = article;
-  const pubDate = article.pubDate ?? article.isoDate;
+
+  const parseDateFn = z.string().datetime().safeParse;
+
+  const parsedPubDate = article.pubDate
+    ? parseDateFn(article.pubDate)
+    : parseDateFn(article.isoDate);
+
+  let pubDate: Date | undefined;
+
+  if (parsedPubDate.success) {
+    pubDate = new Date(parsedPubDate.data);
+  }
 
   if (!isValidLink(link)) {
     return Result.err(new Error('Invalid link'));
@@ -115,7 +126,7 @@ async function retrieveArticleMetadata(
         articleMetadata = {
           title: title ?? 'Untitled',
           readable,
-          publishedAt: pubDate ? new Date(pubDate) : new Date(),
+          publishedAt: pubDate ?? new Date(),
           link,
           siteName
         };
@@ -124,7 +135,7 @@ async function retrieveArticleMetadata(
           ...partialMetadata,
           title: title ?? partialMetadata?.title ?? 'Untitled',
           readable,
-          publishedAt: pubDate ? new Date(pubDate) : new Date(),
+          publishedAt: pubDate ?? new Date(),
           link,
           siteName
         };
