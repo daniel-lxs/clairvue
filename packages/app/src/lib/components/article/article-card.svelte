@@ -111,7 +111,7 @@
               {#if !isMobile || imageType === 'wide'}
                 <Card.Content class="p-0">
                   {#if article.description}
-                    <p class="text-md break-all">
+                    <p class="text-md break-words whitespace-normal">
                       {truncateDescription(article.description, descriptionLength)}
                     </p>
                   {/if}
@@ -132,7 +132,7 @@
         {#if isMobile && imageType === 'square'}
           <Card.Content class="p-0">
             {#if article.description}
-              <p class="text-md break-all">
+              <p class="text-md break-words whitespace-normal">
                 {truncateDescription(article.description, descriptionLength)}
               </p>
             {/if}
