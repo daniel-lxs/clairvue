@@ -43,7 +43,7 @@ async function createFeed(feedData: CreateFeedDto, userId: string): Promise<Resu
     if (!createdFeed.link.startsWith('default-feed')) {
       const articleQueue = getArticlesQueue();
       articleQueue?.add(
-        'sync',
+        'sync-articles',
         { feed: createdFeed },
         {
           deduplication: {

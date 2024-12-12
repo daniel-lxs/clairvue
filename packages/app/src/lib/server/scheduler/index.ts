@@ -30,7 +30,7 @@ export function startScheduler() {
           feeds.map((feed) => {
             return (() => {
               return {
-                name: 'sync',
+                name: 'sync-articles',
                 data: { feed },
                 opts: {
                   deduplication: {

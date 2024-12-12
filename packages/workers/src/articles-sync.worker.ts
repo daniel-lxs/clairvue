@@ -28,7 +28,7 @@ export function startSyncArticlesWorker(
   };
 
   const processors = {
-    syncArticles: syncArticlesProcessor
+    'sync-articles': syncArticlesProcessor
   };
   const worker = new Worker(
     'sync-articles',
