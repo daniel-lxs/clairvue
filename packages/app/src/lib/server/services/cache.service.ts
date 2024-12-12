@@ -66,7 +66,7 @@ async function getUpdatedReadableArticle(
   }
 
   try {
-    return await job.waitUntilFinished(getQueueEvents(queue.name), promiseTtl);
+    return Result.ok(await job.waitUntilFinished(getQueueEvents(queue.name), promiseTtl));
   } catch (error) {
     return Result.err(error as Error);
   }
