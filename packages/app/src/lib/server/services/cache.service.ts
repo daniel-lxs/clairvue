@@ -45,10 +45,9 @@ async function getUpdatedReadableArticle(
   link: string
 ): Promise<Result<ReadableArticle | false, Error>> {
   const promiseTtl = 1000 * 60 * 1; // 1 minute
-  const queueName = 'get-updated-article';
-
-  const job = await getUpdatedArticleQueue().add(
-    queueName,
+  const queue = getUpdatedArticleQueue();
+  const job = await queue.add(
+    queue.name,
     { slug, url: link },
     {
       deduplication: {
@@ -67,7 +66,7 @@ async function getUpdatedReadableArticle(
   }
 
   try {
-    return await job.waitUntilFinished(getQueueEvents(queueName), promiseTtl);
+    return await job.waitUntilFinished(getQueueEvents(queue.name), promiseTtl);
   } catch (error) {
     return Result.err(error as Error);
   }
