@@ -1,16 +1,17 @@
 <script lang="ts">
   import * as Card from '@/components/ui/card';
-  import type { ArticleWithFeed } from '@clairvue/types';
+  import type { ArticleWithInteraction, Feed } from '@clairvue/types';
   import { calculateAge, truncateDescription } from '$lib/utils';
   import ArticleCardImage from './article-card-image.svelte';
   import { Skeleton } from '../ui/skeleton';
   import { BookOpen } from 'lucide-svelte';
 
   interface Props {
-    article: ArticleWithFeed;
+    feed?: Feed;
+    article: ArticleWithInteraction;
   }
 
-  let { article }: Props = $props();
+  let { article, feed }: Props = $props();
 
   let imageLoaded = $state(false);
 
@@ -29,6 +30,10 @@
   let isMobile = $state(false);
 
   let descriptionLength: number = $state(300);
+
+  function handleSave() {
+    console.log('Saving article:', article.slug);
+  }
 
   $effect(() => {
     isMobile = window.innerWidth <= 768;
@@ -74,9 +79,9 @@
             <div class="space-y-2">
               <Card.Header class="p-0">
                 <a
-                  href="/f/{article.feedId}"
+                  href="/f/{feed?.id}"
                   class="hover:text-primary text-xs font-bold transition-colors sm:text-sm"
-                  >{article.feed?.name}</a
+                  >{feed?.name}</a
                 >
                 <div class="flex flex-col gap-2">
                   <Card.Title
@@ -111,7 +116,7 @@
               {#if !isMobile || imageType === 'wide'}
                 <Card.Content class="p-0">
                   {#if article.description}
-                    <p class="text-md break-words whitespace-normal">
+                    <p class="text-md whitespace-normal break-words">
                       {truncateDescription(article.description, descriptionLength)}
                     </p>
                   {/if}
@@ -132,7 +137,7 @@
         {#if isMobile && imageType === 'square'}
           <Card.Content class="p-0">
             {#if article.description}
-              <p class="text-md break-words whitespace-normal">
+              <p class="text-md whitespace-normal break-words">
                 {truncateDescription(article.description, descriptionLength)}
               </p>
             {/if}

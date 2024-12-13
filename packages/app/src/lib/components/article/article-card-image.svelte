@@ -1,11 +1,27 @@
 <script lang="ts">
-  import type { Article } from '@clairvue/types';
+  import { Button } from '../ui/button';
+  import { Bookmark } from 'lucide-svelte';
+  import type { ArticleWithInteraction } from '@clairvue/types';
+  import { removeArticleFromSavedArticles, addArticleToSavedArticles } from '$lib/api/article';
+  import { showToast } from '../../utils';
 
   interface Props {
-    article: Article;
+    article: ArticleWithInteraction;
     imageLoaded?: boolean;
     imageError?: boolean;
     type?: string;
+  }
+
+  function handleBookmark() {
+    if (saved) {
+      removeArticleFromSavedArticles(article.id);
+      saved = false;
+      showToast('Article removed', 'Article removed from saved articles feed', 'success');
+    } else {
+      addArticleToSavedArticles(article.id);
+      saved = true;
+      showToast('Article saved', 'Article saved to your saved articles feed', 'success');
+    }
   }
 
   let {
@@ -14,6 +30,8 @@
     imageError = $bindable(false),
     type = 'wide'
   }: Props = $props();
+
+  let saved = $derived(article.saved);
 </script>
 
 <div class="relative w-full overflow-hidden {type === 'square' ? 'rounded-lg' : 'rounded-t-lg'}">
@@ -33,4 +51,19 @@
       }}
     />
   </a>
+  <div class="absolute right-2 top-2">
+    <Button
+      variant="secondary"
+      size="icon"
+      class="bg-background/80 supports-[backdrop-filter]:bg-background/40 p-0 backdrop-blur"
+      title="Save article"
+      on:click={handleBookmark}
+    >
+      {#if saved}
+        <Bookmark fill="white" class="text-foreground h-4 w-4" />
+      {:else}
+        <Bookmark class="text-foreground h-4 w-4" />
+      {/if}
+    </Button>
+  </div>
 </div>
