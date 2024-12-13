@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { countArticles, getArticlesByFeedId } from '@/api/article';
+  import { countArticlesByFeedId, getArticlesByFeedId } from '$lib/api/article';
   import ArticleCard from '@/components/article/article-card.svelte';
   import * as Page from '@/components/page';
   import { onMount } from 'svelte';
@@ -7,7 +7,7 @@
   import ArticleCardSkeleton from '@/components/article/article-card-skeleton.svelte';
   import NewArticlesButton from '@/components/collection/new-articles-button.svelte';
   import { afterNavigate, beforeNavigate } from '$app/navigation';
-  import { type Article } from '@clairvue/types';
+  import { type ArticleWithInteraction } from '@clairvue/types';
   import { showToast, normalizeError } from '$lib/utils';
   import { collectionsStore } from '@/stores/collections';
   import { feedsStore } from '@/stores/feeds';
@@ -28,7 +28,7 @@
   const perPage = 10;
   let isLoadingMore = $state(false);
   let currentPage = 2; // Since we load 20 articles at first, we are starting at page 2
-  let articles: Article[] = $state([]);
+  let articles: ArticleWithInteraction[] = $state([]);
   let savedScrollPosition = 0;
   let hasReachedEnd = false;
   let feedDomain = $derived(
@@ -144,10 +144,9 @@
   };
 
   const checkNewArticles = async () => {
-    const countArticlesResult = await countArticles(
-      articles[0].publishedAt,
+    const countArticlesResult = await countArticlesByFeedId(
       data.feed.id,
-      undefined
+      articles[0].publishedAt
     );
     countArticlesResult.match({
       ok: (value) => (newArticlesCount = value.count),
@@ -212,7 +211,7 @@
         {/each}
       {:else if articles && articles.length > 0}
         {#each articles as article}
-          <ArticleCard {article} />
+          <ArticleCard {article} feed={data.feed} />
         {/each}
         {#if isLoadingMore}
           <ArticleCardSkeleton />

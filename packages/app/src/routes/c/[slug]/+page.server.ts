@@ -2,8 +2,8 @@ import { redirect, error } from '@sveltejs/kit';
 import authService from '@/server/services/auth.service';
 import type { PageServerLoad } from './$types';
 import collectionService from '@/server/services/collection.service';
-import articleService from '@/server/services/article.service';
-import type { ArticleWithFeed, PaginatedList, Result } from '@clairvue/types';
+import type { ArticleWithFeed, PaginatedList, FeedWithArticles } from '@clairvue/types';
+import feedService from '$lib/server/services/feed.service';
 
 export const load: PageServerLoad = async ({ params: { slug }, cookies }) => {
   const authSessionResult = await authService.validateAuthSession(cookies);
@@ -34,32 +34,55 @@ export const load: PageServerLoad = async ({ params: { slug }, cookies }) => {
 
       const limitPerPage = 20;
 
-      const articlesResult = articleService.findByCollectionId(
-        collection.id,
-        undefined,
-        limitPerPage
-      );
+      const beforePublishedAt = new Date();
 
-      const unwrapPromise = async (
-        resultPromise: Promise<Result<false | PaginatedList<ArticleWithFeed>, Error>>
-      ) => {
-        const result = await resultPromise;
+      const getArticles = async (): Promise<
+        PaginatedList<
+          ArticleWithFeed & {
+            saved: boolean;
+            read: boolean;
+          }
+        >
+      > => {
+        const feedsResult = await feedService.findByCollectionIdWithArticles(
+          collection.id,
+          beforePublishedAt,
+          limitPerPage
+        );
 
-        if (result.isErr()) {
-          error(500, result.unwrapErr().message);
+        if (feedsResult.isErr()) {
+          error(500, feedsResult.unwrapErr().message);
         }
 
-        if (result.isOkAnd((value) => value === false)) {
-          error(404, 'Articles not found');
+        const feeds: FeedWithArticles[] | false = feedsResult.unwrap();
+
+        if (!feeds) {
+          error(404, 'Feeds not found');
         }
 
-        return result.unwrap() as PaginatedList<ArticleWithFeed>;
+        const articles: (ArticleWithFeed & {
+          saved: boolean;
+          read: boolean;
+        })[] = feeds.flatMap((feed) => {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { articles: _, ...feedWithoutArticles } = feed;
+
+          return feed.articles.map((article) => ({
+            ...article,
+            feed: feedWithoutArticles
+          }));
+        });
+
+        return {
+          items: articles,
+          totalCount: articles.length
+        };
       };
 
       return {
         collection,
         streamed: {
-          articles: unwrapPromise(articlesResult)
+          articles: getArticles()
         }
       };
     }

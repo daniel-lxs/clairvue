@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { countArticles, getArticlesByCollectionId } from '@/api/article';
+  import { countArticlesByCollectionId, getArticlesByCollectionId } from '$lib/api/article';
   import ArticleCard from '@/components/article/article-card.svelte';
   import * as Page from '@/components/page';
   import type { PageData } from './$types';
@@ -10,7 +10,11 @@
   import MoreHorizontal from 'lucide-svelte/icons/more-horizontal';
   import * as Tooltip from '@/components/ui/tooltip';
   import { onMount } from 'svelte';
-  import { type PaginatedList, type Article } from '@clairvue/types';
+  import {
+    type PaginatedList,
+    type ArticleWithInteraction,
+    type ArticleWithFeed
+  } from '@clairvue/types';
   import { showToast, normalizeError } from '$lib/utils';
   import NavigationSidebar from '@/components/navigation/navigation-sidebar.svelte';
   import { collectionsStore } from '@/stores/collections';
@@ -31,7 +35,10 @@
   const perPage = 10;
   let isLoadingMore = $state(false);
   let currentPage = 2; // Since we load 20 articles at first, we are starting at page 2
-  let articles: Article[] = $state([]);
+  let articles: (ArticleWithFeed & {
+    saved: boolean;
+    read: boolean;
+  })[] = $state([]);
   let savedScrollPosition = 0;
   let hasReachedEnd = false;
 
@@ -97,7 +104,7 @@
   const fetchArticles = async (
     limit: number,
     beforePublishedAt: Date | string = new Date()
-  ): Promise<PaginatedList<Article> | undefined> => {
+  ): Promise<PaginatedList<ArticleWithInteraction> | undefined> => {
     const articlesResult = await getArticlesByCollectionId(
       data.collection.id,
       beforePublishedAt,
@@ -159,10 +166,9 @@
   };
 
   const checkNewArticles = async () => {
-    const countArticlesResult = await countArticles(
-      articles[0].publishedAt,
-      undefined,
-      data.collection.id
+    const countArticlesResult = await countArticlesByCollectionId(
+      data.collection.id,
+      articles[0].publishedAt
     );
     countArticlesResult.match({
       ok: (value) => (newArticlesCount = value.count),

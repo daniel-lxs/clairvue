@@ -3,7 +3,7 @@ import authService from '@/server/services/auth.service';
 import type { PageServerLoad } from './$types';
 import articleService from '@/server/services/article.service';
 import feedService from '@/server/services/feed.service';
-import type { Article, Feed, PaginatedList, Result } from '@clairvue/types';
+import type { ArticleWithInteraction, Feed, PaginatedList, Result } from '@clairvue/types';
 
 export const load: PageServerLoad = async ({ params: { slug: feedId }, cookies }) => {
   const authSessionResult = await authService.validateAuthSession(cookies);
@@ -27,22 +27,33 @@ export const load: PageServerLoad = async ({ params: { slug: feedId }, cookies }
         return error(404, 'Feed not found');
       }
       const limitPerPage = 20;
-      const articleResult = articleService.findByFeedId(feedId, undefined, limitPerPage);
+      const articleResult = articleService.findByFeedIdWithInteractions(
+        feedId,
+        authSession.user.id,
+        undefined,
+        limitPerPage
+      );
 
       const unwrapPromise = async (
-        resultPromise: Promise<Result<false | PaginatedList<Article>, Error>>
+        resultPromise: Promise<Result<false | PaginatedList<ArticleWithInteraction>, Error>>
       ) => {
         const result = await resultPromise;
 
         if (result.isErr()) {
-          return error(500, result.unwrapErr().message);
+          return {
+            items: [],
+            totalCount: 0
+          };
         }
 
         if (result.isOkAnd((value) => value === false)) {
-          return error(404, 'Articles not found');
+          return {
+            items: [],
+            totalCount: 0
+          };
         }
 
-        return result.unwrap() as PaginatedList<Article>;
+        return result.unwrap() as PaginatedList<ArticleWithInteraction>;
       };
 
       return {
