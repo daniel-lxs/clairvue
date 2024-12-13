@@ -1,5 +1,5 @@
 {
-  "id": "53729811-9e9b-487c-b1e9-c6ca753d1cd2",
+  "id": "5d83f8c5-78af-490b-9c19-a4fb2a4a780e",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -28,12 +28,6 @@
         },
         "link": {
           "name": "link",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "feedId": {
-          "name": "feedId",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -103,6 +97,66 @@
           ]
         }
       },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.articlesToFeeds": {
+      "name": "articlesToFeeds",
+      "schema": "",
+      "columns": {
+        "articleId": {
+          "name": "articleId",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "feedId": {
+          "name": "feedId",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "articlesToFeeds_articleId_articles_id_fk": {
+          "name": "articlesToFeeds_articleId_articles_id_fk",
+          "tableFrom": "articlesToFeeds",
+          "tableTo": "articles",
+          "columnsFrom": [
+            "articleId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "articlesToFeeds_feedId_feeds_id_fk": {
+          "name": "articlesToFeeds_feedId_feeds_id_fk",
+          "tableFrom": "articlesToFeeds",
+          "tableTo": "feeds",
+          "columnsFrom": [
+            "feedId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "articlesToFeeds_articleId_feedId_pk": {
+          "name": "articlesToFeeds_articleId_feedId_pk",
+          "columns": [
+            "articleId",
+            "feedId"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -405,6 +459,94 @@
           ]
         }
       },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.userArticleInteractions": {
+      "name": "userArticleInteractions",
+      "schema": "",
+      "columns": {
+        "userId": {
+          "name": "userId",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "articleId": {
+          "name": "articleId",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "read": {
+          "name": "read",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "saved": {
+          "name": "saved",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "userArticleInteractions_userId_users_id_fk": {
+          "name": "userArticleInteractions_userId_users_id_fk",
+          "tableFrom": "userArticleInteractions",
+          "tableTo": "users",
+          "columnsFrom": [
+            "userId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "userArticleInteractions_articleId_articles_id_fk": {
+          "name": "userArticleInteractions_articleId_articles_id_fk",
+          "tableFrom": "userArticleInteractions",
+          "tableTo": "articles",
+          "columnsFrom": [
+            "articleId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "userArticleInteractions_userId_articleId_pk": {
+          "name": "userArticleInteractions_userId_articleId_pk",
+          "columns": [
+            "userId",
+            "articleId"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

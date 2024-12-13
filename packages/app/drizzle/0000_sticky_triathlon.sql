@@ -4,7 +4,6 @@ CREATE TABLE IF NOT EXISTS "articles" (
 	"slug" varchar NOT NULL,
 	"title" text NOT NULL,
 	"link" text NOT NULL,
-	"feedId" text NOT NULL,
 	"description" text,
 	"siteName" text NOT NULL,
 	"image" text,
@@ -14,6 +13,12 @@ CREATE TABLE IF NOT EXISTS "articles" (
 	"createdAt" timestamp DEFAULT now() NOT NULL,
 	"updatedAt" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "articles_link_unique" UNIQUE("link")
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "articlesToFeeds" (
+	"articleId" varchar NOT NULL,
+	"feedId" varchar NOT NULL,
+	CONSTRAINT "articlesToFeeds_articleId_feedId_pk" PRIMARY KEY("articleId","feedId")
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "collections" (
@@ -61,6 +66,28 @@ CREATE TABLE IF NOT EXISTS "users" (
 	CONSTRAINT "users_username_unique" UNIQUE("username")
 );
 --> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "userArticleInteractions" (
+	"userId" varchar NOT NULL,
+	"articleId" varchar NOT NULL,
+	"read" boolean DEFAULT false NOT NULL,
+	"saved" boolean DEFAULT false NOT NULL,
+	"createdAt" timestamp DEFAULT now() NOT NULL,
+	"updatedAt" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "userArticleInteractions_userId_articleId_pk" PRIMARY KEY("userId","articleId")
+);
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "articlesToFeeds" ADD CONSTRAINT "articlesToFeeds_articleId_articles_id_fk" FOREIGN KEY ("articleId") REFERENCES "public"."articles"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "articlesToFeeds" ADD CONSTRAINT "articlesToFeeds_feedId_feeds_id_fk" FOREIGN KEY ("feedId") REFERENCES "public"."feeds"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "collections" ADD CONSTRAINT "collections_userId_users_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
@@ -75,6 +102,18 @@ END $$;
 --> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "sessions" ADD CONSTRAINT "sessions_userId_users_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "userArticleInteractions" ADD CONSTRAINT "userArticleInteractions_userId_users_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "userArticleInteractions" ADD CONSTRAINT "userArticleInteractions_articleId_articles_id_fk" FOREIGN KEY ("articleId") REFERENCES "public"."articles"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
