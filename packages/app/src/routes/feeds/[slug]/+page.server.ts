@@ -2,7 +2,6 @@ import collectionService from '@/server/services/collection.service';
 import authService from '@/server/services/auth.service';
 import type { PageServerLoad } from './$types';
 import { redirect, error } from '@sveltejs/kit';
-import feedService from '@/server/services/feed.service';
 
 export const load = (async ({ cookies, params, depends }) => {
   // Add dependency on feeds data
@@ -41,18 +40,6 @@ export const load = (async ({ cookies, params, depends }) => {
     
       if (!selectedCollection || !defaultCollection) {
         error(404, 'Collections not found');
-      }
-    
-      // Count articles for the selected collection's feeds
-      if (selectedCollection.feeds) {
-        await Promise.all(
-          selectedCollection.feeds.map(async (feed) => {
-            feed.articleCount = (await feedService.countArticles(feed.id)).match({
-              ok: (count) => count,
-              err: (e) => error(500, e.message)
-            });
-          })
-        );
       }
     
       return {

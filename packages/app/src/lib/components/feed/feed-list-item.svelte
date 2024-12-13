@@ -1,14 +1,24 @@
 <script lang="ts">
-  import type { Feed } from '@/server/data/schema';
   import { calculateAge } from '$lib/utils';
   import { Button } from '../ui/button';
   import { Trash, MoreVertical } from 'lucide-svelte';
   import * as DropdownMenu from '../ui/dropdown-menu';
+  import type { Feed } from '@clairvue/types';
+  import { countArticlesByFeedId } from '$lib/api/article';
 
   interface Props {
     feed: Feed;
     disableActions?: boolean;
     onRemove: (feed: Feed) => void;
+  }
+
+  async function getArticleCount(feed: Feed) {
+    const articleCountResult = await countArticlesByFeedId(feed.id);
+
+    return articleCountResult.match({
+      ok: (value) => value.count,
+      err: () => 0
+    });
   }
 
   let { feed, onRemove, disableActions }: Props = $props();
@@ -19,14 +29,20 @@
   role="button"
   tabindex="0"
 >
-  <div class="flex flex-col">
+  <div class="flex w-full flex-col">
     <a
       href="/f/{feed.id}"
       class="item-title text-primary decoration-primary/30 hover:text-primary/80 truncate text-sm font-medium underline-offset-4 transition-colors hover:underline"
       >{feed.name}</a
     >
-    <div class="text-muted-foreground text-xs">
-      Created {calculateAge(feed.createdAt, 'long')} • {feed.articleCount || 0} articles
+    <div class="text-muted-foreground w-full text-xs">
+      {#await getArticleCount(feed)}
+        <div class="bg-muted-foreground/40 h-4 w-full animate-pulse rounded-md"></div>
+      {:then articleCount}
+        Created {calculateAge(feed.createdAt, 'long')} • {articleCount} articles
+      {:catch _}
+        Created {calculateAge(feed.createdAt, 'long')}
+      {/await}
     </div>
   </div>
   {#if !disableActions}
