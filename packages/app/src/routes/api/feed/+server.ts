@@ -1,8 +1,8 @@
 import type { RequestHandler } from '@sveltejs/kit';
 import feedService from '@/server/services/feed.service';
 import { createFeedsDto, updateFeedDto, type CreateFeedDto } from '@/server/dto/feed.dto';
-import type { Feed } from '@/server/data/schema';
-import { Result } from '@clairvue/types';
+
+import { Result, type Feed } from '@clairvue/types';
 
 export const GET: RequestHandler = async ({ url, locals }) => {
   const { authSession } = locals;
