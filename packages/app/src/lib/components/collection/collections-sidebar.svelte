@@ -2,7 +2,7 @@
   import { Button, buttonVariants } from '@/components/ui/button';
   import { Folder, FolderPlus } from 'lucide-svelte';
   import { Label } from '../ui/label';
-  import type { Collection, Feed } from '@/server/data/schema';
+  import type { Collection, Feed } from '@clairvue/types';
   import { Trigger } from '@/components/ui/dialog';
 
   let {

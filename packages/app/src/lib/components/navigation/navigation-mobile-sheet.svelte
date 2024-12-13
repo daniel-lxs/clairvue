@@ -1,6 +1,6 @@
 <script lang="ts">
   import * as Sheet from '$lib/components/ui/sheet';
-  import type { Collection, Feed } from '$lib/server/data/schema';
+  import type { Collection, Feed } from '@clairvue/types';
   import { Button } from '../ui/button';
   import { Menu } from 'lucide-svelte';
   import Logo from '../ui/logo/logo.svelte';

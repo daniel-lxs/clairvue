@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { CollectionWithFeeds } from '@/server/data/schema';
+  import type { CollectionWithFeeds } from '@clairvue/types';
   import { Button } from '../ui/button';
   import { calculateAge } from '$lib/utils';
 

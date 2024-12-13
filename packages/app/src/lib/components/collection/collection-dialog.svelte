@@ -6,7 +6,7 @@
   import { Checkbox } from '@/components/ui/checkbox';
   import { ScrollArea } from '@/components/ui/scroll-area';
   import { Loader2, PlusCircle } from 'lucide-svelte';
-  import type { Feed, CollectionWithFeeds, Collection } from '@/server/data/schema';
+  import type { Feed, CollectionWithFeeds, Collection } from '@clairvue/types';
   import collectionApi from '@/api/collection';
 
   let {

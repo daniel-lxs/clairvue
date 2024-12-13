@@ -6,8 +6,8 @@
   import collectionApi from '@/api/collection';
   import feedApi from '@/api/feed';
   import { showToast } from '$lib/utils';
-  import type { NewFeed } from '@clairvue/types';
-  import type { Collection, Feed } from '@/server/data/schema';
+  import type { Feed, NewFeed, Collection } from '@clairvue/types';
+
   import * as Breadcrumb from '@/components/ui/breadcrumb';
   import * as Select from '@/components/ui/select';
   import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
