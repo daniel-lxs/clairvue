@@ -1,5 +1,6 @@
 import type { RequestHandler } from '@sveltejs/kit';
 import articleService from '@/server/services/article.service';
+import { z } from 'zod';
 
 export const GET: RequestHandler = async ({ url, locals }) => {
   if (!locals.authSession) {
@@ -10,21 +11,29 @@ export const GET: RequestHandler = async ({ url, locals }) => {
   const feedId = url.searchParams.get('feedId') || undefined;
   const afterPublishedAt = url.searchParams.get('afterPublishedAt');
 
-  if (!afterPublishedAt) {
-    return new Response('Missing required parameters: afterPublishedAt', { status: 400 });
-  }
-
-  let afterPublishedAtDate: Date;
-  try {
+  let afterPublishedAtDate: Date | undefined;
+  if (afterPublishedAt && z.string().datetime().safeParse(afterPublishedAt).success === true) {
     afterPublishedAtDate = new Date(afterPublishedAt);
-  } catch (error) {
-    afterPublishedAtDate = new Date();
   }
 
-  const articles = await articleService.countArticles(afterPublishedAtDate, feedId, collectionId);
+  if (collectionId) {
+    const articlesResult = await articleService.countArticlesByCollectionId(
+      collectionId,
+      afterPublishedAtDate
+    );
 
-  return articles.match({
-    ok: (count) => new Response(JSON.stringify({ count }), { status: 200 }),
-    err: (error) => new Response(error.message, { status: 500 })
-  });
+    return articlesResult.match({
+      ok: (count) => new Response(JSON.stringify({ count }), { status: 200 }),
+      err: (error) => new Response(error.message, { status: 500 })
+    });
+  } else if (feedId) {
+    const articlesResult = await articleService.countArticlesByFeedId(feedId, afterPublishedAtDate);
+
+    return articlesResult.match({
+      ok: (count) => new Response(JSON.stringify({ count }), { status: 200 }),
+      err: (error) => new Response(error.message, { status: 500 })
+    });
+  } else {
+    return new Response('Missing required parameters: collectionId or feedId', { status: 400 });
+  }
 };
