@@ -148,7 +148,6 @@ export function parseErrorMessages(errors: Error[]): string[] {
 }
 
 export function validateDateString(dateString: string): boolean {
-  console.log({ dateString });
   return z.string().datetime().safeParse(dateString).success;
 }
 
