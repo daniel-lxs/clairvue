@@ -1,11 +1,16 @@
-import { count, desc, eq, like, sql, and } from 'drizzle-orm';
+import { count, desc, eq, and, asc, like, lt, not, inArray } from 'drizzle-orm';
 import ShortUniqueId from 'short-unique-id';
 import { getClient } from '../db';
-import { collectionsToFeeds, feedSchema, type Feed, articleSchema } from '../schema';
-import { Result, type Collection } from '@clairvue/types';
+import {
+  collectionsToFeeds,
+  feedSchema,
+  articlesToFeeds,
+  articleSchema,
+  userArticleInteractions
+} from '../schema';
+import { Result, type Feed, type FeedWithArticles } from '@clairvue/types';
 import { normalizeError } from '$lib/utils';
 import slugify from 'slugify';
-import collectionRepository from './collection.repository';
 
 async function create(
   newFeed: Pick<Feed, 'name' | 'description' | 'link'>
@@ -118,28 +123,20 @@ async function findByUserId(
     const db = getClient();
     take = take > 100 ? 100 : take;
 
-    const defaultCollectionResult = await collectionRepository.findDefaultByUserId(userId);
-
-    if (defaultCollectionResult.isErr()) return Result.err(defaultCollectionResult.unwrapErr());
-
-    if (defaultCollectionResult.isOkAnd((r) => !r))
-      return Result.err(new Error('Default collection not found'));
-
-    const defaultCollection = defaultCollectionResult.unwrap() as Collection;
-
     const result = await db
       .select()
       .from(feedSchema)
-      .leftJoin(collectionsToFeeds, eq(collectionsToFeeds.feedId, feedSchema.id))
-      .where(eq(collectionsToFeeds.collectionId, defaultCollection.id))
+      .innerJoin(
+        collectionsToFeeds,
+        and(eq(collectionsToFeeds.feedId, feedSchema.id), eq(collectionsToFeeds.userId, userId))
+      )
       .limit(take)
       .offset(skip)
       .execute();
 
     if (!result || result.length === 0) return Result.ok(false);
 
-    const feeds = result.map((r) => r.feeds);
-    return Result.ok(feeds);
+    return Result.ok(result.map((r) => r.feeds));
   } catch (e) {
     const error = normalizeError(e);
     console.error('Error occurred while finding feed by user id:', error);
@@ -178,20 +175,19 @@ async function findOutdated(take = 20, skip = 0): Promise<Result<Feed[] | false,
     take = take > 100 ? 100 : take;
     const db = getClient();
 
-    const outdatedDate = new Date(Date.now() - MAX_AGE).toISOString();
+    const outdatedDate = new Date(Date.now() - MAX_AGE);
 
-    const query = sql`
-      SELECT *
-      FROM ${feedSchema}
-      WHERE
-        ${feedSchema.syncedAt} < ${outdatedDate}
-        AND ${feedSchema.link} NOT LIKE 'default-feed%'
-      ORDER BY ${feedSchema.syncedAt}
-      LIMIT ${take}
-      OFFSET ${skip}
-    `;
-
-    const result: Feed[] = await db.execute(query);
+    const result = await db.query.feedSchema
+      .findMany({
+        where: and(
+          lt(feedSchema.syncedAt, outdatedDate),
+          not(like(feedSchema.link, 'default-feed%'))
+        ),
+        orderBy: asc(feedSchema.syncedAt),
+        limit: take,
+        offset: skip
+      })
+      .execute();
 
     if (!result || result.length === 0) return Result.ok(false);
 
@@ -203,13 +199,130 @@ async function findOutdated(take = 20, skip = 0): Promise<Result<Feed[] | false,
   }
 }
 
+async function findWithArticles(
+  id: string,
+  userId: string,
+  take = 20,
+  skip = 0
+): Promise<Result<FeedWithArticles | false, Error>> {
+  try {
+    const db = getClient();
+    const result = await db
+      .select()
+      .from(feedSchema)
+      .where(eq(feedSchema.id, id))
+      .innerJoin(articlesToFeeds, eq(articlesToFeeds.feedId, feedSchema.id))
+      .innerJoin(articleSchema, eq(articleSchema.id, articlesToFeeds.articleId))
+      .innerJoin(
+        userArticleInteractions,
+        and(
+          eq(userArticleInteractions.articleId, articleSchema.id),
+          eq(userArticleInteractions.userId, userId)
+        )
+      )
+      .limit(take)
+      .offset(skip)
+      .execute();
+
+    if (!result) return Result.ok(false);
+
+    const feed = {
+      ...result[0].feeds,
+      articles: result.map(({ articles, userArticleInteractions }) => ({
+        ...articles,
+        saved: userArticleInteractions.saved,
+        read: userArticleInteractions.read
+      }))
+    };
+
+    return Result.ok(feed);
+  } catch (e) {
+    const error = normalizeError(e);
+    console.error('Error occurred while finding feed with articles:', error);
+    return Result.err(error);
+  }
+}
+
+async function findByCollectionIdWithArticles(
+  collectionId: string,
+  beforePublishedAt: Date,
+  take = 20
+): Promise<Result<FeedWithArticles[] | false, Error>> {
+  try {
+    const db = getClient();
+
+    const feedArticlePairs = await db
+      .select({
+        feedId: articlesToFeeds.feedId,
+        articleId: articlesToFeeds.articleId
+      })
+      .from(articlesToFeeds)
+      .innerJoin(collectionsToFeeds, eq(collectionsToFeeds.feedId, articlesToFeeds.feedId))
+      .innerJoin(articleSchema, eq(articleSchema.id, articlesToFeeds.articleId))
+      .where(
+        and(
+          lt(articleSchema.publishedAt, beforePublishedAt),
+          eq(collectionsToFeeds.collectionId, collectionId)
+        )
+      )
+      .limit(take)
+      .execute();
+
+    if (!feedArticlePairs || feedArticlePairs.length === 0) return Result.ok(false);
+
+    const feedIds = [...new Set(feedArticlePairs.map((pair) => pair.feedId))];
+
+    const feedsResult = await db.query.feedSchema.findMany({
+      where: inArray(feedSchema.id, feedIds)
+    });
+
+    if (!feedsResult) return Result.ok(false);
+
+    const articleIds = feedArticlePairs.map((pair) => pair.articleId);
+    const articlesWithInteractionsResult = await db
+      .select()
+      .from(articleSchema)
+      .innerJoin(userArticleInteractions, eq(userArticleInteractions.articleId, articleSchema.id))
+      .where(inArray(articleSchema.id, articleIds))
+      .execute();
+
+    if (!articlesWithInteractionsResult) return Result.ok(false);
+
+    const articlesMap = new Map(
+      articlesWithInteractionsResult.map(({ articles, userArticleInteractions }) => [
+        articles.id,
+        { ...articles, saved: userArticleInteractions.saved, read: userArticleInteractions.read }
+      ])
+    );
+
+    const feedsMap = new Map<string, FeedWithArticles>();
+
+    for (const feed of feedsResult) {
+      feedsMap.set(feed.id, { ...feed, articles: [] });
+    }
+
+    for (const pair of feedArticlePairs) {
+      const article = articlesMap.get(pair.articleId);
+      if (article) {
+        feedsMap.get(pair.feedId)?.articles.push(article);
+      }
+    }
+
+    return Result.ok(Array.from(feedsMap.values()));
+  } catch (e) {
+    const error = normalizeError(e);
+    console.error('Error occurred while finding feed by collection id with articles:', error);
+    return Result.err(error);
+  }
+}
+
 async function countArticles(id: string): Promise<Result<number, Error>> {
   try {
     const db = getClient();
     const [result] = await db
       .select({ count: count() })
-      .from(articleSchema)
-      .where(eq(articleSchema.feedId, id))
+      .from(articlesToFeeds)
+      .where(eq(articlesToFeeds.feedId, id))
       .execute();
 
     if (!result) return Result.ok(0);
@@ -332,6 +445,8 @@ export default {
   findAll,
   findByUserId,
   findOutdated,
+  findWithArticles,
+  findByCollectionIdWithArticles,
   countArticles,
   update,
   updateLastSync,

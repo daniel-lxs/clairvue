@@ -4,16 +4,13 @@ import {
   collectionSchema,
   feedSchema,
   collectionsToFeeds,
-  type Collection,
-  type CollectionWithFeeds,
-  type CollectionToFeeds
 } from '../schema';
 import { and, eq, like } from 'drizzle-orm';
 import slugify from 'slugify';
 import { Result } from '@clairvue/types';
 import { normalizeError } from '$lib/utils';
 import feedRepository from './feed.repository';
-import type { AddFeedsToCollectionResult } from '@clairvue/types';
+import type { AddFeedsToCollectionResult, Collection, CollectionToFeeds, CollectionWithFeeds } from '@clairvue/types';
 
 interface FeedAssignment {
   id: string;
