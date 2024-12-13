@@ -4,7 +4,8 @@ export type {
   ArticleMetadata,
   ReadableArticle,
   ProcessArticlesOptions,
-  ArticleWithFeed
+  ArticleWithFeed,
+  ArticleWithInteraction
 } from './types/Article';
 export type { Feed, FeedWithArticles, NewFeed, FeedInfo } from './types/Feed';
 export type { PaginatedList } from './types/PaginatedList';
@@ -17,3 +18,4 @@ export type {
   AddFeedsToCollectionResult
 } from './types/Collection';
 export { Result } from './types/Result';
+export type { UserArticleInteraction } from './types/ArticleInteraction';
