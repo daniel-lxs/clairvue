@@ -1,6 +1,6 @@
 import { pgTable, primaryKey, text, timestamp, varchar } from 'drizzle-orm/pg-core';
-import { feedSchema, type Feed } from './feed.schema';
-import { relations, type InferSelectModel } from 'drizzle-orm';
+import { feedSchema } from './feed.schema';
+import { relations } from 'drizzle-orm';
 import { userSchema } from '.';
 
 export const collectionSchema = pgTable('collections', {
@@ -48,9 +48,3 @@ export const collectionsToFeedsRelations = relations(collectionsToFeeds, ({ one 
     references: [userSchema.id]
   })
 }));
-
-export type Collection = InferSelectModel<typeof collectionSchema>;
-export type CollectionWithFeeds = InferSelectModel<typeof collectionSchema> & {
-  feeds: Feed[];
-};
-export type CollectionToFeeds = InferSelectModel<typeof collectionsToFeeds>;

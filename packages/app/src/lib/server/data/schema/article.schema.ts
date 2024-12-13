@@ -1,15 +1,12 @@
-import { boolean, pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core';
-import { feedSchema, type Feed } from './feed.schema';
-import { relations, type InferSelectModel } from 'drizzle-orm';
+import { boolean, pgTable, primaryKey, text, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { feedSchema } from './feed.schema';
+import { relations } from 'drizzle-orm';
 
 export const articleSchema = pgTable('articles', {
   id: varchar('id').primaryKey(),
   slug: varchar('slug').notNull(),
   title: text('title').notNull(),
   link: text('link').unique().notNull(),
-  feedId: text('feedId')
-    .notNull()
-    .references(() => feedSchema.id, { onDelete: 'cascade' }),
   description: text('description'),
   siteName: text('siteName').notNull(),
   image: text('image'),
@@ -20,10 +17,32 @@ export const articleSchema = pgTable('articles', {
   updatedAt: timestamp('updatedAt').notNull().defaultNow()
 });
 
-export const articleRelations = relations(articleSchema, ({ one }) => ({
-  feed: one(feedSchema, { fields: [articleSchema.feedId], references: [feedSchema.id] })
+export const articleRelations = relations(articleSchema, ({ many }) => ({
+  articlesToFeeds: many(articlesToFeeds)
 }));
 
-export type Article = InferSelectModel<typeof articleSchema> & {
-  feed?: Feed | null;
-};
+export const articlesToFeeds = pgTable(
+  'articlesToFeeds',
+  {
+    articleId: varchar('articleId')
+      .notNull()
+      .references(() => articleSchema.id),
+    feedId: varchar('feedId')
+      .notNull()
+      .references(() => feedSchema.id)
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.articleId, t.feedId] })
+  })
+);
+
+export const articlesToFeedsRelations = relations(articlesToFeeds, ({ one }) => ({
+  article: one(articleSchema, {
+    fields: [articlesToFeeds.articleId],
+    references: [articleSchema.id]
+  }),
+  feed: one(feedSchema, {
+    fields: [articlesToFeeds.feedId],
+    references: [feedSchema.id]
+  })
+}));

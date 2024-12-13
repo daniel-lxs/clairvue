@@ -1,7 +1,7 @@
 import { pgEnum, pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { collectionsToFeeds } from './collection.schema';
-import { articleSchema, type Article } from './article.schema';
-import { relations, type InferSelectModel } from 'drizzle-orm';
+import { articlesToFeeds } from './article.schema';
+import { relations } from 'drizzle-orm';
 
 export const feedTypeEnum = pgEnum('type', ['rss', 'atom']);
 
@@ -18,10 +18,5 @@ export const feedSchema = pgTable('feeds', {
 
 export const feedRelations = relations(feedSchema, ({ many }) => ({
   collectionsToFeeds: many(collectionsToFeeds),
-  articles: many(articleSchema)
+  articlesToFeeds: many(articlesToFeeds)
 }));
-
-export type Feed = InferSelectModel<typeof feedSchema> & {
-  articles?: Article[];
-  articleCount?: number;
-};
