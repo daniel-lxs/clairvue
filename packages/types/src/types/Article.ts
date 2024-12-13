@@ -1,3 +1,4 @@
+import { UserArticleInteraction } from './ArticleInteraction';
 import { Feed } from './Feed';
 
 export interface Article {
@@ -5,11 +6,10 @@ export interface Article {
   slug: string;
   title: string;
   link: string;
-  feedId: string;
-  description?: string;
+  description: string | null;
   siteName: string;
-  image?: string;
-  author?: string;
+  image: string | null;
+  author: string | null;
   readable: boolean;
   publishedAt: Date;
   createdAt: Date;
@@ -19,6 +19,8 @@ export interface Article {
 export interface ArticleWithFeed extends Article {
   feed?: Feed;
 }
+
+export type ArticleWithInteraction = Article & UserArticleInteraction;
 
 export interface NewArticle extends Omit<Article, 'id' | 'slug' | 'createdAt' | 'updatedAt'> {}
 

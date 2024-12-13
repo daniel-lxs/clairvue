@@ -1,4 +1,4 @@
-import { Article } from './Article';
+import { ArticleWithInteraction } from './Article';
 
 export interface Feed {
   id: string;
@@ -12,12 +12,10 @@ export interface Feed {
 }
 
 export interface FeedWithArticles extends Feed {
-  articleCount: number;
-  articles: Article[];
+  articles: ArticleWithInteraction[];
 }
 
 export interface NewFeed extends Pick<Feed, 'id' | 'name' | 'description' | 'link'> {}
-
 export interface FeedInfo {
   title: string;
   description: string | undefined;
