@@ -1,4 +1,4 @@
-import type { Collection } from '@/server/data/schema';
+import type { Collection } from '@clairvue/types';
 import { normalizeError } from '$lib/utils';
 import { Result } from '@clairvue/types';
 

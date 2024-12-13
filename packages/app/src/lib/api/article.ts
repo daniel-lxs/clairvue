@@ -1,4 +1,4 @@
-import type { PaginatedList, Article, ArticleMetadata } from '@clairvue/types';
+import type { PaginatedList, ArticleMetadata, ArticleWithInteraction } from '@clairvue/types';
 import { Result } from '@clairvue/types';
 import { normalizeError, validateDateString } from '$lib/utils';
 
@@ -6,7 +6,7 @@ export async function getArticlesByCollectionId(
   collectionId: string,
   beforePublishedAt?: Date | string,
   take = 5
-): Promise<Result<PaginatedList<Article>, Error>> {
+): Promise<Result<PaginatedList<ArticleWithInteraction>, Error>> {
   try {
     const url = new URL(`/api/article?collectionId=${collectionId}`, location.origin);
     url.searchParams.set('take', take.toString());
@@ -48,7 +48,7 @@ export async function getArticlesByFeedId(
   feedId: string,
   beforePublishedAt?: Date | string,
   take = 5
-): Promise<Result<PaginatedList<Article>, Error>> {
+): Promise<Result<PaginatedList<ArticleWithInteraction>, Error>> {
   try {
     const url = new URL(`/api/article?feedId=${feedId}`, location.origin);
     url.searchParams.set('take', take.toString());
@@ -87,32 +87,62 @@ export async function getArticlesByFeedId(
   }
 }
 
-export async function countArticles(
-  afterPublishedAt: Date | string,
-  feedId?: string,
-  collectionId?: string
+export async function countArticlesByFeedId(
+  feedId: string,
+  afterPublishedAt?: Date | string
 ): Promise<Result<{ count: number }, Error>> {
-  if (typeof afterPublishedAt === 'string') {
-    const isDateValid = validateDateString(afterPublishedAt);
-
-    if (!isDateValid) {
-      return Result.err(new Error('Invalid date format'));
+  let dateParam = afterPublishedAt;
+  if (dateParam) {
+    if (typeof dateParam === 'string') {
+      const isDateValid = validateDateString(dateParam);
+      if (!isDateValid) {
+        return Result.err(new Error('Invalid date format'));
+      }
+    } else {
+      dateParam = dateParam.toISOString();
     }
-  } else {
-    afterPublishedAt = afterPublishedAt.toISOString();
   }
 
   try {
     const url = new URL(`/api/article/count`, location.origin);
-
-    url.searchParams.set('afterPublishedAt', afterPublishedAt);
-
-    if (feedId) {
-      url.searchParams.set('feedId', feedId);
+    url.searchParams.set('feedId', feedId);
+    if (dateParam) {
+      url.searchParams.set('afterPublishedAt', dateParam);
     }
 
-    if (collectionId) {
-      url.searchParams.set('collectionId', collectionId);
+    const response = await fetch(url.toString());
+    if (!response.ok) {
+      return Result.err(new Error(`Failed to get articles: ${response.statusText}`));
+    }
+    return Result.ok(await response.json());
+  } catch (e) {
+    const error = normalizeError(e);
+    console.error('Error occurred while getting articles:', error);
+    return Result.err(error);
+  }
+}
+
+export async function countArticlesByCollectionId(
+  collectionId: string,
+  afterPublishedAt?: Date | string
+): Promise<Result<{ count: number }, Error>> {
+  let dateParam = afterPublishedAt;
+  if (dateParam) {
+    if (typeof dateParam === 'string') {
+      const isDateValid = validateDateString(dateParam);
+      if (!isDateValid) {
+        return Result.err(new Error('Invalid date format'));
+      }
+    } else {
+      dateParam = dateParam.toISOString();
+    }
+  }
+
+  try {
+    const url = new URL(`/api/article/count`, location.origin);
+    url.searchParams.set('collectionId', collectionId);
+    if (dateParam) {
+      url.searchParams.set('afterPublishedAt', dateParam);
     }
 
     const response = await fetch(url.toString());
@@ -164,4 +194,32 @@ export async function getArticleMetadata(url: string): Promise<Result<ArticleMet
 
   const data = await response.json();
   return Result.ok(data);
+}
+
+export async function addArticleToSavedArticles(articleId: string): Promise<Result<true, Error>> {
+  const response = await fetch(`/api/article`, {
+    method: 'PUT',
+    body: JSON.stringify({ articleId })
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    return Result.err(error);
+  }
+
+  return Result.ok(true);
+}
+
+export async function removeArticleFromSavedArticles(articleId: string): Promise<Result<true, Error>> {
+  const response = await fetch(`/api/article`, {
+    method: 'DELETE',
+    body: JSON.stringify({ articleId })
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    return Result.err(error);
+  }
+
+  return Result.ok(true);
 }

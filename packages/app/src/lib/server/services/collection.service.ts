@@ -1,6 +1,5 @@
 import collectionRepository from '@/server/data/repositories/collection.repository';
-import type { Collection, CollectionWithFeeds } from '@/server/data/schema';
-import type { AddFeedsToCollectionResult } from '@clairvue/types';
+import type { AddFeedsToCollectionResult, Collection, CollectionWithFeeds } from '@clairvue/types';
 import { Result } from '@clairvue/types';
 
 async function findBySlug(

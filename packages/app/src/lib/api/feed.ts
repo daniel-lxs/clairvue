@@ -1,7 +1,7 @@
 import type { CreateFeedDto } from '@/server/dto/feed.dto';
 import type { FeedInfo } from '@clairvue/types';
 import { Result } from '@clairvue/types';
-import type { Feed } from '@/server/data/schema';
+import type { Feed } from '@clairvue/types';
 import { normalizeError } from '$lib/utils';
 
 async function createFeeds(feeds: CreateFeedDto[]): Promise<Result<Feed[], Error>> {

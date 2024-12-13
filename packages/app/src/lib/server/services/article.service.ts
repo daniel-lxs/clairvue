@@ -1,63 +1,59 @@
 import articleRepository from '@/server/data/repositories/article.repository';
-import type { Article, ArticleWithFeed, NewArticle, PaginatedList } from '@clairvue/types';
+import type {
+  Article,
+  ArticleMetadata,
+  ArticleWithInteraction,
+  NewArticle,
+  PaginatedList
+} from '@clairvue/types';
 import { createArticlesDto } from '../dto/article.dto';
 import { Result } from '@clairvue/types';
 import feedService from './feed.service';
-import { normalizeError } from '$lib/utils';
 
-async function create(newArticles: NewArticle[]): Promise<Result<string[], Error>> {
-  return await articleRepository.create(newArticles);
+async function create(newArticles: NewArticle[], feedId: string): Promise<Result<string[], Error>> {
+  return await articleRepository.create(newArticles, feedId);
 }
 
 async function createFromJobResult(
   feedId: string,
-  jobResult: any
+  jobResult: ArticleMetadata[]
 ): Promise<Result<string[], Error>> {
-  const result = await feedService.findById(feedId);
+  feedService.updateLastSyncedAt(feedId);
+  const validationResult = createArticlesDto.safeParse(jobResult);
 
-  if (result.isOk()) {
-    const feed = result.unwrap();
-
-    if (!feed) {
-      console.error('Feed not found');
-      return Result.err(new Error('Feed not found'));
-    }
-
-    feedService.updateLastSyncedAt(feed.id);
-    const validationResult = createArticlesDto.safeParse(jobResult);
-
-    if (!validationResult.success) {
-      console.error('Error occurred while creating article:', validationResult.error);
-      return Result.err(
-        new Error('Error occurred while creating article', { cause: validationResult.error })
-      );
-    }
-
-    const articles = validationResult.data;
-    if (!articles || articles.length === 0) {
-      console.error('No articles found');
-      return Result.err(new Error('No articles found'));
-    }
-
-    console.info(`${articles.length} new articles found`);
-    for (const article of articles) {
-      (article as NewArticle).feedId = feed.id;
-    }
-
-    return await create(articles as NewArticle[]);
-  } else {
-    const error = normalizeError(result.unwrapErr());
-    console.error('Error occurred while creating article:', error);
-    return Result.err(error);
+  if (!validationResult.success) {
+    console.error('Error occurred while creating article:', validationResult.error);
+    return Result.err(
+      new Error('Error occurred while creating article', { cause: validationResult.error })
+    );
   }
+
+  const articles = validationResult.data;
+  if (!articles || articles.length === 0) {
+    console.error('No articles found');
+    return Result.err(new Error('No articles found'));
+  }
+
+  return await create(
+    articles.map((article) => ({
+      ...article,
+      description: article.description ?? null,
+      image: article.image ?? null,
+      author: article.author ?? null
+    })),
+    feedId
+  );
 }
 
-async function findByCollectionId(
-  collectionId: string,
-  beforePublishedAt?: string,
-  take: number = 5
-): Promise<Result<PaginatedList<ArticleWithFeed> | false, Error>> {
-  return await articleRepository.findByCollectionId(collectionId, beforePublishedAt, take);
+async function addToSavedArticles(articleId: string, userId: string): Promise<Result<true, Error>> {
+  return await articleRepository.addToSavedArticles(articleId, userId);
+}
+
+async function removeFromSavedArticles(
+  articleId: string,
+  userId: string
+): Promise<Result<true, Error>> {
+  return await articleRepository.removeFromSavedArticles(articleId, userId);
 }
 
 async function findByFeedId(
@@ -72,24 +68,47 @@ async function findBySlug(slug: string): Promise<Result<Article | false, Error>>
   return await articleRepository.findBySlug(slug);
 }
 
-async function countArticles(
-  afterPublishedAt: Date,
-  feedId?: string,
-  collectionId?: string
+async function findByFeedIdWithInteractions(
+  feedId: string,
+  userId: string,
+  beforePublishedAt?: string,
+  take: number = 5
+): Promise<Result<PaginatedList<ArticleWithInteraction> | false, Error>> {
+  return await articleRepository.findByFeedIdWithInteractions(
+    feedId,
+    userId,
+    beforePublishedAt,
+    take
+  );
+}
+
+async function countArticlesByFeedId(
+  feedId: string,
+  afterPublishedAt?: Date
 ): Promise<Result<number, Error>> {
-  return await articleRepository.countArticles(afterPublishedAt, feedId, collectionId);
+  return await articleRepository.countArticlesByFeedId(feedId, afterPublishedAt);
+}
+
+async function countArticlesByCollectionId(
+  collectionId: string,
+  afterPublishedAt?: Date
+): Promise<Result<number, Error>> {
+  return await articleRepository.countArticlesByCollectionId(collectionId, afterPublishedAt);
 }
 
 async function existsWithLink(link: string): Promise<Result<boolean, Error>> {
-  return await articleRepository.existsWithLink(link);
+  return await articleRepository.existsByLink(link);
 }
 
 export default {
   findBySlug,
-  countArticles,
+  countArticlesByFeedId,
+  countArticlesByCollectionId,
   create,
   createFromJobResult,
   findByFeedId,
-  findByCollectionId,
-  existsWithLink
+  findByFeedIdWithInteractions,
+  existsWithLink,
+  addToSavedArticles,
+  removeFromSavedArticles
 };

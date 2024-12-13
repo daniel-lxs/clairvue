@@ -1,12 +1,11 @@
 import feedRepository from '@/server/data/repositories/feed.repository';
-import type { Feed } from '@/server/data/schema';
 import DOMPurify from 'isomorphic-dompurify';
 import type { CreateFeedDto } from '@/server/dto/feed.dto';
 import { getArticlesQueue } from '@/server/queue/articles';
 import collectionService from './collection.service';
 import config from '@/config';
 import { JSDOM } from 'jsdom';
-import { Result } from '@clairvue/types';
+import { Result, type Feed, type FeedWithArticles } from '@clairvue/types';
 import { normalizeError } from '$lib/utils';
 import Parser from 'rss-parser';
 
@@ -180,6 +179,14 @@ async function findByUserId(
   return await feedRepository.findByUserId(userId, take, skip);
 }
 
+async function findByCollectionIdWithArticles(
+  collectionId: string,
+  beforePublishedAt: Date,
+  take?: number
+): Promise<Result<FeedWithArticles[] | false, Error>> {
+  return await feedRepository.findByCollectionIdWithArticles(collectionId, beforePublishedAt, take);
+}
+
 async function deleteForUser(userId: string, feedId: string): Promise<Result<true, Error>> {
   return await feedRepository.deleteForUser(userId, feedId);
 }
@@ -187,6 +194,7 @@ async function deleteForUser(userId: string, feedId: string): Promise<Result<tru
 export default {
   findById,
   findByUserId,
+  findByCollectionIdWithArticles,
   createFeed,
   updateFeed,
   findBySlug,
