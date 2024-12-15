@@ -161,65 +161,73 @@ export async function createArticle(
   feedId: string,
   articleData: { title: string; url: string; makeReadable: boolean }
 ): Promise<Result<string[], Error>> {
-  const response = await fetch('/api/article', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ feedId, ...articleData })
-  });
+  try {
+    const response = await fetch('/api/article', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ feedId, ...articleData })
+    });
 
-  if (!response.ok) {
-    const error = await response.json();
+    if (!response.ok) {
+      const error = await response.json();
+      return Result.err(error);
+    }
+
+    const data = await response.json();
+    return Result.ok(data);
+  } catch (e) {
+    const error = normalizeError(e);
+    console.error('Error occurred while creating article:', error);
     return Result.err(error);
   }
-
-  const data = await response.json();
-  return Result.ok(data);
 }
 
 export async function getArticleMetadata(url: string): Promise<Result<ArticleMetadata, Error>> {
-  const response = await fetch(`/api/article/metadata`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ url })
-  });
+  try {
+    const response = await fetch(`/api/article/metadata`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ url })
+    });
 
-  if (!response.ok) {
-    const error = await response.json();
+    if (!response.ok) {
+      const error = await response.json();
+      return Result.err(error);
+    }
+
+    const data = await response.json();
+    return Result.ok(data);
+  } catch (e) {
+    const error = normalizeError(e);
+    console.error('Error occurred while getting article metadata:', error);
     return Result.err(error);
   }
-
-  const data = await response.json();
-  return Result.ok(data);
 }
 
-export async function addArticleToSavedArticles(articleId: string): Promise<Result<true, Error>> {
-  const response = await fetch(`/api/article`, {
-    method: 'PUT',
-    body: JSON.stringify({ articleId })
-  });
+export async function updateInteractions(
+  articleId: string,
+  read?: boolean,
+  saved?: boolean
+): Promise<Result<true, Error>> {
+  try {
+    const response = await fetch(`/api/article/interactions`, {
+      method: 'PUT',
+      body: JSON.stringify({ articleId, read, saved })
+    });
 
-  if (!response.ok) {
-    const error = await response.json();
+    if (!response.ok) {
+      const error = await response.json();
+      return Result.err(error);
+    }
+
+    return Result.ok(true);
+  } catch (e) {
+    const error = normalizeError(e);
+    console.error('Error occurred while updating interactions:', error);
     return Result.err(error);
   }
-
-  return Result.ok(true);
-}
-
-export async function removeArticleFromSavedArticles(articleId: string): Promise<Result<true, Error>> {
-  const response = await fetch(`/api/article`, {
-    method: 'DELETE',
-    body: JSON.stringify({ articleId })
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    return Result.err(error);
-  }
-
-  return Result.ok(true);
 }
