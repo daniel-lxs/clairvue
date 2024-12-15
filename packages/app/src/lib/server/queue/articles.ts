@@ -29,6 +29,11 @@ export const listenArticlesQueue = () => {
       return;
     }
 
+    if (Array.isArray(job.returnvalue) && job.returnvalue.length === 0) {
+      console.info('No articles to create');
+      return;
+    }
+
     const result = await articleService.createFromJobResult(job.data.feed.id, job.returnvalue);
 
     if (result.isErr()) {
