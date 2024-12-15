@@ -6,6 +6,7 @@ export interface Article {
   slug: string;
   title: string;
   link: string;
+  feedId: string;
   description: string | null;
   siteName: string;
   image: string | null;
