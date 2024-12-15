@@ -1,13 +1,7 @@
-import { count, desc, eq, and, asc, like, lt, not, inArray } from 'drizzle-orm';
+import { count, desc, eq, and, asc, like, lt, not } from 'drizzle-orm';
 import ShortUniqueId from 'short-unique-id';
 import { getClient } from '../db';
-import {
-  collectionsToFeeds,
-  feedSchema,
-  articlesToFeeds,
-  articleSchema,
-  userArticleInteractions
-} from '../schema';
+import { collectionsToFeeds, feedSchema, articleSchema, userArticleInteractions } from '../schema';
 import { Result, type Feed, type FeedWithArticles } from '@clairvue/types';
 import { normalizeError } from '$lib/utils';
 import slugify from 'slugify';
@@ -211,8 +205,7 @@ async function findWithArticles(
       .select()
       .from(feedSchema)
       .where(eq(feedSchema.id, id))
-      .innerJoin(articlesToFeeds, eq(articlesToFeeds.feedId, feedSchema.id))
-      .innerJoin(articleSchema, eq(articleSchema.id, articlesToFeeds.articleId))
+      .innerJoin(articleSchema, eq(articleSchema.feedId, feedSchema.id))
       .innerJoin(
         userArticleInteractions,
         and(
@@ -243,86 +236,13 @@ async function findWithArticles(
   }
 }
 
-async function findByCollectionIdWithArticles(
-  collectionId: string,
-  beforePublishedAt: Date,
-  take = 20
-): Promise<Result<FeedWithArticles[] | false, Error>> {
-  try {
-    const db = getClient();
-
-    const feedArticlePairs = await db
-      .select({
-        feedId: articlesToFeeds.feedId,
-        articleId: articlesToFeeds.articleId
-      })
-      .from(articlesToFeeds)
-      .innerJoin(collectionsToFeeds, eq(collectionsToFeeds.feedId, articlesToFeeds.feedId))
-      .innerJoin(articleSchema, eq(articleSchema.id, articlesToFeeds.articleId))
-      .where(
-        and(
-          lt(articleSchema.publishedAt, beforePublishedAt),
-          eq(collectionsToFeeds.collectionId, collectionId)
-        )
-      )
-      .limit(take)
-      .execute();
-
-    if (!feedArticlePairs || feedArticlePairs.length === 0) return Result.ok(false);
-
-    const feedIds = [...new Set(feedArticlePairs.map((pair) => pair.feedId))];
-
-    const feedsResult = await db.query.feedSchema.findMany({
-      where: inArray(feedSchema.id, feedIds)
-    });
-
-    if (!feedsResult) return Result.ok(false);
-
-    const articleIds = feedArticlePairs.map((pair) => pair.articleId);
-    const articlesWithInteractionsResult = await db
-      .select()
-      .from(articleSchema)
-      .innerJoin(userArticleInteractions, eq(userArticleInteractions.articleId, articleSchema.id))
-      .where(inArray(articleSchema.id, articleIds))
-      .execute();
-
-    if (!articlesWithInteractionsResult) return Result.ok(false);
-
-    const articlesMap = new Map(
-      articlesWithInteractionsResult.map(({ articles, userArticleInteractions }) => [
-        articles.id,
-        { ...articles, saved: userArticleInteractions.saved, read: userArticleInteractions.read }
-      ])
-    );
-
-    const feedsMap = new Map<string, FeedWithArticles>();
-
-    for (const feed of feedsResult) {
-      feedsMap.set(feed.id, { ...feed, articles: [] });
-    }
-
-    for (const pair of feedArticlePairs) {
-      const article = articlesMap.get(pair.articleId);
-      if (article) {
-        feedsMap.get(pair.feedId)?.articles.push(article);
-      }
-    }
-
-    return Result.ok(Array.from(feedsMap.values()));
-  } catch (e) {
-    const error = normalizeError(e);
-    console.error('Error occurred while finding feed by collection id with articles:', error);
-    return Result.err(error);
-  }
-}
-
 async function countArticles(id: string): Promise<Result<number, Error>> {
   try {
     const db = getClient();
     const [result] = await db
       .select({ count: count() })
-      .from(articlesToFeeds)
-      .where(eq(articlesToFeeds.feedId, id))
+      .from(articleSchema)
+      .where(eq(articleSchema.feedId, id))
       .execute();
 
     if (!result) return Result.ok(0);
@@ -446,7 +366,6 @@ export default {
   findByUserId,
   findOutdated,
   findWithArticles,
-  findByCollectionIdWithArticles,
   countArticles,
   update,
   updateLastSync,

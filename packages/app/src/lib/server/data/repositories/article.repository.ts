@@ -3,13 +3,19 @@ import { getClient } from '../db';
 import {
   articleSchema,
   collectionsToFeeds,
-  articlesToFeeds,
-  feedSchema,
-  userArticleInteractions
+  userArticleInteractions,
+  collectionSchema,
+  feedSchema
 } from '../schema';
-import { count, desc, eq, lt, sql, and, like, gt } from 'drizzle-orm';
+import { count, desc, eq, lt, sql, and, gt } from 'drizzle-orm';
 import { Result } from '@clairvue/types';
-import type { Article, ArticleWithInteraction, NewArticle, PaginatedList } from '@clairvue/types';
+import type {
+  Article,
+  ArticleWithFeed,
+  ArticleWithInteraction,
+  NewArticle,
+  PaginatedList
+} from '@clairvue/types';
 import { normalizeError } from '$lib/utils';
 
 async function create(
@@ -21,29 +27,40 @@ async function create(
     const { randomUUID } = new ShortUniqueId({ length: 8 });
 
     const toCreate = Array.isArray(newArticles)
-      ? newArticles.map((article) => ({ id: randomUUID(), slug: randomUUID(), ...article }))
-      : [{ id: randomUUID(), slug: randomUUID(), ...newArticles }];
+      ? newArticles.map((article) => ({
+          id: randomUUID(),
+          slug: randomUUID(),
+          feedId,
+          ...article
+        }))
+      : [
+          {
+            id: randomUUID(),
+            slug: randomUUID(),
+            feedId,
+            ...newArticles
+          }
+        ];
 
-    const result = await db
-      .insert(articleSchema)
-      .values(toCreate)
-      .onConflictDoNothing()
-      .returning({
-        id: articleSchema.id,
-        slug: articleSchema.slug
-      })
-      .execute();
+    const result = await db.transaction(async (tx) => {
+      const insertedArticles = await tx
+        .insert(articleSchema)
+        .values(toCreate)
+        .onConflictDoNothing()
+        .returning({
+          id: articleSchema.id,
+          slug: articleSchema.slug
+        })
+        .execute();
 
-    const articleFeedRelations = result.map((article) => ({
-      articleId: article.id,
-      feedId
-    }));
+      if (!insertedArticles || insertedArticles.length === 0) {
+        return Result.err(new Error('Failed to create article'));
+      }
 
-    await db.insert(articlesToFeeds).values(articleFeedRelations).execute();
+      return Result.ok(insertedArticles.map((r) => r.slug));
+    });
 
-    if (!result || result.length === 0) return Result.err(new Error('Failed to create article'));
-
-    return Result.ok(result.map((r) => r.slug));
+    return result;
   } catch (e) {
     const error = normalizeError(e);
     console.error('Error occurred while creating article:', error);
@@ -51,101 +68,40 @@ async function create(
   }
 }
 
-async function getSavedArticlesFeedId(userId: string): Promise<Result<string, Error>> {
-  try {
-    const db = getClient();
-    const result = await db
-      .select({ id: feedSchema.id })
-      .from(feedSchema)
-      .innerJoin(collectionsToFeeds, and(eq(feedSchema.id, collectionsToFeeds.feedId), eq(collectionsToFeeds.userId, userId)))
-      .where(like(feedSchema.link, 'default-feed-%'))
-      .execute();
-    return Result.ok(result[0].id);
-  } catch (e) {
-    const error = normalizeError(e);
-    console.error('Error occurred while getting saved articles feed id:', error);
-    return Result.err(error);
-  }
-}
-
-async function addToSavedArticles(articleId: string, userId: string): Promise<Result<true, Error>> {
-  try {
-    const db = getClient();
-
-    const savedArticlesFeedIdResult = await getSavedArticlesFeedId(userId);
-
-    if (savedArticlesFeedIdResult.isErr()) return savedArticlesFeedIdResult;
-
-    const savedArticlesFeedId = savedArticlesFeedIdResult.unwrap();
-
-    const articleFeedRelations = { articleId, feedId: savedArticlesFeedId };
-
-    const result = await db
-      .insert(articlesToFeeds)
-      .values(articleFeedRelations)
-      .onConflictDoNothing()
-      .returning({ id: articlesToFeeds.articleId })
-      .execute();
-
-    if (!result || result.length === 0)
-      return Result.err(new Error('Failed to add article to saved articles'));
-
-    const userInteractionResult = await db
-      .insert(userArticleInteractions)
-      .values({ articleId, userId, saved: true })
-      .onConflictDoUpdate({
-        target: [userArticleInteractions.articleId, userArticleInteractions.userId],
-        set: { saved: true }
-      })
-      .returning({ id: userArticleInteractions.articleId })
-      .execute();
-
-    if (!userInteractionResult || userInteractionResult.length === 0)
-      return Result.err(new Error('Failed to add article to saved articles'));
-
-    return Result.ok(true);
-  } catch (e) {
-    const error = normalizeError(e);
-    console.error('Error occurred while adding article to saved articles:', error);
-    return Result.err(error);
-  }
-}
-
-async function removeFromSavedArticles(
+async function updateInteractions(
+  userId: string,
   articleId: string,
-  userId: string
+  read?: boolean,
+  saved?: boolean
 ): Promise<Result<true, Error>> {
   try {
     const db = getClient();
-
-    const savedArticlesFeedIdResult = await getSavedArticlesFeedId(userId);
-
-    if (savedArticlesFeedIdResult.isErr()) return savedArticlesFeedIdResult;
-
-    const savedArticlesFeedId = savedArticlesFeedIdResult.unwrap();
-
     const result = await db
-      .delete(articlesToFeeds)
-      .where(and(eq(articlesToFeeds.articleId, articleId), eq(articlesToFeeds.feedId, savedArticlesFeedId)))
-      .returning({ id: articlesToFeeds.articleId });
-
-    const userInteractionResult = await db
-      .update(userArticleInteractions)
-      .set({ saved: false })
-      .where(and(eq(userArticleInteractions.articleId, articleId), eq(userArticleInteractions.userId, userId)))
-      .returning({ id: userArticleInteractions.articleId })
+      .insert(userArticleInteractions)
+      .values({
+        userId,
+        articleId,
+        read,
+        saved
+      })
+      .onConflictDoUpdate({
+        target: [userArticleInteractions.userId, userArticleInteractions.articleId],
+        set: {
+          updatedAt: new Date(),
+          read,
+          saved
+        }
+      })
+      .returning()
       .execute();
 
     if (!result || result.length === 0)
-      return Result.err(new Error('Failed to remove article from saved articles'));
-
-    if (!userInteractionResult || userInteractionResult.length === 0)
-      return Result.err(new Error('Failed to remove article from saved articles'));
+      return Result.err(new Error('Failed to update interactions'));
 
     return Result.ok(true);
   } catch (e) {
     const error = normalizeError(e);
-    console.error('Error occurred while removing article from saved articles:', error);
+    console.error('Error occurred while updating interactions:', error);
     return Result.err(error);
   }
 }
@@ -196,11 +152,12 @@ async function findByFeedId(
     const result = await db
       .select()
       .from(articleSchema)
-      .innerJoin(
-        articlesToFeeds,
-        and(eq(articleSchema.id, articlesToFeeds.articleId), eq(articlesToFeeds.feedId, feedId))
+      .where(
+        and(
+          eq(articleSchema.feedId, feedId),
+          lt(articleSchema.publishedAt, new Date(beforePublishedAt))
+        )
       )
-      .where(lt(articleSchema.publishedAt, new Date(beforePublishedAt)))
       .orderBy(desc(articleSchema.publishedAt))
       .limit(take)
       .execute();
@@ -208,7 +165,7 @@ async function findByFeedId(
     if (!result || result.length === 0) return Result.ok(false);
 
     return Result.ok({
-      items: result.map((r) => r.articles),
+      items: result,
       totalCount: result.length
     });
   } catch (e) {
@@ -232,10 +189,6 @@ async function findByFeedIdWithInteractions(
         interaction: userArticleInteractions
       })
       .from(articleSchema)
-      .innerJoin(
-        articlesToFeeds,
-        and(eq(articleSchema.id, articlesToFeeds.articleId), eq(articlesToFeeds.feedId, feedId))
-      )
       .leftJoin(
         userArticleInteractions,
         and(
@@ -243,7 +196,12 @@ async function findByFeedIdWithInteractions(
           eq(userArticleInteractions.userId, userId)
         )
       )
-      .where(lt(articleSchema.publishedAt, new Date(beforePublishedAt)))
+      .where(
+        and(
+          eq(articleSchema.feedId, feedId),
+          lt(articleSchema.publishedAt, new Date(beforePublishedAt))
+        )
+      )
       .orderBy(desc(articleSchema.publishedAt))
       .limit(take)
       .execute();
@@ -267,16 +225,18 @@ async function findByFeedIdWithInteractions(
 
 async function countArticlesByFeedId(
   feedId: string,
-  afterPublishedAt: Date = new Date()
+  afterPublishedAt: string = new Date().toISOString()
 ): Promise<Result<number, Error>> {
   try {
     const db = getClient();
     const result = await db
-      .select({ count: sql<number>`cast(${count(articlesToFeeds.articleId)} as int)` })
-      .from(articlesToFeeds)
-      .innerJoin(articleSchema, eq(articlesToFeeds.articleId, articleSchema.id))
+      .select({ count: sql<number>`cast(${count(articleSchema.id)} as int)` })
+      .from(articleSchema)
       .where(
-        and(eq(articlesToFeeds.feedId, feedId), gt(articleSchema.publishedAt, afterPublishedAt))
+        and(
+          eq(articleSchema.feedId, feedId),
+          gt(articleSchema.publishedAt, new Date(afterPublishedAt))
+        )
       )
       .execute();
     return Result.ok(result[0].count);
@@ -289,21 +249,21 @@ async function countArticlesByFeedId(
 
 async function countArticlesByCollectionId(
   collectionId: string,
-  afterPublishedAt: Date = new Date()
+  afterPublishedAt: string = new Date().toISOString()
 ): Promise<Result<number, Error>> {
   try {
     const db = getClient();
     const result = await db
-      .select({ count: sql<number>`cast(${count(articlesToFeeds.articleId)} as int)` })
-      .from(articlesToFeeds)
-      .innerJoin(collectionsToFeeds, eq(articlesToFeeds.feedId, collectionsToFeeds.feedId))
-      .innerJoin(articleSchema, eq(articlesToFeeds.articleId, articleSchema.id))
-      .where(
+      .select({ count: sql<number>`cast(${count(articleSchema.id)} as int)` })
+      .from(articleSchema)
+      .innerJoin(
+        collectionsToFeeds,
         and(
-          eq(collectionsToFeeds.collectionId, collectionId),
-          gt(articleSchema.publishedAt, afterPublishedAt)
+          eq(articleSchema.feedId, collectionsToFeeds.feedId),
+          eq(collectionsToFeeds.collectionId, collectionId)
         )
       )
+      .where(gt(articleSchema.publishedAt, new Date(afterPublishedAt)))
       .execute();
     return Result.ok(result[0].count);
   } catch (e) {
@@ -313,14 +273,208 @@ async function countArticlesByCollectionId(
   }
 }
 
+async function findByCollectionId(
+  collectionId: string,
+  beforePublishedAt: string = new Date().toISOString(),
+  take: number
+): Promise<Result<PaginatedList<ArticleWithFeed> | false, Error>> {
+  try {
+    const db = getClient();
+
+    const articles = await db
+      .select()
+      .from(articleSchema)
+      .innerJoin(feedSchema, eq(articleSchema.feedId, feedSchema.id))
+      .innerJoin(
+        collectionsToFeeds,
+        and(
+          eq(feedSchema.id, collectionsToFeeds.feedId),
+          eq(collectionsToFeeds.collectionId, collectionId)
+        )
+      )
+
+      .where(
+        and(
+          eq(collectionSchema.id, collectionId),
+          lt(articleSchema.publishedAt, new Date(beforePublishedAt))
+        )
+      )
+      .orderBy(desc(articleSchema.publishedAt))
+      .limit(take)
+      .execute();
+
+    if (!articles || articles.length === 0) return Result.ok(false);
+
+    // Extract the article data from the joined result
+    const extractedArticles = articles.map((result) => ({
+      ...result.articles,
+      feed: result.feeds
+    }));
+
+    const totalCount = await countArticlesByCollectionId(collectionId, beforePublishedAt);
+
+    if (totalCount.isErr()) return Result.err(totalCount.unwrapErr());
+
+    return Result.ok({
+      items: extractedArticles,
+      totalCount: totalCount.unwrap()
+    });
+  } catch (e) {
+    const error = normalizeError(e);
+    console.error(
+      'Error occurred while finding articles by collection and before published date:',
+      error
+    );
+    return Result.err(error);
+  }
+}
+
+async function findByCollectionIdWithInteractions(
+  collectionId: string,
+  userId: string,
+  beforePublishedAt: string = new Date().toISOString(),
+  take: number
+): Promise<Result<PaginatedList<ArticleWithInteraction> | false, Error>> {
+  try {
+    const db = getClient();
+
+    const articles = await db
+      .select({
+        article: articleSchema,
+        interaction: userArticleInteractions
+      })
+      .from(articleSchema)
+      .innerJoin(feedSchema, eq(articleSchema.feedId, feedSchema.id))
+      .innerJoin(
+        collectionsToFeeds,
+        and(
+          eq(feedSchema.id, collectionsToFeeds.feedId),
+          eq(collectionsToFeeds.collectionId, collectionId)
+        )
+      )
+      .leftJoin(
+        userArticleInteractions,
+        and(
+          eq(articleSchema.id, userArticleInteractions.articleId),
+          eq(userArticleInteractions.userId, userId)
+        )
+      )
+      .where(
+        and(
+          eq(collectionSchema.id, collectionId),
+          lt(articleSchema.publishedAt, new Date(beforePublishedAt))
+        )
+      )
+      .orderBy(desc(articleSchema.publishedAt))
+      .limit(take)
+      .execute();
+
+    if (!articles || articles.length === 0) return Result.ok(false);
+
+    const items = articles.map((r) => ({
+      ...r.article,
+      read: r.interaction?.read ?? false,
+      saved: r.interaction?.saved ?? false
+    }));
+
+    const totalCount = await countArticlesByCollectionId(collectionId, beforePublishedAt);
+
+    if (totalCount.isErr()) return Result.err(totalCount.unwrapErr());
+
+    return Result.ok({
+      items,
+      totalCount: totalCount.unwrap()
+    });
+  } catch (e) {
+    const error = normalizeError(e);
+    console.error(
+      'Error occurred while finding articles with interactions by collection and before published date:',
+      error
+    );
+    return Result.err(error);
+  }
+}
+
+async function findSavedByUserId(
+  userId: string
+): Promise<Result<ArticleWithInteraction[] | false, Error>> {
+  try {
+    const db = getClient();
+    const result = await db
+      .select()
+      .from(articleSchema)
+      .innerJoin(
+        userArticleInteractions,
+        and(
+          eq(articleSchema.id, userArticleInteractions.articleId),
+          eq(userArticleInteractions.userId, userId)
+        )
+      )
+      .where(eq(userArticleInteractions.saved, true))
+      .execute();
+
+    if (!result || result.length === 0) return Result.ok(false);
+
+    const articlesWithInteractions = result.map((r) => ({
+      ...r.articles,
+      read: r.userArticleInteractions.read,
+      saved: r.userArticleInteractions.saved
+    }));
+
+    return Result.ok(articlesWithInteractions);
+  } catch (e) {
+    const error = normalizeError(e);
+    console.error('Error occurred while finding saved articles by userId:', error);
+    return Result.err(error);
+  }
+}
+
+async function findUnreadByUserId(
+  userId: string
+): Promise<Result<ArticleWithInteraction[] | false, Error>> {
+  try {
+    const db = getClient();
+
+    const result = await db
+      .select()
+      .from(articleSchema)
+      .innerJoin(
+        userArticleInteractions,
+        and(
+          eq(articleSchema.id, userArticleInteractions.articleId),
+          eq(userArticleInteractions.userId, userId)
+        )
+      )
+      .where(eq(userArticleInteractions.read, false))
+      .execute();
+
+    if (!result || result.length === 0) return Result.ok(false);
+
+    const articlesWithInteractions = result.map((r) => ({
+      ...r.articles,
+      read: r.userArticleInteractions.read,
+      saved: r.userArticleInteractions.saved
+    }));
+
+    return Result.ok(articlesWithInteractions);
+  } catch (e) {
+    const error = normalizeError(e);
+    console.error('Error occurred while finding read articles by userId:', error);
+    return Result.err(error);
+  }
+}
+
 export default {
   create,
-  addToSavedArticles,
-  removeFromSavedArticles,
   findBySlug,
   existsByLink,
   findByFeedId,
   findByFeedIdWithInteractions,
   countArticlesByFeedId,
-  countArticlesByCollectionId
+  countArticlesByCollectionId,
+  findByCollectionId,
+  findByCollectionIdWithInteractions,
+  findSavedByUserId,
+  findUnreadByUserId,
+  updateInteractions
 };
