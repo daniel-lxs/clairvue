@@ -11,15 +11,14 @@ export const GET: RequestHandler = async ({ url, locals }) => {
   const feedId = url.searchParams.get('feedId') || undefined;
   const afterPublishedAt = url.searchParams.get('afterPublishedAt');
 
-  let afterPublishedAtDate: Date | undefined;
-  if (afterPublishedAt && z.string().datetime().safeParse(afterPublishedAt).success === true) {
-    afterPublishedAtDate = new Date(afterPublishedAt);
+  if (!afterPublishedAt || z.string().datetime().safeParse(afterPublishedAt).success === false) {
+    return new Response('Invalid afterPublishedAt', { status: 400 });
   }
 
   if (collectionId) {
     const articlesResult = await articleService.countArticlesByCollectionId(
       collectionId,
-      afterPublishedAtDate
+      afterPublishedAt
     );
 
     return articlesResult.match({
@@ -27,7 +26,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
       err: (error) => new Response(error.message, { status: 500 })
     });
   } else if (feedId) {
-    const articlesResult = await articleService.countArticlesByFeedId(feedId, afterPublishedAtDate);
+    const articlesResult = await articleService.countArticlesByFeedId(feedId, afterPublishedAt);
 
     return articlesResult.match({
       ok: (count) => new Response(JSON.stringify({ count }), { status: 200 }),

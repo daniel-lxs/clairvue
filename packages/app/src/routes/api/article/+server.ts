@@ -4,7 +4,6 @@ import { createArticleDto } from '@/server/dto/article.dto';
 import { getArticleMetadataQueue, getQueueEvents } from '@/server/queue/articles';
 import { hashString, normalizeError } from '$lib/utils';
 import { z } from 'zod';
-import feedService from '$lib/server/services/feed.service';
 
 export const GET: RequestHandler = async ({ url, locals }) => {
   const { authSession } = locals;
@@ -22,24 +21,28 @@ export const GET: RequestHandler = async ({ url, locals }) => {
     return new Response('Invalid beforePublishedAt', { status: 400 });
   }
 
-  const parsedBeforePublishedAt = new Date(beforePublishedAt);
-
   if (collectionId) {
     if (isNaN(take)) {
       take = 5;
     }
 
-    const feedsResult = await feedService.findByCollectionIdWithArticles(
+    const articlesResult = await articlesService.findByCollectionIdWithInteractions(
       collectionId,
-      parsedBeforePublishedAt,
+      authSession.user.id,
+      beforePublishedAt,
       take
     );
 
-    return feedsResult.match({
-      ok: (feeds) => {
-        if (feeds) {
-          const articles = feeds.flatMap((feed) => feed.articles);
-          return new Response(JSON.stringify(articles), { status: 200 });
+    return articlesResult.match({
+      ok: (articles) => {
+        if (articles) {
+          return new Response(
+            JSON.stringify({
+              items: articles.items,
+              totalCount: articles.totalCount
+            }),
+            { status: 200 }
+          );
         }
         return new Response('Articles not found', { status: 404 });
       },
@@ -137,47 +140,4 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     const error = normalizeError(e);
     return new Response(error.message, { status: 500 });
   }
-};
-
-export const PUT: RequestHandler = async ({ request, locals }) => {
-  // Allow for the user to add the article to their saved articles feed
-  const { authSession } = locals;
-
-  if (!authSession) {
-    return new Response('Unauthorized', { status: 401 });
-  }
-
-  const { articleId } = await request.json();
-
-  if (!articleId) {
-    return new Response('Invalid request', { status: 400 });
-  }
-
-  const result = await articlesService.addToSavedArticles(articleId, authSession.user.id);
-
-  return result.match({
-    ok: () => new Response('Article added to saved articles', { status: 200 }),
-    err: (error) => new Response(error.message, { status: 500 })
-  });
-};
-
-export const DELETE: RequestHandler = async ({ request, locals }) => {
-  const { authSession } = locals;
-
-  if (!authSession) {
-    return new Response('Unauthorized', { status: 401 });
-  }
-
-  const { articleId } = await request.json();
-
-  if (!articleId) {
-    return new Response('Invalid request', { status: 400 });
-  }
-
-  const result = await articlesService.removeFromSavedArticles(articleId, authSession.user.id);
-
-  return result.match({
-    ok: () => new Response('Article removed from saved articles', { status: 200 }),
-    err: (error) => new Response(error.message, { status: 500 })
-  });
 };
