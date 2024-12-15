@@ -2,8 +2,8 @@
   import { Button } from '../ui/button';
   import { Bookmark } from 'lucide-svelte';
   import type { ArticleWithInteraction } from '@clairvue/types';
-  import { removeArticleFromSavedArticles, addArticleToSavedArticles } from '$lib/api/article';
-  import { showToast } from '../../utils';
+  import { updateInteractions } from '$lib/api/article';
+  import { showToast } from '$lib/utils';
 
   interface Props {
     article: ArticleWithInteraction;
@@ -14,11 +14,11 @@
 
   function handleBookmark() {
     if (saved) {
-      removeArticleFromSavedArticles(article.id);
+      updateInteractions(article.id, article.read, false);
       saved = false;
       showToast('Article removed', 'Article removed from saved articles feed', 'success');
     } else {
-      addArticleToSavedArticles(article.id);
+      updateInteractions(article.id, article.read, true);
       saved = true;
       showToast('Article saved', 'Article saved to your saved articles feed', 'success');
     }
