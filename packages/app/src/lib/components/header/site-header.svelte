@@ -31,7 +31,7 @@
   }
 
   function handleSave(articleSlugs: string[]) {
-    showToast('Success', 'Article saved', 'success', {
+    showToast('Success', 'Article imported', 'success', {
       label: 'View article',
       onClick: () => {
         goto(`/article/${articleSlugs[0]}`);
