@@ -1,6 +1,6 @@
 import { pgEnum, pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { collectionsToFeeds } from './collection.schema';
-import { articlesToFeeds } from './article.schema';
+import { articleSchema } from './article.schema';
 import { relations } from 'drizzle-orm';
 
 export const feedTypeEnum = pgEnum('type', ['rss', 'atom']);
@@ -18,5 +18,5 @@ export const feedSchema = pgTable('feeds', {
 
 export const feedRelations = relations(feedSchema, ({ many }) => ({
   collectionsToFeeds: many(collectionsToFeeds),
-  articlesToFeeds: many(articlesToFeeds)
+  articles: many(articleSchema)
 }));
