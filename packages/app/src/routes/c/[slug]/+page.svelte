@@ -258,7 +258,7 @@
         {/each}
       {:else if articles && articles.length > 0}
         {#each articles as article}
-          <ArticleCard {article} />
+          <ArticleCard {article} feed={article.feed} />
         {/each}
         {#if isLoadingMore}
           <ArticleCardSkeleton />
