@@ -4,13 +4,7 @@ import collectionService from './collection.service';
 import feedService from './feed.service';
 import argon2 from 'argon2';
 import { generateId } from '$lib/utils';
-import {
-  Result,
-  type Collection,
-  type LoginResult,
-  type SignupResult,
-  type User
-} from '@clairvue/types';
+import { Result, type User } from '@clairvue/types';
 
 const validateUserForm = z.object({
   username: z
@@ -109,8 +103,8 @@ const signup = async (username: string, password: string): Promise<Result<User, 
 
   const defaultFeedResult = await feedService.createFeed(
     {
-      name: 'Saved Articles',
-      description: 'Articles you have saved',
+      name: 'Imported Articles',
+      description: 'Articles you have imported',
       link: `default-feed-${userId}`,
       collectionId: defaultCollection?.id
     },
