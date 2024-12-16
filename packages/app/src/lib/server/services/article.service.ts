@@ -112,15 +112,19 @@ async function existsWithLink(link: string): Promise<Result<boolean, Error>> {
 }
 
 async function findSavedByUserId(
-  userId: string
+  userId: string,
+  take: number = 20,
+  skip: number = 0
 ): Promise<Result<ArticleWithInteraction[] | false, Error>> {
-  return await articleRepository.findSavedByUserId(userId);
+  return await articleRepository.findSavedByUserId(userId, take, skip);
 }
 
 async function findUnreadByUserId(
-  userId: string
+  userId: string,
+  take: number = 20,
+  skip: number = 0
 ): Promise<Result<ArticleWithInteraction[] | false, Error>> {
-  return await articleRepository.findUnreadByUserId(userId);
+  return await articleRepository.findUnreadByUserId(userId, take, skip);
 }
 
 async function updateInteractions(
