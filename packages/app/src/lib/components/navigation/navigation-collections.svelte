@@ -22,7 +22,7 @@
       <a
         href="/c/{collection.slug}"
         onclick={() => onNavigate?.(collection.slug)}
-        class="hover:bg-muted hover:border-muted-foreground flex items-center rounded-md rounded-l-none border-l px-4 py-2 transition-colors"
+        class="hover:bg-muted hover:border-muted-foreground flex items-center rounded-md rounded-l-none border-l px-4 py-3 transition-colors"
       >
         <div class="flex flex-col">
           <span class="text-sm font-medium">{collection.name}</span>

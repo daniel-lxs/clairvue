@@ -22,7 +22,7 @@
         href="/f/{feed.id}"
         onclick={() => onNavigate?.(feed.id)}
         class={cn(
-          'hover:bg-muted hover:border-muted-foreground flex items-center rounded-md rounded-l-none border-l px-4 py-2 transition-colors',
+          'hover:bg-muted hover:border-muted-foreground flex items-center rounded-md rounded-l-none border-l px-4 py-3 transition-colors',
           currentFeedId === feed.id && 'bg-muted'
         )}
       >
