@@ -126,6 +126,7 @@ async function findByUserId(
       )
       .limit(take)
       .offset(skip)
+      .orderBy(desc(feedSchema.createdAt))
       .execute();
 
     if (!result || result.length === 0) return Result.ok(false);
