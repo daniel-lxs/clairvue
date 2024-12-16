@@ -15,7 +15,7 @@
   </aside>
 
   <main class="flex-1 md:pl-64">
-    <div class="mx-auto mt-14 max-w-7xl pl-0 pt-2 sm:pl-3 md:pl-5">
+    <div class="mx-auto mt-14 max-w-7xl pb-12 pl-0 pt-2 sm:pl-3 md:pl-5">
       {@render content()}
     </div>
   </main>
