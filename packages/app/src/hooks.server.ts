@@ -1,4 +1,3 @@
-import { resolve } from 'path';
 import { startScheduler } from './lib/server/scheduler';
 import config from '@/config';
 import authService from '@/server/services/auth.service';
