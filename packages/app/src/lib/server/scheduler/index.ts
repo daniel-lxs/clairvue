@@ -1,6 +1,7 @@
 import { CronJob } from 'cron';
 import feedRepository from '@/server/data/repositories/feed.repository';
 import { getArticlesQueue, listenArticlesQueue } from '@/server/queue/articles';
+import feedService from '../services/feed.service';
 
 export function startScheduler() {
   console.log(`[Scheduler] Started at ${new Date().toLocaleString()}`);
@@ -46,6 +47,10 @@ export function startScheduler() {
             })();
           })
         );
+
+        feeds.forEach((feed) => {
+          feedService.updateLastSyncedAt(feed.id);
+        });
 
         if (feeds.length < pageSize) {
           hasMoreFeeds = false; //No more feeds
