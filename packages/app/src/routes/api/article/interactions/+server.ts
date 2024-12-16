@@ -1,13 +1,22 @@
 import articleService from '$lib/server/services/article.service';
 
 export const GET = async ({ url, locals }) => {
-  const userId = locals.authSession.user.id;
+  const { authSession } = locals;
+
+  if (!authSession) {
+    return new Response('Unauthorized', { status: 401 });
+  }
+
+  const userId = authSession.user.id;
+
+  const take = Number(url.searchParams.get('take')) || 20;
+  const skip = Number(url.searchParams.get('skip')) || 0;
 
   const unread = url.searchParams.get('unread');
   const saved = url.searchParams.get('saved');
 
   if (unread) {
-    const articlesResult = await articleService.findUnreadByUserId(userId);
+    const articlesResult = await articleService.findUnreadByUserId(userId, take, skip);
 
     return articlesResult.match({
       ok: (articles) => new Response(JSON.stringify(articles), { status: 200 }),
@@ -16,7 +25,7 @@ export const GET = async ({ url, locals }) => {
   }
 
   if (saved) {
-    const articlesResult = await articleService.findSavedByUserId(userId);
+    const articlesResult = await articleService.findSavedByUserId(userId, take, skip);
 
     return articlesResult.match({
       ok: (articles) => new Response(JSON.stringify(articles), { status: 200 }),
