@@ -359,12 +359,7 @@ async function findByCollectionIdWithInteractions(
           eq(userArticleInteractions.userId, userId)
         )
       )
-      .where(
-        and(
-          eq(collectionSchema.id, collectionId),
-          lt(articleSchema.publishedAt, new Date(beforePublishedAt))
-        )
-      )
+      .where(lt(articleSchema.publishedAt, new Date(beforePublishedAt)))
       .orderBy(desc(articleSchema.publishedAt))
       .limit(take)
       .execute();
@@ -396,7 +391,9 @@ async function findByCollectionIdWithInteractions(
 }
 
 async function findSavedByUserId(
-  userId: string
+  userId: string,
+  take: number = 20,
+  skip: number = 0
 ): Promise<Result<ArticleWithInteraction[] | false, Error>> {
   try {
     const db = getClient();
@@ -411,6 +408,9 @@ async function findSavedByUserId(
         )
       )
       .where(eq(userArticleInteractions.saved, true))
+      .limit(take)
+      .offset(skip)
+      .orderBy(desc(userArticleInteractions.createdAt))
       .execute();
 
     if (!result || result.length === 0) return Result.ok(false);
@@ -430,7 +430,9 @@ async function findSavedByUserId(
 }
 
 async function findUnreadByUserId(
-  userId: string
+  userId: string,
+  take: number = 20,
+  skip: number = 0
 ): Promise<Result<ArticleWithInteraction[] | false, Error>> {
   try {
     const db = getClient();
@@ -446,6 +448,8 @@ async function findUnreadByUserId(
         )
       )
       .where(eq(userArticleInteractions.read, false))
+      .limit(take)
+      .offset(skip)
       .execute();
 
     if (!result || result.length === 0) return Result.ok(false);
