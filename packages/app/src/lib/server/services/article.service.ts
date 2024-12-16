@@ -30,8 +30,8 @@ async function createFromJobResult(
 
   const articles = validationResult.data;
   if (!articles || articles.length === 0) {
-    console.error('No articles found');
-    return Result.err(new Error('No articles found'));
+    console.warn('No articles found');
+    return Result.ok([]);
   }
 
   return await create(
