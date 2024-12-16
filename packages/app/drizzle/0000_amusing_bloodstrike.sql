@@ -12,13 +12,8 @@ CREATE TABLE IF NOT EXISTS "articles" (
 	"publishedAt" timestamp DEFAULT now() NOT NULL,
 	"createdAt" timestamp DEFAULT now() NOT NULL,
 	"updatedAt" timestamp DEFAULT now() NOT NULL,
-	CONSTRAINT "articles_link_unique" UNIQUE("link")
-);
---> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "articlesToFeeds" (
-	"articleId" varchar NOT NULL,
 	"feedId" varchar NOT NULL,
-	CONSTRAINT "articlesToFeeds_articleId_feedId_pk" PRIMARY KEY("articleId","feedId")
+	CONSTRAINT "articles_link_unique" UNIQUE("link")
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "collections" (
@@ -77,13 +72,7 @@ CREATE TABLE IF NOT EXISTS "userArticleInteractions" (
 );
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "articlesToFeeds" ADD CONSTRAINT "articlesToFeeds_articleId_articles_id_fk" FOREIGN KEY ("articleId") REFERENCES "public"."articles"("id") ON DELETE no action ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "articlesToFeeds" ADD CONSTRAINT "articlesToFeeds_feedId_feeds_id_fk" FOREIGN KEY ("feedId") REFERENCES "public"."feeds"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "articles" ADD CONSTRAINT "articles_feedId_feeds_id_fk" FOREIGN KEY ("feedId") REFERENCES "public"."feeds"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;

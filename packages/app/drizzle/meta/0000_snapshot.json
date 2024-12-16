@@ -1,5 +1,5 @@
 {
-  "id": "5d83f8c5-78af-490b-9c19-a4fb2a4a780e",
+  "id": "4873c92c-c602-4bc9-85b0-024f2903a50a",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -83,33 +83,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "articles_link_unique": {
-          "name": "articles_link_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "link"
-          ]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.articlesToFeeds": {
-      "name": "articlesToFeeds",
-      "schema": "",
-      "columns": {
-        "articleId": {
-          "name": "articleId",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": true
         },
         "feedId": {
           "name": "feedId",
@@ -120,22 +93,9 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "articlesToFeeds_articleId_articles_id_fk": {
-          "name": "articlesToFeeds_articleId_articles_id_fk",
-          "tableFrom": "articlesToFeeds",
-          "tableTo": "articles",
-          "columnsFrom": [
-            "articleId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "articlesToFeeds_feedId_feeds_id_fk": {
-          "name": "articlesToFeeds_feedId_feeds_id_fk",
-          "tableFrom": "articlesToFeeds",
+        "articles_feedId_feeds_id_fk": {
+          "name": "articles_feedId_feeds_id_fk",
+          "tableFrom": "articles",
           "tableTo": "feeds",
           "columnsFrom": [
             "feedId"
@@ -147,16 +107,16 @@
           "onUpdate": "no action"
         }
       },
-      "compositePrimaryKeys": {
-        "articlesToFeeds_articleId_feedId_pk": {
-          "name": "articlesToFeeds_articleId_feedId_pk",
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "articles_link_unique": {
+          "name": "articles_link_unique",
+          "nullsNotDistinct": false,
           "columns": [
-            "articleId",
-            "feedId"
+            "link"
           ]
         }
       },
-      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
