@@ -8,9 +8,9 @@ import {
   DB_USER,
   DB_PASSWORD,
   DB_NAME,
-  ORIGIN,
   ARTICLE_CACHE_TTL,
-  USER_AGENT
+  USER_AGENT,
+  ORIGIN
 } from '$env/static/private';
 
 type Config = {

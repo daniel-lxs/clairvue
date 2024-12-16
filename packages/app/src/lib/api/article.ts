@@ -1,6 +1,7 @@
 import type { PaginatedList, ArticleMetadata, ArticleWithInteraction } from '@clairvue/types';
 import { Result } from '@clairvue/types';
 import { normalizeError, validateDateString } from '$lib/utils';
+import { publicConfig } from '../config.public';
 
 export async function getArticlesByCollectionId(
   collectionId: string,
@@ -8,7 +9,8 @@ export async function getArticlesByCollectionId(
   take = 5
 ): Promise<Result<PaginatedList<ArticleWithInteraction>, Error>> {
   try {
-    const url = new URL(`/api/article?collectionId=${collectionId}`, location.origin);
+    const baseUrl = publicConfig.app.baseUrl;
+    const url = new URL(`/api/article?collectionId=${collectionId}`, baseUrl);
     url.searchParams.set('take', take.toString());
 
     if (beforePublishedAt) {
@@ -50,7 +52,8 @@ export async function getArticlesByFeedId(
   take = 5
 ): Promise<Result<PaginatedList<ArticleWithInteraction>, Error>> {
   try {
-    const url = new URL(`/api/article?feedId=${feedId}`, location.origin);
+    const baseUrl = publicConfig.app.baseUrl;
+    const url = new URL(`/api/article?feedId=${feedId}`, baseUrl);
     url.searchParams.set('take', take.toString());
 
     if (beforePublishedAt) {
@@ -104,7 +107,8 @@ export async function countArticlesByFeedId(
   }
 
   try {
-    const url = new URL(`/api/article/count`, location.origin);
+    const baseUrl = publicConfig.app.baseUrl;
+    const url = new URL(`/api/article/count`, baseUrl);
     url.searchParams.set('feedId', feedId);
     if (dateParam) {
       url.searchParams.set('afterPublishedAt', dateParam);
@@ -139,7 +143,8 @@ export async function countArticlesByCollectionId(
   }
 
   try {
-    const url = new URL(`/api/article/count`, location.origin);
+    const baseUrl = publicConfig.app.baseUrl;
+    const url = new URL(`/api/article/count`, baseUrl);
     url.searchParams.set('collectionId', collectionId);
     if (dateParam) {
       url.searchParams.set('afterPublishedAt', dateParam);
@@ -162,7 +167,9 @@ export async function createArticle(
   articleData: { title: string; url: string; makeReadable: boolean }
 ): Promise<Result<string[], Error>> {
   try {
-    const response = await fetch('/api/article', {
+    const baseUrl = publicConfig.app.baseUrl;
+    const url = new URL(`/api/article`, baseUrl);
+    const response = await fetch(url.toString(), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -184,14 +191,18 @@ export async function createArticle(
   }
 }
 
-export async function getArticleMetadata(url: string): Promise<Result<ArticleMetadata, Error>> {
+export async function getArticleMetadata(
+  articleUrl: string
+): Promise<Result<ArticleMetadata, Error>> {
   try {
-    const response = await fetch(`/api/article/metadata`, {
+    const baseUrl = publicConfig.app.baseUrl;
+    const url = new URL(`/api/article/metadata`, baseUrl);
+    const response = await fetch(url.toString(), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ url })
+      body: JSON.stringify({ url: articleUrl })
     });
 
     if (!response.ok) {
@@ -208,13 +219,39 @@ export async function getArticleMetadata(url: string): Promise<Result<ArticleMet
   }
 }
 
+export async function getSavedArticles(
+  take: number = 20,
+  skip: number = 0
+): Promise<Result<ArticleWithInteraction[] | false, Error>> {
+  try {
+    const baseUrl = publicConfig.app.baseUrl;
+    const url = new URL(`/api/article/interactions?saved=true&take=${take}&skip=${skip}`, baseUrl);
+    console.log('url', url.toString());
+    const response = await fetch(url.toString());
+
+    if (!response.ok) {
+      const error = await response.statusText;
+      return Result.err(new Error(error));
+    }
+
+    const data = await response.json();
+    return Result.ok(data);
+  } catch (e) {
+    const error = normalizeError(e);
+    console.error('Error occurred while getting saved articles:', error);
+    return Result.err(error);
+  }
+}
+
 export async function updateInteractions(
   articleId: string,
   read?: boolean,
   saved?: boolean
 ): Promise<Result<true, Error>> {
   try {
-    const response = await fetch(`/api/article/interactions`, {
+    const baseUrl = publicConfig.app.baseUrl;
+    const url = new URL(`/api/article/interactions`, baseUrl);
+    const response = await fetch(url.toString(), {
       method: 'PUT',
       body: JSON.stringify({ articleId, read, saved })
     });
