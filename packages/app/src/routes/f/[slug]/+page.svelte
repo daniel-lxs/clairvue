@@ -45,9 +45,8 @@
     }
   });
 
-  // Restore the state when navigating back
-  afterNavigate(({ type }) => {
-    if (type === 'popstate') {
+  afterNavigate(({ type, from, to }) => {
+    if (type === 'popstate' && from?.url.pathname !== to?.url.pathname) {
       const savedArticles = sessionStorage.getItem('feed_articles_' + data.feed.id);
       const savedScroll = sessionStorage.getItem('feed_scroll_' + data.feed.id);
       const savedReachedEnd = sessionStorage.getItem('feed_reached_end_' + data.feed.id);
@@ -66,7 +65,12 @@
           window.scrollTo(0, parseInt(savedScroll));
         }, 0);
       }
-    } else if (type === 'enter') {
+    } else {
+      isLoading = true;
+      articles = [];
+      currentPage = 2;
+      hasReachedEnd = false;
+      newArticlesCount = 0;
       getArticles();
       sessionStorage.removeItem('feed_articles_' + data.feed.id);
       sessionStorage.removeItem('feed_scroll_' + data.feed.id);
@@ -144,10 +148,7 @@
   };
 
   const checkNewArticles = async () => {
-    const countArticlesResult = await countArticlesByFeedId(
-      data.feed.id,
-      articles[0].publishedAt
-    );
+    const countArticlesResult = await countArticlesByFeedId(data.feed.id, articles[0].publishedAt);
     countArticlesResult.match({
       ok: (value) => (newArticlesCount = value.count),
       err: (error) => {

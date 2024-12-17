@@ -58,9 +58,8 @@
     }
   });
 
-  // Restore the state when navigating back
-  afterNavigate(({ type }) => {
-    if (type === 'popstate') {
+  afterNavigate(({ type, from, to }) => {
+    if (type === 'popstate' && from?.url.pathname !== to?.url.pathname) {
       const savedArticles = sessionStorage.getItem('collection_articles_' + data.collection.id);
       const savedScroll = sessionStorage.getItem('collection_scroll_' + data.collection.id);
       const savedReachedEnd = sessionStorage.getItem(
@@ -81,7 +80,12 @@
           window.scrollTo(0, parseInt(savedScroll));
         }, 0);
       }
-    } else if (type === 'enter') {
+    } else {
+      isLoading = true;
+      articles = [];
+      currentPage = 2;
+      hasReachedEnd = false;
+      newArticlesCount = 0;
       getArticles();
       sessionStorage.removeItem('collection_articles_' + data.collection.id);
       sessionStorage.removeItem('collection_scroll_' + data.collection.id);
