@@ -24,7 +24,7 @@
       url: string;
       makeReadable: boolean;
     }) => Promise<Result<string[], Error>>;
-    onSave?: (articleIds: string[]) => void;
+    onSave?: (articleSlugs: string[]) => void;
     showButton?: boolean;
     children?: import('svelte').Snippet;
     open?: boolean;
