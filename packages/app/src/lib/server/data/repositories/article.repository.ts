@@ -232,7 +232,7 @@ async function countArticlesByFeedId(
     const whereClause = afterPublishedAt
       ? and(
           eq(articleSchema.feedId, feedId),
-          lt(articleSchema.publishedAt, new Date(afterPublishedAt))
+          gt(articleSchema.publishedAt, new Date(afterPublishedAt))
         )
       : eq(articleSchema.feedId, feedId);
 
