@@ -225,19 +225,21 @@ async function findByFeedIdWithInteractions(
 
 async function countArticlesByFeedId(
   feedId: string,
-  afterPublishedAt: string = new Date().toISOString()
+  afterPublishedAt?: string
 ): Promise<Result<number, Error>> {
   try {
     const db = getClient();
+    const whereClause = afterPublishedAt
+      ? and(
+          eq(articleSchema.feedId, feedId),
+          lt(articleSchema.publishedAt, new Date(afterPublishedAt))
+        )
+      : eq(articleSchema.feedId, feedId);
+
     const result = await db
       .select({ count: sql<number>`cast(${count(articleSchema.id)} as int)` })
       .from(articleSchema)
-      .where(
-        and(
-          eq(articleSchema.feedId, feedId),
-          gt(articleSchema.publishedAt, new Date(afterPublishedAt))
-        )
-      )
+      .where(whereClause)
       .execute();
     return Result.ok(result[0].count);
   } catch (e) {

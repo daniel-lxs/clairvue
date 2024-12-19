@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { calculateAge } from '$lib/utils';
+  import { calculateAge, showToast } from '$lib/utils';
   import { Button } from '../ui/button';
   import { Trash, MoreVertical } from 'lucide-svelte';
   import * as DropdownMenu from '../ui/dropdown-menu';
@@ -12,16 +12,27 @@
     onRemove: (feed: Feed) => void;
   }
 
+  let { feed, onRemove, disableActions }: Props = $props();
+
+  let articleCount: number | undefined = $state(undefined);
+
   async function getArticleCount(feed: Feed) {
     const articleCountResult = await countArticlesByFeedId(feed.id);
 
     return articleCountResult.match({
       ok: (value) => value.count,
-      err: () => 0
+      err: (error) => {
+        showToast('Something went wrong', error.message, 'error');
+        return undefined;
+      }
     });
   }
 
-  let { feed, onRemove, disableActions }: Props = $props();
+  $effect(() => {
+    getArticleCount(feed).then((count) => {
+      articleCount = count;
+    });
+  });
 </script>
 
 <div
@@ -36,13 +47,11 @@
       >{feed.name}</a
     >
     <div class="text-muted-foreground w-full text-xs">
-      {#await getArticleCount(feed)}
+      {#if articleCount === undefined}
         <div class="bg-muted-foreground/40 h-4 w-full animate-pulse rounded-md"></div>
-      {:then articleCount}
+      {:else}
         Created {calculateAge(feed.createdAt, 'long')} • {articleCount} articles
-      {:catch _}
-        Created {calculateAge(feed.createdAt, 'long')}
-      {/await}
+      {/if}
     </div>
   </div>
   {#if !disableActions}
