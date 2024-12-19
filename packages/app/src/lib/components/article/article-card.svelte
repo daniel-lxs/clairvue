@@ -86,7 +86,7 @@
                 <div class="flex flex-col gap-2">
                   <Card.Title
                     tag="h1"
-                    class="hover:text-primary text-xl font-bold transition-colors"
+                    class="hover:text-primary text-lg font-bold transition-colors"
                   >
                     {#if article.readable}
                       <a href={`/article/${article.slug}`}>{article.title}</a>
@@ -116,7 +116,7 @@
               {#if !isMobile || imageType === 'wide'}
                 <Card.Content class="p-0">
                   {#if article.description}
-                    <p class="text-md whitespace-normal break-words">
+                    <p class="whitespace-normal break-words text-sm">
                       {truncateDescription(article.description, descriptionLength)}
                     </p>
                   {/if}
@@ -137,7 +137,7 @@
         {#if isMobile && imageType === 'square'}
           <Card.Content class="p-0">
             {#if article.description}
-              <p class="text-md whitespace-normal break-words">
+              <p class="whitespace-normal break-words text-sm">
                 {truncateDescription(article.description, descriptionLength)}
               </p>
             {/if}
