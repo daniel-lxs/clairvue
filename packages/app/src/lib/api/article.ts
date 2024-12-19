@@ -178,8 +178,8 @@ export async function createArticle(
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      return Result.err(error);
+      const error = await response.text();
+      return Result.err(new Error(error));
     }
 
     const data = await response.json();
@@ -206,8 +206,8 @@ export async function getArticleMetadata(
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      return Result.err(error);
+      const error = await response.text();
+      return Result.err(new Error(error));
     }
 
     const data = await response.json();
@@ -257,8 +257,8 @@ export async function updateInteractions(
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      return Result.err(error);
+      const error = await response.text();
+      return Result.err(new Error(error));
     }
 
     return Result.ok(true);

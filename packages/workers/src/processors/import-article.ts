@@ -23,6 +23,13 @@ export async function importArticle(
     throw new Error('Invalid url');
   }
 
+  const existingArticleMetadataResult =
+    await articleMetadataService.retrieveCachedArticleMetadata(url);
+
+  if (existingArticleMetadataResult.isOkAnd((article) => !!article)) {
+    return Result.err(new Error('Article already exists'));
+  }
+
   console.info(`[${job.id}] Processing article ${title} from ${url}`);
 
   const defaultArticleMetadata: ArticleMetadata = {

@@ -111,6 +111,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
     const { success, data: validationData, error } = createArticleDto.safeParse(result);
     if (!success) {
+      if (result === null) {
+        return new Response('Article already exists', { status: 409 });
+      }
       return new Response(JSON.stringify(error), { status: 400 });
     }
 
