@@ -43,13 +43,21 @@ export const load: PageServerLoad = async ({ params: { slug }, locals }) => {
     );
 
     if (articlesResult.isErr()) {
-      error(500, articlesResult.unwrapErr().message);
+      // Streamed functions can't throw
+      console.error(articlesResult.unwrapErr());
+      return {
+        items: [],
+        totalCount: 0
+      };
     }
 
     const articles = articlesResult.unwrap();
 
     if (!articles) {
-      error(404, 'Articles not found');
+      return {
+        items: [],
+        totalCount: 0
+      };
     }
 
     return articles;
