@@ -1,90 +1,9 @@
-import { Redis } from 'ioredis';
 import { type ReadableArticle, Result } from '@clairvue/types';
-import config from '../config';
 import { createHash } from 'crypto';
 import { isValidLink, normalizeError } from '../utils';
 import DOMPurify from 'isomorphic-dompurify';
 import { JSDOM } from 'jsdom';
 import { isProbablyReaderable, Readability } from '@mozilla/readability';
-
-let redisClient: Redis | null = null;
-
-function getRedisClient(): Redis | null {
-  if (!redisClient) {
-    redisClient = new Redis(config.redis);
-  }
-
-  return redisClient;
-}
-
-function hashLink(link: string): string {
-  const hash = createHash('sha256').update(link).digest('hex');
-  return hash.substring(0, 16);
-}
-
-async function doesReadableArticleExist(link: string): Promise<Result<boolean, Error>> {
-  const redis = getRedisClient();
-  if (!redis) return Result.err(new Error('Redis client not initialized'));
-
-  return Result.ok((await redis.exists(`readable-article:${hashLink(link)}`)) > 0);
-}
-
-async function getCachedReadableArticle(
-  link: string
-): Promise<Result<ReadableArticle | false, Error>> {
-  const redis = getRedisClient();
-  if (!redis) return Result.err(new Error('Redis client not initialized'));
-
-  try {
-    const cached = await redis.get(`readable-article:${hashLink(link)}`);
-    if (cached) {
-      return Result.ok(JSON.parse(cached));
-    }
-    return Result.ok(false);
-  } catch (e) {
-    const error = normalizeError(e);
-    console.error('Error occurred while retrieving readable article from cache:', error);
-    return Result.err(error);
-  }
-}
-
-async function deleteReadableArticleCache(link: string): Promise<Result<true, Error>> {
-  const redis = getRedisClient();
-  if (!redis) return Result.err(new Error('Redis client not initialized'));
-
-  try {
-    await redis.del(`readable-article:${hashLink(link)}`);
-    return Result.ok(true);
-  } catch (e) {
-    const error = normalizeError(e);
-    console.error('Error occurred while deleting readable article from cache:', error);
-    return Result.err(error);
-  }
-}
-
-async function createReadableArticleCache(
-  link: string,
-  readableArticle: ReadableArticle
-): Promise<Result<true, Error>> {
-  const redis = getRedisClient();
-  if (!redis) return Result.err(new Error('Redis client not initialized'));
-
-  const expirationTime = 24 * 60 * 60 * 2; // 2 days
-
-  try {
-    await redis.set(
-      `readable-article:${hashLink(link)}`,
-      JSON.stringify(readableArticle),
-      'EX',
-      expirationTime
-    );
-    return Result.ok(true);
-  } catch (e) {
-    const error = normalizeError(e);
-    console.error('Error occurred while storing readable article in cache:', error);
-    return Result.err(error);
-  }
-}
 
 async function isReadable(url: string, response: Response): Promise<Result<boolean, Error>> {
   const documentResult = await extractAndSanitizeDocument(url, response);
@@ -174,41 +93,7 @@ async function extractAndSanitizeDocument(
   }
 }
 
-async function refreshReadableArticle(
-  link: string,
-  response: Response
-): Promise<Result<ReadableArticle | false, Error>> {
-  const existingArticleResult = await getCachedReadableArticle(link);
-
-  if (existingArticleResult.isErr()) {
-    return Result.err(existingArticleResult.unwrapErr());
-  }
-
-  const result = await retrieveReadableArticle(link, response);
-
-  return result.match({
-    ok: async (readableArticle) => {
-      if (!readableArticle) {
-        return Result.err(new Error('Readable article not found'));
-      }
-      const existingReadableArticle = existingArticleResult.unwrap();
-      const newHash = createHash('sha256').update(readableArticle.textContent).digest('hex');
-      if (existingReadableArticle && existingReadableArticle.contentHash === newHash) {
-        return Result.ok(false);
-      }
-      await createReadableArticleCache(link, readableArticle);
-      return Result.ok(readableArticle);
-    },
-    err: (error) => Result.err(error)
-  });
-}
-
 export default {
-  getCachedReadableArticle,
-  doesReadableArticleExist,
-  deleteReadableArticleCache,
-  createReadableArticleCache,
-  refreshReadableArticle,
   retrieveReadableArticle,
   isReadable
 };

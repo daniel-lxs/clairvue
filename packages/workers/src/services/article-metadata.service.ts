@@ -2,12 +2,12 @@ import Parser from 'rss-parser';
 import urlMetadata from 'url-metadata';
 import config from '../config';
 import feedService from './feed.service';
-import { ArticleMetadata } from '@clairvue/types';
-import { createHash } from 'crypto';
 import Redis from 'ioredis';
+import { ArticleMetadata } from '@clairvue/types';
 import { isValidLink, normalizeError } from '../utils';
 import { Result } from '@clairvue/types';
 import { z } from 'zod';
+import { createHash } from 'crypto';
 
 let redisClient: Redis | null = null;
 
@@ -147,8 +147,6 @@ async function retrieveArticleMetadata(
           siteName
         };
       }
-
-      await storeArticleMetadataInCache(link, articleMetadata);
 
       return Result.ok(articleMetadata);
     },
@@ -308,54 +306,9 @@ async function retrieveCachedArticleMetadata(
   }
 }
 
-async function storeArticleMetadataInCache(
-  link: string,
-  article: ArticleMetadata
-): Promise<Result<true, Error>> {
-  const redis = initializeRedisClient();
-  if (!redis) return Result.err(new Error('Redis client not initialized'));
-
-  if (!link) {
-    return Result.err(new Error('Link is required'));
-  }
-
-  const expirationTime = 24 * 60 * 60; // 1 day
-
-  try {
-    await redis.set(
-      `article-metadata:${generateLinkHash(link)}`,
-      JSON.stringify(article),
-      'EX',
-      expirationTime
-    );
-
-    return Result.ok(true);
-  } catch (e) {
-    const error = normalizeError(e);
-    console.error('Error occurred while storing article metadata in cache:', error);
-    return Result.err(error);
-  }
-}
-
-async function removeArticleMetadataFromCache(link: string): Promise<Result<true, Error>> {
-  const redis = initializeRedisClient();
-  if (!redis) return Result.err(new Error('Redis client not initialized'));
-
-  try {
-    await redis.del(`article-metadata:${generateLinkHash(link)}`);
-    return Result.ok(true);
-  } catch (e) {
-    const error = normalizeError(e);
-    console.error('Error occurred while removing article metadata from cache:', error);
-    return Result.err(error);
-  }
-}
 export default {
   retrieveArticleMetadata,
-  retrieveCachedArticleMetadata,
   retrieveArticlesFromFeed,
-  storeArticleMetadataInCache,
-  removeArticleMetadataFromCache,
   retrieveArticleMetadataDetails,
   deriveArticleMetadata,
   checkIfNewsArticle
