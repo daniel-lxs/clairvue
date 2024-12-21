@@ -29,15 +29,18 @@ export const listenArticlesQueue = () => {
       return;
     }
 
-    if (Array.isArray(job.returnvalue) && job.returnvalue.length === 0) {
+    if (
+      job.returnvalue === undefined ||
+      (Array.isArray(job.returnvalue) && job.returnvalue.length === 0)
+    ) {
       console.info('No articles to create');
       return;
     }
 
-    const result = await articleService.createFromJobResult(job.data.feed.id, job.returnvalue);
+    const result = await articleService.processArticlesFromJob(job);
 
     if (result.isErr()) {
-      console.error(`Error processing job ${jobId}: ${result.unwrapErr().message}`);
+      console.error(`Error processing job ${jobId}`);
     }
   });
 };
