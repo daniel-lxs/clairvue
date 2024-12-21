@@ -17,6 +17,10 @@ import type {
   PaginatedList
 } from '@clairvue/types';
 import { normalizeError } from '$lib/utils';
+import type { PgTransaction } from 'drizzle-orm/pg-core';
+import type { PostgresJsQueryResultHKT } from 'drizzle-orm/postgres-js';
+import * as schema from '../schema';
+import type { ExtractTablesWithRelations } from 'drizzle-orm/relations';
 
 async function create(
   newArticles: NewArticle | NewArticle[],
@@ -470,6 +474,18 @@ async function findUnreadByUserId(
   }
 }
 
+async function withTransaction<T>(
+  callback: (
+    tx: PgTransaction<
+      PostgresJsQueryResultHKT,
+      typeof schema,
+      ExtractTablesWithRelations<typeof schema>
+    >
+  ) => Promise<Result<T, Error>>
+) {
+  const db = getClient();
+  return await db.transaction(callback);
+}
 export default {
   create,
   findBySlug,
@@ -482,5 +498,6 @@ export default {
   findByCollectionIdWithInteractions,
   findSavedByUserId,
   findUnreadByUserId,
-  updateInteractions
+  updateInteractions,
+  withTransaction
 };
