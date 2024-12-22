@@ -51,6 +51,7 @@ export interface ReadableArticle {
   publishedTime: string | null;
   contentHash: string;
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface ProcessArticlesOptions {

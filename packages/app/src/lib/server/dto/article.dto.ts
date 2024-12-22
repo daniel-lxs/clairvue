@@ -17,6 +17,7 @@ export const createArticleDto = z.object({
       lang: z.string().nullable(),
       contentHash: z.string(),
       createdAt: z.string(),
+      updatedAt: z.string(),
       publishedTime: z.string().nullable()
     })
     .optional(),

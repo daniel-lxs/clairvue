@@ -76,9 +76,13 @@ async function getUpdatedReadableArticle(
 
     // Get the current cached article to compare content
     const currentCachedResult = await getCachedReadableArticle(link);
-
     if (currentCachedResult.isErr()) {
       return Result.err(currentCachedResult.unwrapErr());
+    }
+
+    const updateResult = await updateReadableArticleUpdatedAt(link, new Date().toISOString());
+    if (updateResult.isErr()) {
+      return Result.err(updateResult.unwrapErr());
     }
 
     const currentCached = currentCachedResult.unwrap();
@@ -142,6 +146,9 @@ async function createReadableArticleCache(
   const expirationTime = 24 * 60 * 60 * 2; // 2 days
 
   try {
+    // Set updatedAt to the same value as createdAt
+    readableArticle.updatedAt = readableArticle.createdAt;
+
     await redis.set(
       `readable-article:${hashLink(link)}`,
       JSON.stringify(readableArticle),
@@ -156,9 +163,49 @@ async function createReadableArticleCache(
   }
 }
 
+async function updateReadableArticleUpdatedAt(
+  link: string,
+  newUpdatedAt: string
+): Promise<Result<true, Error>> {
+  const redis = getRedisClient();
+  if (!redis) return Result.err(new Error('Redis client not initialized'));
+
+  try {
+    // Get the existing cached article
+    const cachedArticleResult = await getCachedReadableArticle(link);
+    if (cachedArticleResult.isErr()) {
+      return Result.err(cachedArticleResult.unwrapErr());
+    }
+
+    const cachedArticle = cachedArticleResult.unwrap();
+
+    // If no cached article exists, return an error
+    if (!cachedArticle) {
+      return Result.err(new Error('Readable article not found in cache'));
+    }
+
+    // Update the updatedAt property
+    cachedArticle.updatedAt = newUpdatedAt;
+
+    // Re-cache the updated article
+    await redis.set(
+      `readable-article:${hashLink(link)}`,
+      JSON.stringify(cachedArticle),
+      'KEEPTTL' // Keep the existing expiration time
+    );
+
+    return Result.ok(true);
+  } catch (e) {
+    const error = normalizeError(e);
+    console.error('Error occurred while updating readable article updatedAt:', error);
+    return Result.err(error);
+  }
+}
+
 export default {
   getCachedReadableArticle,
   getUpdatedReadableArticle,
   storeArticleMetadataInCache,
-  createReadableArticleCache
+  createReadableArticleCache,
+  updateReadableArticleUpdatedAt
 };
