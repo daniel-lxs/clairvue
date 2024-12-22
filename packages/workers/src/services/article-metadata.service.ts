@@ -311,5 +311,6 @@ export default {
   retrieveArticlesFromFeed,
   retrieveArticleMetadataDetails,
   deriveArticleMetadata,
-  checkIfNewsArticle
+  checkIfNewsArticle,
+  retrieveCachedArticleMetadata
 };
