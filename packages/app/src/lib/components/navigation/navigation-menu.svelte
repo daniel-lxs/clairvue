@@ -3,9 +3,10 @@
   import ChevronUp from 'lucide-svelte/icons/chevron-up';
   import * as Collapsible from '$lib/components/ui/collapsible';
   import { NavigationCollections, NavigationFeeds } from '.';
-  import { Button } from '../ui/button';
+  import { Button, buttonVariants } from '../ui/button';
   import { cn } from '$lib/utils';
   import { Separator } from '../ui/separator';
+  import { Home } from 'lucide-svelte';
 
   let {
     class: className = undefined,
@@ -27,6 +28,15 @@
 </script>
 
 <div class={cn('flex flex-col', className)}>
+  <a
+    class={cn(buttonVariants({ variant: 'ghost' }), 'text-muted-foreground w-full justify-start')}
+    href="/"
+    onclick={() => onNavigate?.('/')}
+  >
+    <Home class="h-5 w-5" />
+    <span class="ml-2">Home</span>
+  </a>
+  <Separator class="my-2" />
   <Collapsible.Root bind:open={openCollections}>
     <Collapsible.Trigger asChild let:builder>
       <Button
@@ -73,6 +83,7 @@
         class={cn(
           'hover:bg-muted hover:border-muted-foreground flex items-center rounded-md rounded-l-none border-l px-4 py-3 transition-colors'
         )}
+        onclick={() => onNavigate?.('/articles/saved')}
       >
         <div class="flex flex-col">
           <span class="text-sm font-medium">Saved</span>
