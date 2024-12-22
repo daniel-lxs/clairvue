@@ -2,15 +2,10 @@ import { Job } from 'bullmq';
 import httpService from '../services/http.service';
 import readableArticleService from '../services/readable-article.service';
 import { isValidLink, isHtmlMimeType } from '../utils';
-import { ReadableArticle, Result } from '@clairvue/types';
-
-export interface GetUpdatedArticleJob {
-  slug: string;
-  url: string;
-}
+import { ReadableArticle, Result, RefreshArticleContentInput } from '@clairvue/types';
 
 export async function getUpdatedArticleProcessor(
-  job: Job<GetUpdatedArticleJob>
+  job: Job<RefreshArticleContentInput>
 ): Promise<Result<ReadableArticle | false, Error>> {
   const { slug, url } = job.data;
 
@@ -36,12 +31,12 @@ export async function getUpdatedArticleProcessor(
 
       console.info(`[${job.id}] Updating article ${slug} from ${url}`);
 
-      const updatedArticleResult = await readableArticleService.refreshReadableArticle(
+      const readableArticleResult = await readableArticleService.retrieveReadableArticle(
         url,
         response
       );
 
-      return updatedArticleResult.match({
+      return readableArticleResult.match({
         ok: (readableArticle) => {
           if (!readableArticle) {
             console.warn(`[${job.id}] No updated content found for article ${slug}`);

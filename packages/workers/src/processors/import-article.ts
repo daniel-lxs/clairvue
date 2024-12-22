@@ -1,18 +1,13 @@
-import { ArticleMetadata, Result } from '@clairvue/types';
+import { ArticleMetadata, ReadableArticle, Result } from '@clairvue/types';
 import { Job } from 'bullmq';
 import articleMetadataService from '../services/article-metadata.service';
 import httpService from '../services/http.service';
 import readableArticleService from '../services/readable-article.service';
 import { isValidLink, isHtmlMimeType } from '../utils';
-
-export interface ImportArticleJob {
-  title: string;
-  url: string;
-  makeReadable: boolean;
-}
+import { ImportArticleInput } from '@clairvue/types';
 
 export async function importArticle(
-  job: Job<ImportArticleJob>
+  job: Job<ImportArticleInput>
 ): Promise<Result<ArticleMetadata, Error>> {
   console.info(`Job ${job.id} started...`);
 
@@ -60,28 +55,17 @@ export async function importArticle(
       }
 
       let isReadable = false;
-
+      let readableArticle: ReadableArticle | undefined = undefined;
       const readableArticleResult = await readableArticleService.retrieveReadableArticle(
         url,
         response.clone()
       );
 
       await readableArticleResult.match({
-        ok: async (readableArticle) => {
-          if (readableArticle) {
-            const cacheArticleResult = await readableArticleService.createReadableArticleCache(
-              url,
-              readableArticle
-            );
-
-            cacheArticleResult.match({
-              ok: () => {
-                isReadable = true;
-              },
-              err: (error) => {
-                console.warn(`[${job.id}] Error caching readable article: ${url} ${error.message}`);
-              }
-            });
+        ok: async (r) => {
+          if (r) {
+            isReadable = true;
+            readableArticle = r;
           } else {
             console.warn(`[${job.id}] Readable article not found: ${url}`);
           }
@@ -108,7 +92,8 @@ export async function importArticle(
           readable: isReadable ?? false,
           link: url,
           siteName: metadata.siteName ?? new URL(url).hostname.replace('www.', ''),
-          publishedAt: metadata.publishedAt ?? new Date()
+          publishedAt: metadata.publishedAt ?? new Date(),
+          readableContent: readableArticle
         })
       );
     }

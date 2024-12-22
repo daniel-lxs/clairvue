@@ -19,3 +19,9 @@ export type {
 } from './types/Collection';
 export { Result } from './types/Result';
 export type { UserArticleInteraction } from './types/ArticleInteraction';
+export type {
+  SyncFeedArticlesInput,
+  RefreshArticleContentInput,
+  ExtractArticleMetadataInput,
+  ImportArticleInput
+} from './types/JobTypes';

@@ -1,15 +1,12 @@
+import { ArticleMetadata, Result, ExtractArticleMetadataInput } from '@clairvue/types';
 import { Job } from 'bullmq';
 import articleMetadataService from '../services/article-metadata.service';
 import httpService from '../services/http.service';
 import { isValidLink, isHtmlMimeType } from '../utils';
-import { ArticleMetadata, Result } from '@clairvue/types';
 import readableService from '../services/readable-article.service';
-export interface GetArticleMetadataJob {
-  url: string;
-}
 
 export async function getArticleMetadata(
-  job: Job<GetArticleMetadataJob>
+  job: Job<ExtractArticleMetadataInput>
 ): Promise<Result<ArticleMetadata, Error>> {
   console.info(`Job ${job.id} started...`);
 

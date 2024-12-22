@@ -1,6 +1,8 @@
-import { Worker, type ConnectionOptions } from 'bullmq';
+import { Job, Worker, type ConnectionOptions } from 'bullmq';
 import { importArticle } from './processors/import-article';
 import { getArticleMetadata } from './processors/get-article-metadata';
+import { ExtractArticleMetadataInput } from '@clairvue/types';
+import { ImportArticleInput } from '@clairvue/types';
 
 interface WorkerConfig {
   concurrency?: number;
@@ -24,19 +26,16 @@ export function startArticleMetadataWorker(connection: ConnectionOptions, config
     ...config
   };
 
-  const jobProcessors = {
-    'import-article': importArticle,
-    'get-article-metadata': getArticleMetadata
-  };
-
   const worker = new Worker(
     'article-metadata',
-    async (job) => {
-      const processor = jobProcessors[job.name as keyof typeof jobProcessors];
-      if (!processor) {
-        throw new Error(`Unknown job type: ${job.name}`);
+    async (job: Job<ImportArticleInput | ExtractArticleMetadataInput>) => {
+      if (job.name === 'import-article') {
+        return (await importArticle(job as Job<ImportArticleInput>)).mapOrElse(
+          () => null,
+          (value) => value
+        );
       }
-      return (await processor(job)).mapOrElse(
+      return (await getArticleMetadata(job as Job<ExtractArticleMetadataInput>)).mapOrElse(
         () => null,
         (value) => value
       );

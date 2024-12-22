@@ -1,13 +1,9 @@
-import { Feed, ArticleMetadata, ReadableArticle, Result } from '@clairvue/types';
+import { ArticleMetadata, Result, ReadableArticle, SyncFeedArticlesInput } from '@clairvue/types';
 import { Job } from 'bullmq';
 import articleMetadataService from '../services/article-metadata.service';
 import httpService from '../services/http.service';
 import readableArticleService from '../services/readable-article.service';
 import { isValidLink, isHtmlMimeType } from '../utils';
-
-export interface GetArticlesJob {
-  feed: Feed;
-}
 
 export interface JobConfig {
   chunkSize: number;
@@ -20,7 +16,7 @@ const DEFAULT_CONFIG: JobConfig = {
 };
 
 export async function syncArticlesProcessor(
-  job: Job<GetArticlesJob>
+  job: Job<SyncFeedArticlesInput>
 ): Promise<Result<ArticleMetadata[], Error>> {
   console.info(`Job ${job.id} started...`);
   const { feed } = job.data;
@@ -60,7 +56,7 @@ export async function syncArticlesProcessor(
 
   for (const chunk of chunks) {
     const chunkResults = await Promise.all(
-      chunk.map(async (article) => {
+      chunk.map(async (article): Promise<ArticleMetadata | undefined> => {
         const { title, link } = article;
 
         const defaultArticleMetadata: ArticleMetadata = {
@@ -79,7 +75,11 @@ export async function syncArticlesProcessor(
         const existingArticleMetadataResult =
           await articleMetadataService.retrieveCachedArticleMetadata(link);
 
-        if (existingArticleMetadataResult.isOkAnd((article) => !!article)) {
+        if (
+          existingArticleMetadataResult.isOkAnd(
+            (existingArticleMetadata) => !!existingArticleMetadata
+          )
+        ) {
           return undefined;
         }
 
@@ -103,19 +103,11 @@ export async function syncArticlesProcessor(
         );
 
         let readable = false;
+        let readableContent: ReadableArticle | undefined = undefined;
 
         if (readableArticleResult.isOkAnd((readableArticle) => !!readableArticle)) {
-          const cacheArticleResult = await readableArticleService.createReadableArticleCache(
-            link,
-            readableArticleResult.unwrap() as ReadableArticle
-          );
-
-          if (cacheArticleResult.isErr()) {
-            const error = cacheArticleResult.unwrapErr();
-            console.error(`[${job.id}] Error caching article: ${link} `, error);
-          }
-
           readable = true;
+          readableContent = readableArticleResult.unwrap() as ReadableArticle;
         } else {
           console.warn(`[${job.id}] Readable article not found: ${link}`);
         }
@@ -127,7 +119,11 @@ export async function syncArticlesProcessor(
         );
 
         return metadataResult.match({
-          ok: (metadata) => metadata,
+          ok: (metadata) => ({
+            ...defaultArticleMetadata,
+            ...metadata,
+            readableContent
+          }),
           err: (error) => {
             console.error(`[${job.id}] Error processing article: ${error.message}`);
             return undefined;

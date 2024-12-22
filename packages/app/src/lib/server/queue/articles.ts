@@ -1,6 +1,14 @@
 import { Job, Queue, QueueEvents, type ConnectionOptions } from 'bullmq';
 import config from '@/config';
 import articleService from '../services/article.service';
+import type {
+  ArticleMetadata,
+  ExtractArticleMetadataInput,
+  ImportArticleInput,
+  ReadableArticle,
+  RefreshArticleContentInput,
+  SyncFeedArticlesInput
+} from '@clairvue/types';
 
 const connection: ConnectionOptions = {
   host: config.redis.host,
@@ -13,10 +21,10 @@ export function getQueueEvents(name: string) {
 }
 
 export const getArticlesQueue = () => {
-  return new Queue('sync-articles', { connection });
+  return new Queue<SyncFeedArticlesInput, ArticleMetadata[]>('sync-articles', { connection });
 };
 
-export const listenArticlesQueue = () => {
+export const listenSyncArticlesQueue = () => {
   const articleQueue = getArticlesQueue();
   const queueEvents = new QueueEvents('sync-articles', { connection });
 
@@ -37,7 +45,7 @@ export const listenArticlesQueue = () => {
       return;
     }
 
-    const result = await articleService.processArticlesFromJob(job);
+    const result = await articleService.processArticlesFromJob(job.data.feed.id, job.returnvalue);
 
     if (result.isErr()) {
       console.error(`Error processing job ${jobId}`);
@@ -46,9 +54,16 @@ export const listenArticlesQueue = () => {
 };
 
 export const getUpdatedArticleQueue = () => {
-  return new Queue('get-updated-article', { connection });
+  return new Queue<RefreshArticleContentInput, ReadableArticle>('get-updated-article', {
+    connection
+  });
 };
 
 export const getArticleMetadataQueue = () => {
-  return new Queue('article-metadata', { connection });
+  return new Queue<ImportArticleInput | ExtractArticleMetadataInput, ArticleMetadata>(
+    'article-metadata',
+    {
+      connection
+    }
+  );
 };
