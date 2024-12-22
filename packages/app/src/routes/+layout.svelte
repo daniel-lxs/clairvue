@@ -10,6 +10,10 @@
   let { children }: Props = $props();
 </script>
 
+<svelte:head>
+  <link rel="manifest" href="/manifest.webmanifest" />
+</svelte:head>
+
 <Toaster />
 <ModeWatcher />
 <div class="min-h-screen">
