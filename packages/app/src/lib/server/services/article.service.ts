@@ -97,7 +97,7 @@ async function findByFeedIdWithInteractions(
 
 async function countArticlesByFeedId(
   feedId: string,
-  afterPublishedAt: string = new Date().toISOString()
+  afterPublishedAt?: string
 ): Promise<Result<number, Error>> {
   return await articleRepository.countArticlesByFeedId(feedId, afterPublishedAt);
 }
@@ -151,9 +151,7 @@ async function processArticlesFromJob(
   // Check if the job result is valid
   const validationResult = createArticlesDto.safeParse(jobResult);
   if (!validationResult.success) {
-    return Result.err(
-      new Error('Error occurred while creating article', { cause: validationResult.error })
-    );
+    return Result.err(new Error('Invalid job result', { cause: validationResult.error }));
   }
 
   const articles = validationResult.data;
