@@ -61,7 +61,8 @@ async function retrieveReadableArticle(
       const readableArticle: ReadableArticle = {
         ...parsedArticle,
         contentHash: hash,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       };
 
       return Result.ok(readableArticle);
