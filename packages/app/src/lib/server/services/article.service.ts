@@ -3,15 +3,14 @@ import type {
   Article,
   ArticleMetadata,
   ArticleWithInteraction,
-  Feed,
   NewArticle,
   PaginatedList
 } from '@clairvue/types';
 import { createArticlesDto } from '../dto/article.dto';
 import { Result } from '@clairvue/types';
 import feedService from './feed.service';
-import { Job } from 'bullmq';
 import cacheService from './cache.service';
+import feedRepository from '../data/repositories/feed.repository';
 
 async function create(newArticles: NewArticle[], feedId: string): Promise<Result<string[], Error>> {
   return await articleRepository.create(newArticles, feedId);
@@ -139,16 +138,18 @@ async function updateInteractions(
   return await articleRepository.updateInteractions(userId, articleId, read, saved);
 }
 
-async function processArticlesFromJob(job: Job): Promise<Result<string[], Error>> {
-  const { feed } = job.data as { feed: Feed };
-  const returnvalue = job.returnvalue;
+async function processArticlesFromJob(
+  feedId: string,
+  jobResult: ArticleMetadata[]
+): Promise<Result<string[], Error>> {
+  const feed = await feedRepository.findById(feedId);
 
-  if (!feed) {
-    return Result.err(new Error('Feed not found'));
+  if (feed.isErr()) {
+    return Result.err(feed.unwrapErr());
   }
 
   // Check if the job result is valid
-  const validationResult = createArticlesDto.safeParse(returnvalue);
+  const validationResult = createArticlesDto.safeParse(jobResult);
   if (!validationResult.success) {
     return Result.err(
       new Error('Error occurred while creating article', { cause: validationResult.error })
@@ -180,7 +181,7 @@ async function processArticlesFromJob(job: Job): Promise<Result<string[], Error>
         image: article.image ?? null,
         author: article.author ?? null
       };
-      const createResult = await articleRepository.create([newArticle], feed.id);
+      const createResult = await articleRepository.create([newArticle], feedId);
 
       if (createResult.isErr()) {
         console.error(
