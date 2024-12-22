@@ -183,9 +183,19 @@ async function deleteForUser(userId: string, feedId: string): Promise<Result<tru
   return await feedRepository.deleteForUser(userId, feedId);
 }
 
+async function findByLink(link: string): Promise<Result<Feed | false, Error>> {
+  return await feedRepository.findByLink(link);
+}
+
+async function findDefaultFeedByUserId(userId: string): Promise<Result<Feed | false, Error>> {
+  return await feedRepository.findDefaultFeedByUserId(userId);
+}
+
 export default {
   findById,
   findByUserId,
+  findDefaultFeedByUserId,
+  findByLink,
   createFeed,
   updateFeed,
   findBySlug,

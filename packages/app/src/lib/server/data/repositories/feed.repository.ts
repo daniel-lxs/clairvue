@@ -237,6 +237,28 @@ async function findWithArticles(
   }
 }
 
+async function findDefaultFeedByUserId(userId: string): Promise<Result<Feed | false, Error>> {
+  try {
+    const db = getClient();
+    const result = await db
+      .select()
+      .from(feedSchema)
+      .innerJoin(
+        collectionsToFeeds,
+        and(eq(collectionsToFeeds.feedId, feedSchema.id), eq(collectionsToFeeds.userId, userId))
+      )
+      .where(like(feedSchema.link, 'default-feed%'))
+      .execute();
+    if (!result || result.length === 0) return Result.ok(false);
+
+    return Result.ok(result[0].feeds);
+  } catch (e) {
+    const error = normalizeError(e);
+    console.error('Error occurred while finding default feed:', error);
+    return Result.err(error);
+  }
+}
+
 async function countArticles(id: string): Promise<Result<number, Error>> {
   try {
     const db = getClient();
@@ -365,6 +387,7 @@ export default {
   findByLink,
   findAll,
   findByUserId,
+  findDefaultFeedByUserId,
   findOutdated,
   findWithArticles,
   countArticles,
