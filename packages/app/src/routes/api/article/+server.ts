@@ -1,9 +1,9 @@
 import type { RequestHandler } from '@sveltejs/kit';
 import articlesService from '@/server/services/article.service';
-import { createArticleDto } from '@/server/dto/article.dto';
 import { getArticleMetadataQueue, getQueueEvents } from '@/server/queue/articles';
 import { hashString, normalizeError } from '$lib/utils';
 import { z } from 'zod';
+import articleService from '@/server/services/article.service';
 
 export const GET: RequestHandler = async ({ url, locals }) => {
   const { authSession } = locals;
@@ -107,35 +107,11 @@ export const POST: RequestHandler = async ({ request, locals }) => {
       }
     );
 
-    const result = await job.waitUntilFinished(getQueueEvents(queueName), ttl);
+    const jobResult = await job.waitUntilFinished(getQueueEvents(queueName), ttl);
 
-    const { success, data: validationData, error } = createArticleDto.safeParse(result);
-    if (!success) {
-      if (result === null) {
-        return new Response('Article already exists', { status: 409 });
-      }
-      return new Response(JSON.stringify(error), { status: 400 });
-    }
+    const result = await articleService.processArticlesFromJob(feedId, [jobResult]);
 
-    const articleExistsResult = await articlesService.existsWithLink(validationData.link);
-
-    if (articleExistsResult.isOkAnd((exists) => exists)) {
-      return new Response('Article already exists', { status: 400 });
-    }
-
-    const articleResult = await articlesService.create(
-      [
-        {
-          ...validationData,
-          description: validationData.description ?? null,
-          image: validationData.image ?? null,
-          author: validationData.author ?? null
-        }
-      ],
-      feedId
-    );
-
-    return articleResult.match({
+    return result.match({
       ok: (slugs) => new Response(JSON.stringify(slugs), { status: 200 }),
       err: (error) => new Response(error.message, { status: 500 })
     });
