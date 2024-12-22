@@ -48,7 +48,7 @@ export const listenSyncArticlesQueue = () => {
     const result = await articleService.processArticlesFromJob(job.data.feed.id, job.returnvalue);
 
     if (result.isErr()) {
-      console.error(`Error processing job ${jobId}`);
+      console.error(`Error processing job ${jobId} ${result.unwrapErr().message}`);
     }
   });
 };
