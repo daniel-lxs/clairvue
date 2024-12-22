@@ -1,6 +1,6 @@
 import { CronJob } from 'cron';
 import feedRepository from '@/server/data/repositories/feed.repository';
-import { getArticlesQueue, listenArticlesQueue } from '@/server/queue/articles';
+import { getArticlesQueue, listenSyncArticlesQueue } from '@/server/queue/articles';
 import feedService from '../services/feed.service';
 
 export function startScheduler() {
@@ -65,5 +65,5 @@ export function startScheduler() {
     }
   });
   cronJob.start();
-  listenArticlesQueue();
+  listenSyncArticlesQueue();
 }
