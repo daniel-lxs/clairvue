@@ -347,6 +347,7 @@ async function findByCollectionIdWithInteractions(
     const articles = await db
       .select({
         article: articleSchema,
+        feed: feedSchema,
         interaction: userArticleInteractions
       })
       .from(articleSchema)
@@ -374,6 +375,7 @@ async function findByCollectionIdWithInteractions(
 
     const items = articles.map((r) => ({
       ...r.article,
+      feed: r.feed,
       read: r.interaction?.read ?? false,
       saved: r.interaction?.saved ?? false
     }));
