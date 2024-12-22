@@ -23,7 +23,8 @@ export interface ArticleWithFeed extends Article {
 
 export type ArticleWithInteraction = Article & UserArticleInteraction;
 
-export interface NewArticle extends Omit<Article, 'id' | 'slug' | 'createdAt' | 'updatedAt'> {}
+export interface NewArticle
+  extends Omit<Article, 'id' | 'slug' | 'createdAt' | 'updatedAt' | 'feedId'> {}
 
 export interface ArticleMetadata {
   title: string;
@@ -34,6 +35,7 @@ export interface ArticleMetadata {
   link: string;
   siteName: string;
   publishedAt: Date;
+  readableContent?: ReadableArticle;
 }
 
 export interface ReadableArticle {
@@ -42,11 +44,11 @@ export interface ReadableArticle {
   textContent: string;
   length: number;
   excerpt: string;
-  byline: string;
-  dir: string;
-  siteName: string;
-  lang: string;
-  publishedTime: string;
+  byline: string | null;
+  dir: string | null;
+  siteName: string | null;
+  lang: string | null;
+  publishedTime: string | null;
   contentHash: string;
   createdAt: string;
 }
