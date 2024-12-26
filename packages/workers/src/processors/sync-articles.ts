@@ -80,6 +80,7 @@ export async function syncArticlesProcessor(
             (existingArticleMetadata) => !!existingArticleMetadata
           )
         ) {
+          console.info(`[${job.id}] Article already exists: ${link}`);
           return undefined;
         }
 
