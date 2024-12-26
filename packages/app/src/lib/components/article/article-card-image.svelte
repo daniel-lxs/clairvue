@@ -1,9 +1,5 @@
 <script lang="ts">
-  import { Button } from '../ui/button';
-  import { Bookmark } from 'lucide-svelte';
   import type { ArticleWithInteraction } from '@clairvue/types';
-  import { updateInteractions } from '$lib/api/article';
-  import { showToast } from '$lib/utils';
 
   interface Props {
     article: ArticleWithInteraction;
@@ -12,26 +8,12 @@
     type?: string;
   }
 
-  function handleBookmark() {
-    if (saved) {
-      updateInteractions(article.id, article.read, false);
-      saved = false;
-      showToast('Article removed', 'Article removed from saved articles feed', 'success');
-    } else {
-      updateInteractions(article.id, article.read, true);
-      saved = true;
-      showToast('Article saved', 'Article saved to your saved articles feed', 'success');
-    }
-  }
-
   let {
     article,
     imageLoaded = $bindable(false),
     imageError = $bindable(false),
     type = 'wide'
   }: Props = $props();
-
-  let saved = $derived(article.saved);
 </script>
 
 <div class="relative w-full overflow-hidden {type === 'square' ? 'rounded-lg' : 'rounded-t-lg'}">
