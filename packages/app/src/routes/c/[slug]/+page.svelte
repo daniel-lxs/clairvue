@@ -229,7 +229,7 @@
 {#snippet content()}
   <div class="flex w-full flex-col sm:pt-2.5">
     {#if newArticlesCount > 0}
-      <NewArticlesButton on:click={showNewArticles} />
+      <NewArticlesButton onClick={showNewArticles} />
     {/if}
     <Page.Header>
       <div class="flex w-full justify-between">

@@ -202,7 +202,7 @@
 {#snippet content()}
   <div class="flex w-full flex-col sm:pt-2.5">
     {#if newArticlesCount > 0}
-      <NewArticlesButton on:click={showNewArticles} />
+      <NewArticlesButton onClick={showNewArticles} />
     {/if}
     <Page.Header title={data.feed?.name || 'Unnamed'} subtitle={feedDomain} />
     <div class="w-full space-y-4 sm:space-y-6 sm:px-0">
