@@ -7,47 +7,25 @@
   import { AlertOctagon } from 'lucide-svelte';
 
   interface Props {
-    form: { message: string } | null;
-    errors?: {
-      other?: string[];
-      username?: string[];
-      password?: string[];
-    };
+    form: { errors: string[] } | null;
   }
 
   let { form }: Props = $props();
 
-  let errors: {
-    other?: string[];
-    username?: string[];
-    password?: string[];
-  } = $state({
-    other: [],
-    username: [],
-    password: []
-  });
-
+  let errors: string[] = $state([]);
   let password: string = $state('');
   let confirmPassword: string = $state('');
 
   function checkPassword() {
+    errors = errors.filter((e) => e !== 'Passwords do not match!');
     if ((password || confirmPassword) && password !== confirmPassword) {
-      if (errors.password) {
-        errors.password = ['Passwords do not match!'];
-      }
-    } else if (errors) {
-      errors.password = [];
+      errors = [...errors, 'Passwords do not match!'];
     }
   }
 
-  function hasErrors() {
-    const entries = Object.entries(errors);
-    return entries.some((entry) => entry[1]?.length > 0);
-  }
-
   $effect(() => {
-    if (form?.message) {
-      errors.other = [form.message];
+    if (form?.errors) {
+      errors = form.errors;
     }
   });
 </script>
@@ -86,14 +64,15 @@
         <Button type="submit" class="w-full">Continue</Button>
       </form>
 
-      <p
-        class="mt-3 flex items-center gap-2 text-sm font-bold text-red-500 opacity-0 {errors &&
-        hasErrors()
-          ? 'opacity-100 transition-opacity'
-          : ''}"
-      >
-        <AlertOctagon />{errors?.['username']?.[0] || errors?.['password']?.[0]}
-      </p>
+      {#if errors.length > 0}
+        <div class="mt-3 space-y-2">
+          {#each errors as error}
+            <p class="flex items-center gap-2 text-sm font-bold text-red-500">
+              <AlertOctagon />{error}
+            </p>
+          {/each}
+        </div>
+      {/if}
     </div>
   </Card.Content>
   <Card.Footer>

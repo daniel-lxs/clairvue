@@ -21,19 +21,15 @@ const validateUserForm = z.object({
 const validateUserInput = async (
   username: string,
   password: string
-): Promise<Result<true, Error>> => {
+): Promise<Result<true, string[]>> => {
   const result = validateUserForm.safeParse({ username, password });
   if (!result.success) {
-    return Result.err(
-      new Error('Invalid username or password', {
-        cause: result.error
-      })
-    );
+    return Result.err(result.error.errors.map((err) => err.message));
   }
   return Result.ok(true);
 };
 
-const login = async (username: string, password: string): Promise<Result<User, Error>> => {
+const login = async (username: string, password: string): Promise<Result<User, string[]>> => {
   const validationResult = await validateUserInput(username, password);
 
   if (validationResult.isErr()) {
@@ -49,24 +45,24 @@ const login = async (username: string, password: string): Promise<Result<User, E
   return existingUserResult.match({
     ok: async (user) => {
       if (!user) {
-        return Result.err(new Error('Invalid username or password'));
+        return Result.err(['Invalid username or password']);
       }
 
       const validPassword = await argon2.verify(user.hashedPassword, password);
 
       if (!validPassword) {
-        return Result.err(new Error('Invalid username or password'));
+        return Result.err(['Invalid username or password']);
       }
 
       return Result.ok(user);
     },
     err: (error) => {
-      return Result.err(error);
+      return Result.err([error.message]);
     }
   });
 };
 
-const signup = async (username: string, password: string): Promise<Result<User, Error>> => {
+const signup = async (username: string, password: string): Promise<Result<User, string[]>> => {
   const validationResult = await validateUserInput(username, password);
 
   if (validationResult.isErr()) {
@@ -79,7 +75,7 @@ const signup = async (username: string, password: string): Promise<Result<User, 
     const user = existingUserResult.unwrap();
 
     if (user) {
-      return Result.err(new Error('User already exists'));
+      return Result.err(['User already exists']);
     }
   }
 
@@ -96,7 +92,7 @@ const signup = async (username: string, password: string): Promise<Result<User, 
   const defaultCollectionResult = await collectionService.createDefault('All Feeds', userId);
 
   if (defaultCollectionResult.isErr()) {
-    return Result.err(defaultCollectionResult.unwrapErr());
+    return Result.err([defaultCollectionResult.unwrapErr().message]);
   }
 
   const defaultCollection = defaultCollectionResult.unwrap();
@@ -112,10 +108,10 @@ const signup = async (username: string, password: string): Promise<Result<User, 
   );
 
   if (defaultFeedResult.isErr()) {
-    return Result.err(defaultFeedResult.unwrapErr());
+    return Result.err([defaultFeedResult.unwrapErr().message]);
   }
 
-  return result;
+  return result.mapErr((error) => [error.message]);
 };
 
 export default {

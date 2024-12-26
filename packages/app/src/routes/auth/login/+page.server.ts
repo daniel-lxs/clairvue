@@ -12,7 +12,7 @@ export const actions: Actions = {
 
     if (!username || typeof username !== 'string' || !password || typeof password !== 'string') {
       return fail(400, {
-        message: 'Invalid username or password'
+        errors: ['Invalid username or password']
       });
     }
 
@@ -25,7 +25,7 @@ export const actions: Actions = {
 
         if (sessionResult.isErr()) {
           return fail(500, {
-            message: 'Failed to create session'
+            errors: ['Failed to create session']
           });
         }
 
@@ -35,9 +35,9 @@ export const actions: Actions = {
 
         return redirect(302, '/feeds');
       },
-      err: (error) => {
+      err: (errors) => {
         return fail(400, {
-          message: error.message
+          errors: errors
         });
       }
     });
