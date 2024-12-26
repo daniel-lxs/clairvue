@@ -8,8 +8,7 @@
 
   interface Props {
     form: {
-      message: string | undefined;
-      errors?: Record<string, string[] | undefined>;
+      errors?: string[];
     } | null;
   }
 
@@ -36,19 +35,18 @@
         <Button type="submit" class="w-full">Login</Button>
       </form>
 
-      <p
-        class="mt-3 flex items-center gap-2 text-sm font-bold text-red-500 opacity-0 {form?.errors &&
-        Object.keys(form?.errors).length > 0
-          ? 'opacity-100 transition-opacity'
-          : ''}"
-      >
-        <AlertOctagon />{form?.message ||
-          form?.errors?.['username']?.[0] ||
-          form?.errors?.['password']?.[0]}
-      </p>
+      {#if form?.errors}
+        <div class="mt-3 space-y-2">
+          {#each form.errors as error}
+            <p class="flex items-center gap-2 text-sm font-bold text-red-500">
+              <AlertOctagon />{error}
+            </p>
+          {/each}
+        </div>
+      {/if}
     </div>
   </Card.Content>
   <Card.Footer>
-    <a href="/auth/signup" class="text-sm text-muted-foreground">Don't have an account? Sign up</a>
+    <a href="/auth/signup" class="text-muted-foreground text-sm">Don't have an account? Sign up</a>
   </Card.Footer>
 </Card.Root>
