@@ -169,6 +169,27 @@ async function processArticlesFromJob(
       const articleExistsResult = await articleRepository.existsByLink(article.link);
       if (articleExistsResult.isOkAnd((exists) => exists)) {
         console.info(`Article with link ${article.link} already exists. Skipping.`);
+
+        // Check if the article is already cached in Redis
+        const cachedArticle = await cacheService.getArticleMetadataFromCache(article.link);
+        if (cachedArticle.isOkAnd((cached) => !!cached)) {
+          console.info(`Article with link ${article.link} already cached in Redis.`);
+          continue;
+        } else {
+          //store the article in redis
+          const cacheMetadataResult = await cacheService.storeArticleMetadataInCache(
+            article.link,
+            article
+          );
+          if (cacheMetadataResult.isErr()) {
+            console.error(
+              `Error caching article metadata for link ${article.link}: ${cacheMetadataResult.unwrapErr().message}`
+            );
+            tx.rollback();
+            return Result.err(cacheMetadataResult.unwrapErr());
+          }
+        }
+
         continue;
       }
 

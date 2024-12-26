@@ -202,9 +202,29 @@ async function updateReadableArticleUpdatedAt(
   }
 }
 
+async function getArticleMetadataFromCache(
+  link: string
+): Promise<Result<ArticleMetadata | false, Error>> {
+  const redis = getRedisClient();
+  if (!redis) return Result.err(new Error('Redis client not initialized'));
+
+  try {
+    const cached = await redis.get(`article-metadata:${hashLink(link)}`);
+    if (cached) {
+      return Result.ok(JSON.parse(cached));
+    }
+    return Result.ok(false);
+  } catch (e) {
+    const error = normalizeError(e);
+    console.error('Error occurred while retrieving article metadata from cache:', error);
+    return Result.err(error);
+  }
+}
+
 export default {
   getCachedReadableArticle,
   getUpdatedReadableArticle,
+  getArticleMetadataFromCache,
   storeArticleMetadataInCache,
   createReadableArticleCache,
   updateReadableArticleUpdatedAt
