@@ -14,6 +14,8 @@
 
   let { article, feed }: Props = $props();
 
+  let isSaved = $state(article.saved);
+
   let imageLoaded = $state(false);
 
   let imageError = $state(false);
@@ -75,16 +77,26 @@
     isScrolling = false;
   }
 
-  function handleSave() {
-    updateInteractions(article.id, article.read, !article.saved);
-    showToast(
-      article.saved ? 'Article removed' : 'Article saved',
-      article.saved
-        ? 'Article removed from saved articles feed'
-        : 'Article saved to your saved articles feed',
-      'success'
-    );
-    currentX = 0;
+  async function handleSave() {
+    const result = await updateInteractions(article.id, article.read, !isSaved);
+
+    result.match({
+      ok: () => {
+        showToast(
+          isSaved ? 'Article removed' : 'Article saved',
+          isSaved
+            ? 'Article removed from saved articles feed'
+            : 'Article saved to your saved articles feed',
+          'success'
+        );
+        currentX = 0;
+        isSaved = !isSaved;
+      },
+      err: (error) => {
+        showToast('Failed to save article', error.message, 'error');
+        currentX = 0;
+      }
+    });
   }
 
   $effect(() => {
@@ -131,9 +143,9 @@
   {#if isDragging}
     <div
       class="absolute inset-y-0 right-0 z-0 flex w-28 items-center justify-center rounded-r-lg"
-      style={`opacity: ${Math.abs(currentX) / maxSwipeDistance}; background-color: rgba(${article.saved ? '239, 68, 68' : '34, 197, 94'}, ${Math.abs(currentX) / maxSwipeDistance})`}
+      style={`opacity: ${Math.abs(currentX) / maxSwipeDistance}; background-color: rgba(${isSaved ? '239, 68, 68' : '34, 197, 94'}, ${Math.abs(currentX) / maxSwipeDistance})`}
     >
-      {#if article.saved}
+      {#if isSaved}
         <BookmarkMinus class="h-6 w-6 text-white" />
       {:else}
         <BookmarkPlus class="h-6 w-6 text-white" />
