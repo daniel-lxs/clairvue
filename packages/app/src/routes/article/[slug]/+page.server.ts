@@ -5,7 +5,15 @@ import type { PageServerLoad } from './$types';
 import { error } from 'console';
 import type { ReadableArticle, Result } from '@clairvue/types';
 
-export const load: PageServerLoad = async ({ params }) => {
+export const load: PageServerLoad = async ({ params, locals }) => {
+  const { authSession } = locals;
+
+  if (!authSession) {
+    redirect(302, '/auth/login');
+  }
+
+  const user = authSession.user;
+
   const slug = params.slug;
 
   const article = await articleService.findBySlug(slug);
@@ -47,13 +55,22 @@ export const load: PageServerLoad = async ({ params }) => {
         });
       };
 
+      const updateInteractionsResult = await articleService.updateInteractions(
+        user.id,
+        article.id,
+        true,
+        undefined
+      );
+
+      if (updateInteractionsResult.isErr()) {
+        error(500, updateInteractionsResult.unwrapErr().message);
+      }
+
       return {
         status: 200,
         streamed: {
           updatedArticle: shouldRefresh
-            ? unwrapPromise(
-              cacheService.getUpdatedReadableArticle(article.slug, article.link)
-              )
+            ? unwrapPromise(cacheService.getUpdatedReadableArticle(article.slug, article.link))
             : undefined
         },
         readableArticle: cachedReadableArticle,
