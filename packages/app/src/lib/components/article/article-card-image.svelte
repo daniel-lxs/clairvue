@@ -51,19 +51,4 @@
       }}
     />
   </a>
-  <div class="absolute right-2 top-2">
-    <Button
-      variant="secondary"
-      size="icon"
-      class="bg-background/80 supports-[backdrop-filter]:bg-background/40 p-0 backdrop-blur"
-      title="Save article"
-      on:click={handleBookmark}
-    >
-      {#if saved}
-        <Bookmark fill="white" class="text-foreground h-4 w-4" />
-      {:else}
-        <Bookmark class="text-foreground h-4 w-4" />
-      {/if}
-    </Button>
-  </div>
 </div>
