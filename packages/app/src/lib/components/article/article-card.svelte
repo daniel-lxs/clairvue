@@ -8,6 +8,7 @@
   import { updateInteractions } from '../../api/article';
   import { Button } from '../ui/button';
   import * as DropdownMenu from '../ui/dropdown-menu';
+  import { MediaQuery } from 'runed';
 
   interface Props {
     feed?: Feed;
@@ -32,7 +33,7 @@
 
   let aspectRatio = $state(0);
 
-  let isMobile = $state(false);
+  const isDesktop = new MediaQuery('(min-width: 768px)');
 
   let descriptionLength: number = $state(300);
 
@@ -129,7 +130,6 @@
   });
 
   $effect(() => {
-    isMobile = window.innerWidth <= 768;
     if (!article.image || imageError) {
       descriptionLength = 500;
       return;
@@ -210,7 +210,7 @@
                         >
                         <div class="mt-1 flex items-center sm:ml-1 sm:mt-0">
                           <span class="text-md text-muted-foreground"
-                            >{!isMobile ? '•' : ''} {age}</span
+                            >{isDesktop ? '•' : ''} {age}</span
                           >
                           {#if article.readable}
                             <div class="ml-2" title="Readable">
@@ -222,7 +222,7 @@
                     </Card.Description>
                   </div>
                 </Card.Header>
-                {#if !isMobile || imageType === 'wide'}
+                {#if isDesktop || imageType === 'wide'}
                   <Card.Content class="p-0">
                     {#if article.description}
                       <p class="whitespace-normal break-words text-sm">
@@ -242,7 +242,7 @@
                 <Skeleton class="h-48 object-cover" />
               {/if}
             {/if}
-            {#if !isMobile}
+            {#if isDesktop}
               <DropdownMenu.Root>
                 <DropdownMenu.Trigger asChild let:builder>
                   <Button
@@ -272,7 +272,7 @@
               </DropdownMenu.Root>
             {/if}
           </div>
-          {#if isMobile && imageType === 'square'}
+          {#if !isDesktop && imageType === 'square'}
             <Card.Content class="p-0">
               {#if article.description}
                 <p class="whitespace-normal break-words text-sm">
