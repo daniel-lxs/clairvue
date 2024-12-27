@@ -210,7 +210,7 @@
                         >
                         <div class="mt-1 flex items-center sm:ml-1 sm:mt-0">
                           <span class="text-md text-muted-foreground"
-                            >{isDesktop ? '•' : ''} {age}</span
+                            >{isDesktop.matches ? '•' : ''} {age}</span
                           >
                           {#if article.readable}
                             <div class="ml-2" title="Readable">
@@ -222,7 +222,7 @@
                     </Card.Description>
                   </div>
                 </Card.Header>
-                {#if isDesktop || imageType === 'wide'}
+                {#if isDesktop.matches || imageType === 'wide'}
                   <Card.Content class="p-0">
                     {#if article.description}
                       <p class="whitespace-normal break-words text-sm">
@@ -242,7 +242,7 @@
                 <Skeleton class="h-48 object-cover" />
               {/if}
             {/if}
-            {#if isDesktop}
+            {#if isDesktop.matches}
               <DropdownMenu.Root>
                 <DropdownMenu.Trigger asChild let:builder>
                   <Button
@@ -272,7 +272,7 @@
               </DropdownMenu.Root>
             {/if}
           </div>
-          {#if !isDesktop && imageType === 'square'}
+          {#if !isDesktop.matches && imageType === 'square'}
             <Card.Content class="p-0">
               {#if article.description}
                 <p class="whitespace-normal break-words text-sm">
