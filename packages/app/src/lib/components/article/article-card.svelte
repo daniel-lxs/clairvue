@@ -4,8 +4,10 @@
   import { calculateAge, showToast, truncateDescription } from '$lib/utils';
   import ArticleCardImage from './article-card-image.svelte';
   import { Skeleton } from '../ui/skeleton';
-  import { BookmarkPlus, BookOpen, BookmarkMinus } from 'lucide-svelte';
+  import { BookmarkPlus, BookOpen, BookmarkMinus, MoreVertical } from 'lucide-svelte';
   import { updateInteractions } from '../../api/article';
+  import { Button } from '../ui/button';
+  import * as DropdownMenu from '../ui/dropdown-menu';
 
   interface Props {
     feed?: Feed;
@@ -95,6 +97,19 @@
       err: (error) => {
         showToast('Failed to save article', error.message, 'error');
         currentX = 0;
+      }
+    });
+  }
+
+  async function handleMarkAsRead(articleId: string) {
+    const result = await updateInteractions(articleId, true, isSaved);
+
+    result.match({
+      ok: () => {
+        showToast('Article marked as read', '', 'success');
+      },
+      err: (error) => {
+        showToast('Failed to mark article as read', error.message, 'error');
       }
     });
   }
@@ -226,6 +241,35 @@
               {:else}
                 <Skeleton class="h-48 object-cover" />
               {/if}
+            {/if}
+            {#if !isMobile}
+              <DropdownMenu.Root>
+                <DropdownMenu.Trigger asChild let:builder>
+                  <Button
+                    builders={[builder]}
+                    variant="ghost"
+                    size="sm"
+                    class="ml-2 h-8 w-8 flex-shrink-0 p-0"
+                  >
+                    <MoreVertical class="h-4 w-4" />
+                  </Button>
+                </DropdownMenu.Trigger>
+                <DropdownMenu.Content>
+                  <DropdownMenu.Item on:click={handleSave}>
+                    {#if isSaved}
+                      <BookmarkMinus class="mr-2 h-4 w-4" />
+                      <span>Remove from Saved</span>
+                    {:else}
+                      <BookmarkPlus class="mr-2 h-4 w-4" />
+                      <span>Save Article</span>
+                    {/if}
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Item on:click={() => handleMarkAsRead(article.id)}>
+                    <BookOpen class="mr-2 h-4 w-4" />
+                    <span>Mark as Read</span>
+                  </DropdownMenu.Item>
+                </DropdownMenu.Content>
+              </DropdownMenu.Root>
             {/if}
           </div>
           {#if isMobile && imageType === 'square'}
