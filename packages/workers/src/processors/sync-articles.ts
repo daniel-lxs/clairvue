@@ -59,9 +59,14 @@ export async function syncArticlesProcessor(
       chunk.map(async (article): Promise<ArticleMetadata | undefined> => {
         const { title, link } = article;
 
+        if (!link) {
+          console.warn(`[${job.id}] No link found for article: ${title}`);
+          return undefined;
+        }
+
         const defaultArticleMetadata: ArticleMetadata = {
           title: title ?? 'Untitled',
-          link: feed.link,
+          link: link,
           readable: false,
           publishedAt: new Date(),
           siteName: new URL(feed.link).hostname.replace('www.', '')
