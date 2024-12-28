@@ -1,38 +1,78 @@
-# create-svelte
+# Clairvue
 
-Everything you need to build a Svelte project, powered by [`create-svelte`](https://github.com/sveltejs/kit/tree/main/packages/create-svelte).
+## Description
 
-## Creating a project
+Clairvue is a multi-user RSS feed aggregator designed for efficient content organization and seamless reading. With support for private and public collections, configurable feed updates, and scalable synchronization, Clairvue simplifies managing and consuming RSS feeds in collaborative or individual workflows.
 
-If you're seeing this, you've probably already done this step. Congrats!
+## Key Features
+
+### Core Functionality
+
+- **Private and Public Collections:** Users can create private feeds and collections, while admins can publish public collections for subscription or cloning.
+- **Feed Configuration:** Customize update frequencies and specify if articles should be read directly in-app.
+- **URL Article Import:** Import web content by URL and detect readable articles automatically.
+
+### Technical Highlights
+
+- **Scalable Worker System:** Synchronization tasks are offloaded to scalable worker instances, ensuring efficient updates even with large numbers of feeds.
+- **Built-in Reader:** Provides a distraction-free reading mode with dark/light themes and font size adjustments.
+- **Filters and Search (Planned):** Includes chronological and unread filters, with topic detection and advanced queries under development.
+- **Authentication:** Basic authentication implemented, with OAuth planned for future releases.
+
+### Planned Enhancements
+
+- **Annotations:** Add notes and highlights directly within articles.
+- **Topic Detection:** Automatically categorize articles by content themes.
+
+## Monorepo Structure
+
+Clairvue uses a monorepo structure to organize its components for modularity and collaboration. The repository is divided into the following packages:
+
+- **`app`**: The main application responsible for the frontend and backend logic, including the user interface and API routes.
+- **`workers`**: Handles background tasks such as feed synchronization, caching, and other time-intensive processes.
+- **`types`**: Shared TypeScript definitions used across the monorepo to ensure consistent type safety and reduce duplication.
+
+## Tech Stack
+
+### Frontend
+
+- **SvelteKit**: A framework for building web applications
+- **Shadcn Svelte**: UI components for Svelte
+
+### Backend
+
+- **SvelteKit API Routes**: For handling backend logic
+- **PostgreSQL**: Relational database for data storage
+- **BullMQ**: For managing queues
+- **Redis**: For caching and queue management
+
+### Build and Run
 
 ```bash
-# create a new project in the current directory
-npm create svelte@latest
-
-# create a new project in my-app
-npm create svelte@latest my-app
+docker-compose up --build
 ```
 
-## Developing
+## Installation and Usage
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+1. Clone the repository.
+2. Navigate to the project directory.
+3. Install dependencies:
+   ```bash
+   pnpm install
+   ```
+4. Start the application:
+   ```bash
+   pnpm run dev:app
+   ```
+5. Start the workers:
+   ```bash
+   pnpm run dev:workers
+   ```
 
-```bash
-npm run dev
+## Contributing
 
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
+Contributions are welcome! Please open an issue or submit a pull request for any enhancements or bug fixes.
 
-## Building
+## License
 
-To create a production version of your app:
-
-```bash
-npm run build
-```
-
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://kit.svelte.dev/docs/adapters) for your target environment.
+This project is licensed under the MIT License.
