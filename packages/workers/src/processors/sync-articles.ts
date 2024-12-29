@@ -69,7 +69,7 @@ export async function syncArticlesProcessor(
           link: link,
           readable: false,
           publishedAt: new Date(),
-          siteName: new URL(feed.link).hostname.replace('www.', '')
+          siteName: new URL(link).hostname.replace('www.', '')
         };
 
         if (!isValidLink(link)) {
