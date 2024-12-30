@@ -6,22 +6,26 @@
 
   let {
     collections,
-    onNavigate,
-    currentFeedId,
-    currentCollectionSlug
+    onNavigate
   }: {
     collections: Collection[] | CollectionWithFeeds[];
     onNavigate?: (slug: string) => void;
-    currentFeedId?: string;
-    currentCollectionSlug?: string;
   } = $props();
+
+  function sortCollections(collections: (Collection | CollectionWithFeeds)[]) {
+    return [...collections].sort((a, b) => {
+      if (a.id.startsWith('default-')) return 1;
+      if (b.id.startsWith('default-')) return -1;
+      return 0;
+    });
+  }
 
   function collectionHasFeeds(collection: Collection | CollectionWithFeeds) {
     return 'feeds' in collection;
   }
 
   let openCollections = $state<Record<string, boolean>>(
-    Object.fromEntries(collections.map((c) => [c.id, true]))
+    Object.fromEntries(collections.map((c) => [c.id, !c.id.startsWith('default-')]))
   );
 
   function toggleCollection(collectionId: string) {
@@ -34,7 +38,7 @@
   <div class="text-muted-foreground text-sm">No collections found</div>
 {:else}
   <div class="flex flex-col">
-    {#each collections as collection (collection.id)}
+    {#each sortCollections(collections) as collection (collection.id)}
       <div class="flex flex-col">
         <div class="flex">
           <div class="flex flex-1">

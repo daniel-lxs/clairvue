@@ -6,7 +6,7 @@
   import Logo from '../ui/logo/logo.svelte';
   import NavigationMenu from './navigation-menu.svelte';
 
-  let { collections, currentFeedId } = $props<{
+  let { collections } = $props<{
     collections: Collection[];
     currentFeedId?: string;
   }>();
@@ -36,11 +36,6 @@
       <Logo />
     </Sheet.Header>
 
-    <NavigationMenu
-      class="py-6 md:pl-0 lg:pl-6"
-      {collections}
-      {currentFeedId}
-      onNavigate={handleNavigate}
-    />
+    <NavigationMenu class="py-6 md:pl-0 lg:pl-6" {collections} onNavigate={handleNavigate} />
   </Sheet.Content>
 </Sheet.Root>

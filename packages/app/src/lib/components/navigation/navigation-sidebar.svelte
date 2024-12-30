@@ -2,19 +2,10 @@
   import type { Collection } from '@clairvue/types';
   import NavigationMenu from './navigation-menu.svelte';
 
-  let {
-    class: className = undefined,
-    collections,
-    currentFeedId,
-    currentCollectionSlug
-  }: {
-    class?: string;
-    collections: Collection[];
-    currentFeedId?: string;
-    currentCollectionSlug?: string;
-  } = $props();
+  let { class: className = undefined, collections }: { class?: string; collections: Collection[] } =
+    $props();
 </script>
 
 <div class={className}>
-  <NavigationMenu {collections} {currentFeedId} {currentCollectionSlug} />
+  <NavigationMenu {collections} />
 </div>

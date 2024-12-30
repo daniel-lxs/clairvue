@@ -8,14 +8,10 @@
   let {
     class: className = undefined,
     collections,
-    currentFeedId,
-    currentCollectionSlug,
     onNavigate
   }: {
     class?: string;
     collections: Collection[];
-    currentFeedId?: string;
-    currentCollectionSlug?: string;
     onNavigate?: (slug: string) => void;
   } = $props();
 </script>
@@ -43,7 +39,7 @@
   <div class="flex flex-col gap-1">
     <div class="text-muted-foreground px-4 py-2 text-sm font-semibold">Collections</div>
     <div class="pl-2">
-      <NavigationCollections {collections} {currentFeedId} {currentCollectionSlug} {onNavigate} />
+      <NavigationCollections {collections} {onNavigate} />
     </div>
   </div>
 </div>
