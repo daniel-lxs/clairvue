@@ -21,7 +21,6 @@
   let { data }: Props = $props();
 
   let collections = $state($collectionsStore);
-  let feeds = $state($feedsStore);
 
   let isLoading = $state(true);
   let newArticlesCount = $state(0);
@@ -161,10 +160,6 @@
     collectionsStore.subscribe((value) => {
       collections = value;
     });
-
-    feedsStore.subscribe((value) => {
-      feeds = value;
-    });
   });
 
   onMount(() => {
@@ -196,7 +191,7 @@
 </svelte:head>
 
 {#snippet sidebar()}
-  <NavigationSidebar class="mt-2.5" {collections} {feeds} />
+  <NavigationSidebar class="mt-2.5" {collections} />
 {/snippet}
 
 {#snippet content()}

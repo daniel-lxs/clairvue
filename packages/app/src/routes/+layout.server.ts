@@ -8,7 +8,7 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 
   if (authSession) {
     // Get collections and feeds
-    const collectionsResult = await collectionService.findByUserId(authSession.user.id);
+    const collectionsResult = await collectionService.findByUserIdWithFeeds(authSession.user.id);
     const feedsResult = await feedService.findByUserId(authSession.user.id, 10, 0);
 
     if (collectionsResult.isErr()) {

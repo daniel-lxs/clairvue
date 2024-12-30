@@ -1,94 +1,49 @@
 <script lang="ts">
-  import type { Collection, Feed } from '@clairvue/types';
-  import ChevronUp from 'lucide-svelte/icons/chevron-up';
-  import * as Collapsible from '$lib/components/ui/collapsible';
-  import { NavigationCollections, NavigationFeeds } from '.';
-  import { Button, buttonVariants } from '../ui/button';
+  import type { Collection } from '@clairvue/types';
+  import { NavigationCollections } from '.';
+  import Button from '../ui/button/button.svelte';
   import { cn } from '$lib/utils';
   import { Separator } from '../ui/separator';
-  import { Home } from 'lucide-svelte';
-
+  import { Home, Bookmark } from 'lucide-svelte';
   let {
     class: className = undefined,
     collections,
-    feeds,
     currentFeedId,
+    currentCollectionSlug,
     onNavigate
   }: {
     class?: string;
     collections: Collection[];
-    feeds: Feed[];
     currentFeedId?: string;
+    currentCollectionSlug?: string;
     onNavigate?: (slug: string) => void;
   } = $props();
-
-  let openCollections = $state(true);
-  let openFeeds = $state(true);
-  let openSaved = $state(true);
 </script>
 
 <div class={cn('flex flex-col', className)}>
-  <a
-    class={cn(buttonVariants({ variant: 'ghost' }), 'text-muted-foreground w-full justify-start')}
+  <Button
+    variant="ghost"
+    class={cn('text-muted-foreground w-full justify-start')}
     href="/"
     onclick={() => onNavigate?.('/')}
   >
     <Home class="h-5 w-5" />
     <span class="ml-2">Home</span>
-  </a>
+  </Button>
+  <Button
+    variant="ghost"
+    class={cn('text-muted-foreground w-full justify-start')}
+    href="/articles/saved"
+    onclick={() => onNavigate?.('/articles/saved')}
+  >
+    <Bookmark class="h-5 w-5" />
+    <span class="ml-2">Saved Articles</span>
+  </Button>
   <Separator class="my-2" />
-  <Collapsible.Root bind:open={openCollections}>
-    <Collapsible.Trigger asChild let:builder>
-      <Button
-        builders={[builder]}
-        variant="ghost"
-        class="text-muted-foreground w-full justify-between"
-        >Collections
-        <ChevronUp class="ml-2 h-5 w-5" />
-      </Button>
-    </Collapsible.Trigger>
-    <Collapsible.Content class="pl-6">
-      <NavigationCollections {collections} {onNavigate} />
-    </Collapsible.Content>
-  </Collapsible.Root>
-  <Collapsible.Root bind:open={openFeeds}>
-    <Collapsible.Trigger asChild let:builder class="w-full">
-      <Button
-        builders={[builder]}
-        variant="ghost"
-        class="text-muted-foreground w-full  justify-between rounded-md p-4 font-semibold"
-      >
-        Feeds
-        <ChevronUp class="ml-2 h-5 w-5" />
-      </Button>
-    </Collapsible.Trigger>
-    <Collapsible.Content class="pl-6">
-      <NavigationFeeds {feeds} {currentFeedId} {onNavigate} />
-    </Collapsible.Content>
-  </Collapsible.Root>
-  <Collapsible.Root bind:open={openSaved}>
-    <Collapsible.Trigger asChild let:builder class="w-full">
-      <Button
-        builders={[builder]}
-        variant="ghost"
-        class="text-muted-foreground w-full  justify-between rounded-md p-4 font-semibold"
-      >
-        Articles
-        <ChevronUp class="ml-2 h-5 w-5" />
-      </Button>
-    </Collapsible.Trigger>
-    <Collapsible.Content class="pl-6">
-      <a
-        href="/articles/saved"
-        class={cn(
-          'hover:bg-muted hover:border-muted-foreground flex items-center rounded-md rounded-l-none border-l px-4 py-3 transition-colors'
-        )}
-        onclick={() => onNavigate?.('/articles/saved')}
-      >
-        <div class="flex flex-col">
-          <span class="text-sm font-medium">Saved</span>
-        </div>
-      </a>
-    </Collapsible.Content>
-  </Collapsible.Root>
+  <div class="flex flex-col gap-1">
+    <div class="text-muted-foreground px-4 py-2 text-sm font-semibold">Collections</div>
+    <div class="pl-2">
+      <NavigationCollections {collections} {currentFeedId} {currentCollectionSlug} {onNavigate} />
+    </div>
+  </div>
 </div>

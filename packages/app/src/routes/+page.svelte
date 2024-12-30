@@ -8,7 +8,6 @@
   import { feedsStore } from '@/stores/feeds';
 
   let collections = $state($collectionsStore);
-  let feeds = $state($feedsStore);
 
   function navigateToLogin() {
     goto('/auth/login');
@@ -22,15 +21,11 @@
     collectionsStore.subscribe((value) => {
       collections = value;
     });
-
-    feedsStore.subscribe((value) => {
-      feeds = value;
-    });
   });
 </script>
 
 {#snippet sidebar()}
-  <NavigationSidebar class="mt-2.5" {collections} {feeds} />
+  <NavigationSidebar class="mt-2.5" {collections} />
 {/snippet}
 
 {#snippet content()}
