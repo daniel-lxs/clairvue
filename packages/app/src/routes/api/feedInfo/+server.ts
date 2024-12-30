@@ -25,16 +25,19 @@ export const GET: RequestHandler = async ({ url, locals }) => {
     const urlResult = await feedService.extractFeedUrl(feedLink);
 
     if (urlResult.isOk()) {
-      const url = urlResult.unwrap();
-      const feedInfoResult = await feedService.fetchAndParseFeed(url);
+      const parsedUrl = urlResult.unwrap();
+      const feedInfoResult = await feedService.fetchAndParseFeed(parsedUrl);
 
       return feedInfoResult.match({
         ok: ({ title, description, feedType }) => {
-          return new Response(JSON.stringify({ title, description, url, type: feedType }), {
-            headers: {
-              'Content-Type': 'application/json'
+          return new Response(
+            JSON.stringify({ title, description, url: parsedUrl, type: feedType }),
+            {
+              headers: {
+                'Content-Type': 'application/json'
+              }
             }
-          });
+          );
         },
         err: (error) => {
           return new Response(JSON.stringify({ error: error.message }), { status: 500 });
@@ -42,8 +45,8 @@ export const GET: RequestHandler = async ({ url, locals }) => {
       });
     }
   }
-  const { title, description } = feedInfoResult.unwrap();
-  return new Response(JSON.stringify({ title, description, url }), {
+  const { title, description, feedType } = feedInfoResult.unwrap();
+  return new Response(JSON.stringify({ title, description, url: feedLink, type: feedType }), {
     headers: {
       'Content-Type': 'application/json'
     }
