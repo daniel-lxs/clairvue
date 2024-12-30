@@ -6,6 +6,7 @@ export interface Feed {
   name: string;
   description: string | null;
   link: string;
+  type: 'rss' | 'atom';
   createdAt: Date;
   updatedAt: Date;
   syncedAt: Date;
@@ -15,9 +16,10 @@ export interface FeedWithArticles extends Feed {
   articles: ArticleWithInteraction[];
 }
 
-export interface NewFeed extends Pick<Feed, 'id' | 'name' | 'description' | 'link'> {}
+export interface NewFeed extends Pick<Feed, 'id' | 'name' | 'description' | 'link' | 'type'> {}
 export interface FeedInfo {
   title: string;
   description: string | undefined;
   url: string;
+  type: 'rss' | 'atom';
 }

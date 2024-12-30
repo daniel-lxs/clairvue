@@ -4,6 +4,7 @@ export const createFeedDto = z.object({
   name: z.string().min(4).max(255),
   description: z.string().max(1000).optional(),
   link: z.string().url(),
+  type: z.enum(['rss', 'atom']),
   collectionId: z.string().refine((val) => !val.includes(' '), 'Slug cannot contain spaces')
 });
 
@@ -16,6 +17,7 @@ export const updateFeedDto = z.object({
   name: z.string().min(4).max(255),
   description: z.string().max(1000).optional(),
   link: z.string().url(),
+  type: z.enum(['rss', 'atom']),
   collectionId: z.string().refine((val) => !val.includes(' '), 'Slug cannot contain spaces')
 });
 

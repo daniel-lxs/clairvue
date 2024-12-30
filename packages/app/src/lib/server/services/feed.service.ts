@@ -82,7 +82,9 @@ async function countArticles(id: string): Promise<Result<number, Error>> {
 
 async function fetchAndParseFeed(
   url: string
-): Promise<Result<{ title: string; description: string | undefined }, Error>> {
+): Promise<
+  Result<{ title: string; description: string | undefined; feedType: 'rss' | 'atom' }, Error>
+> {
   try {
     const response = await fetch(url);
 
@@ -99,9 +101,16 @@ async function fetchAndParseFeed(
 
     const { title, description } = parsedData;
 
+    // Determine feed type
+    let feedType: 'rss' | 'atom' = 'rss';
+    if (feedData.includes('<feed') && feedData.includes('xmlns="http://www.w3.org/2005/Atom"')) {
+      feedType = 'atom';
+    }
+
     return Result.ok({
       title,
-      description
+      description,
+      feedType
     });
   } catch (e) {
     const error = normalizeError(e);

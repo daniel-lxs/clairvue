@@ -26,7 +26,8 @@
     id: '',
     name: '',
     description: '',
-    link: ''
+    link: '',
+    type: 'rss'
   });
   let link: string = $state('');
 
@@ -50,7 +51,8 @@
           id: '',
           name: feedInfo.title,
           description: feedInfo.description ?? null,
-          link: parsedLink.data
+          link: parsedLink.data,
+          type: feedInfo.type
         };
         onSave(newFeed);
         open = false;
@@ -72,7 +74,8 @@
         id: '',
         name: '',
         description: '',
-        link: ''
+        link: '',
+        type: 'rss'
       };
       link = '';
       hasError = false;

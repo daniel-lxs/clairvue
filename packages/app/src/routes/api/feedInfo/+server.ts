@@ -1,4 +1,3 @@
-import authService from '@/server/services/auth.service';
 import feedService from '@/server/services/feed.service';
 import type { RequestHandler } from '@sveltejs/kit';
 
@@ -30,8 +29,8 @@ export const GET: RequestHandler = async ({ url, locals }) => {
       const feedInfoResult = await feedService.fetchAndParseFeed(url);
 
       return feedInfoResult.match({
-        ok: ({ title, description }) => {
-          return new Response(JSON.stringify({ title, description, url }), {
+        ok: ({ title, description, feedType }) => {
+          return new Response(JSON.stringify({ title, description, url, type: feedType }), {
             headers: {
               'Content-Type': 'application/json'
             }
