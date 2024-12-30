@@ -3,6 +3,8 @@
   import { cn } from '$lib/utils';
   import ChevronUp from 'lucide-svelte/icons/chevron-up';
   import Button from '../ui/button/button.svelte';
+  import { goto } from '$app/navigation';
+  import { buttonVariants } from '../ui/button';
 
   let {
     collections,
@@ -32,6 +34,12 @@
     openCollections[collectionId] = !openCollections[collectionId];
     openCollections = openCollections;
   }
+
+  function handleClick(route: string, event: MouseEvent) {
+    event.preventDefault();
+    onNavigate?.(route);
+    goto(route);
+  }
 </script>
 
 {#if collections.length === 0}
@@ -43,28 +51,28 @@
         <div class="flex">
           <div class="flex flex-1">
             {#if collectionHasFeeds(collection) && collection.feeds.length > 0}
-              <Button
-                variant="ghost"
-                size="icon"
-                class="-ml-1"
-                onclick={() => toggleCollection(collection.id)}
+              <button
+                class={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), '-ml-1')}
+                onclick={(e: MouseEvent) => {
+                  e.stopPropagation();
+                  toggleCollection(collection.id);
+                }}
               >
                 <ChevronUp
                   class={cn(
-                    'h-5 w-5 transition-transform',
+                    'h-5 w-5 touch-none transition-transform',
                     !openCollections[collection.id] && 'rotate-180'
                   )}
                 />
-              </Button>
+              </button>
             {/if}
             <div class="flex-1">
               <Button
                 variant="ghost"
                 class="w-full justify-between"
-                href={`/c/${collection.slug}`}
-                onclick={() => onNavigate?.(collection.slug)}
+                onclick={(e: MouseEvent) => handleClick(`/c/${collection.slug}`, e)}
               >
-                <span class="text-sm font-medium">{collection.name}</span>
+                {collection.name}
                 {#if collectionHasFeeds(collection)}
                   <span class="text-muted-foreground text-xs">
                     {collection.feeds.length}
@@ -82,8 +90,7 @@
                     <Button
                       variant="ghost"
                       class="w-full justify-start"
-                      href={`/f/${feed.id}`}
-                      onclick={() => onNavigate?.(`/f/${feed.id}`)}
+                      onclick={(e: MouseEvent) => handleClick(`/f/${feed.id}`, e)}
                     >
                       {feed.name}
                     </Button>

@@ -5,6 +5,7 @@
   import { cn } from '$lib/utils';
   import { Separator } from '../ui/separator';
   import { Home, Bookmark } from 'lucide-svelte';
+  import { goto } from '$app/navigation';
   let {
     class: className = undefined,
     collections,
@@ -14,26 +15,30 @@
     collections: Collection[];
     onNavigate?: (slug: string) => void;
   } = $props();
+
+  function handleClick(route: string, event: MouseEvent) {
+    event.preventDefault();
+    onNavigate?.(route);
+    goto(route);
+  }
 </script>
 
 <div class={cn('flex flex-col', className)}>
   <Button
     variant="ghost"
     class={cn('text-muted-foreground w-full justify-start')}
-    href="/"
-    onclick={() => onNavigate?.('/')}
+    onclick={(e: MouseEvent) => handleClick('/', e)}
   >
-    <Home class="h-5 w-5" />
-    <span class="ml-2">Home</span>
+    <Home class="mr-2 h-5 w-5" />
+    Home
   </Button>
   <Button
     variant="ghost"
     class={cn('text-muted-foreground w-full justify-start')}
-    href="/articles/saved"
-    onclick={() => onNavigate?.('/articles/saved')}
+    onclick={(e: MouseEvent) => handleClick('/articles/saved', e)}
   >
-    <Bookmark class="h-5 w-5" />
-    <span class="ml-2">Saved Articles</span>
+    <Bookmark class="mr-2 h-5 w-5" />
+    Saved Articles
   </Button>
   <Separator class="my-2" />
   <div class="flex flex-col gap-1">
