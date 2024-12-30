@@ -61,7 +61,7 @@
     </div>
 
     <div class="flex flex-1 items-center md:hidden">
-      <NavigationMobileSheet {collections} {feeds} />
+      <NavigationMobileSheet {collections} />
     </div>
     <div class="flex items-center space-x-2 md:ml-auto">
       <CreateArticleDialog showButton={true} {save} onSave={handleSave}>

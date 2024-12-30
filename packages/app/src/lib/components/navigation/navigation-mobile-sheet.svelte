@@ -1,14 +1,13 @@
 <script lang="ts">
   import * as Sheet from '$lib/components/ui/sheet';
-  import type { Collection, Feed } from '@clairvue/types';
+  import type { Collection } from '@clairvue/types';
   import { Button } from '../ui/button';
   import { Menu } from 'lucide-svelte';
   import Logo from '../ui/logo/logo.svelte';
   import NavigationMenu from './navigation-menu.svelte';
 
-  let { collections, feeds, currentFeedId } = $props<{
+  let { collections, currentFeedId } = $props<{
     collections: Collection[];
-    feeds: Feed[];
     currentFeedId?: string;
   }>();
 
@@ -40,7 +39,6 @@
     <NavigationMenu
       class="py-6 md:pl-0 lg:pl-6"
       {collections}
-      {feeds}
       {currentFeedId}
       onNavigate={handleNavigate}
     />
