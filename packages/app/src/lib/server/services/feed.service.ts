@@ -3,11 +3,12 @@ import DOMPurify from 'isomorphic-dompurify';
 import type { CreateFeedDto } from '@/server/dto/feed.dto';
 import { getArticlesQueue } from '@/server/queue/articles';
 import collectionService from './collection.service';
-import config from '@/config';
 import { JSDOM } from 'jsdom';
-import { Result, type Feed } from '@clairvue/types';
+import { Result, type Feed, type FeedInfo } from '@clairvue/types';
 import { normalizeError } from '$lib/utils';
 import Parser from 'rss-parser';
+import config from '../../config';
+import { downloadFavicon } from './favicon.service';
 
 async function findById(id: string): Promise<Result<Feed | false, Error>> {
   return await feedRepository.findById(id);
@@ -16,7 +17,11 @@ async function findById(id: string): Promise<Result<Feed | false, Error>> {
 async function createFeed(feedData: CreateFeedDto, userId: string): Promise<Result<Feed, Error>> {
   try {
     const createdFeed = (
-      await feedRepository.create({ ...feedData, description: feedData.description ?? null })
+      await feedRepository.create({
+        ...feedData,
+        description: feedData.description ?? null,
+        faviconPath: feedData.faviconPath ?? null
+      })
     ).unwrap();
 
     if (feedData.collectionId) {
@@ -80,49 +85,43 @@ async function countArticles(id: string): Promise<Result<number, Error>> {
   return await feedRepository.countArticles(id);
 }
 
-async function fetchAndParseFeed(
-  url: string
-): Promise<
-  Result<{ title: string; description: string | undefined; feedType: 'rss' | 'atom' }, Error>
-> {
-  try {
-    const response = await fetch(url);
+async function extractFeedUrl(html: string, baseUrl: string): Promise<string | null> {
+  const cleanHtml = DOMPurify.sanitize(html, {
+    WHOLE_DOCUMENT: true,
+    ALLOWED_TAGS: ['head', 'link']
+  });
 
-    if (!response.ok) {
-      return Result.err(new Error(`HTTP error! status: ${response.status}`));
+  const { document } = new JSDOM(cleanHtml).window;
+
+  const rssLinkElement = document.querySelector(
+    'link[rel="alternate"][type="application/rss+xml"]'
+  );
+  const atomLinkElement = document.querySelector(
+    'link[rel="alternate"][type="application/atom+xml"]'
+  );
+
+  let feedUrl: string | null = null;
+
+  if (rssLinkElement) {
+    const rssLink = rssLinkElement.getAttribute('href');
+    if (rssLink) {
+      feedUrl = !rssLink.startsWith('http') ? new URL(rssLink, baseUrl).toString() : rssLink;
     }
-
-    const feedData = await response.text();
-    const parsedData = await new Parser().parseString(feedData);
-
-    if (!parsedData || !parsedData.title) {
-      return Result.err(new Error('Invalid feed'));
-    }
-
-    const { title, description } = parsedData;
-
-    // Determine feed type
-    let feedType: 'rss' | 'atom' = 'rss';
-    if (feedData.includes('<feed') && feedData.includes('xmlns="http://www.w3.org/2005/Atom"')) {
-      feedType = 'atom';
-    }
-
-    return Result.ok({
-      title,
-      description,
-      feedType
-    });
-  } catch (e) {
-    const error = normalizeError(e);
-    console.error('Error occurred while parsing feed:', error);
-    return Result.err(error);
   }
+
+  if (!feedUrl && atomLinkElement) {
+    const atomLink = atomLinkElement.getAttribute('href');
+    if (atomLink) {
+      feedUrl = !atomLink.startsWith('http') ? new URL(atomLink, baseUrl).toString() : atomLink;
+    }
+  }
+
+  return feedUrl;
 }
 
-async function extractFeedUrl(url: string): Promise<Result<string, Error>> {
+async function fetchAndParseFeed(url: string): Promise<Result<FeedInfo, Error>> {
   try {
     const response = await fetch(url, {
-      method: 'GET',
       headers: {
         'User-Agent': config.app.userAgent
       }
@@ -132,46 +131,94 @@ async function extractFeedUrl(url: string): Promise<Result<string, Error>> {
       return Result.err(new Error(`HTTP error! status: ${response.status}`));
     }
 
-    const html = await response.text();
+    const feedData = await response.text();
+    try {
+      const parsedData = await new Parser().parseString(feedData);
 
-    const cleanHtml = DOMPurify.sanitize(html, {
-      WHOLE_DOCUMENT: true,
-      ALLOWED_TAGS: ['head', 'link']
-    });
-
-    const { document } = new JSDOM(cleanHtml).window;
-
-    const rssLinkElement = document.querySelector(
-      'link[rel="alternate"][type="application/rss+xml"]'
-    );
-    const atomLinkElement = document.querySelector(
-      'link[rel="alternate"][type="application/atom+xml"]'
-    );
-
-    if (rssLinkElement) {
-      const rssLink = rssLinkElement.getAttribute('href');
-      if (rssLink) {
-        if (!rssLink.startsWith('http')) {
-          return Result.ok(new URL(rssLink, url).toString());
-        }
-        return Result.ok(rssLink);
+      if (!parsedData || !parsedData.title) {
+        throw new Error('Invalid feed');
       }
-    }
 
-    if (atomLinkElement) {
-      const atomLink = atomLinkElement.getAttribute('href');
-      if (atomLink) {
-        if (!atomLink.startsWith('http')) {
-          return Result.ok(new URL(atomLink, url).toString());
+      const { title, description } = parsedData;
+      let faviconPath: string | undefined = undefined;
+
+      // Try to get favicon from the feed's link property
+      if (parsedData.link) {
+        const downloadResult = await downloadFavicon(parsedData.link);
+        if (downloadResult.isErr()) {
+          return downloadResult;
         }
-        return Result.ok(atomLink);
+        faviconPath = downloadResult.unwrap();
       }
-    }
 
-    return Result.err(new Error('No RSS or Atom link found'));
+      // Determine feed type
+      let feedType: 'rss' | 'atom' = 'rss';
+      if (feedData.includes('<feed') && feedData.includes('xmlns="http://www.w3.org/2005/Atom"')) {
+        feedType = 'atom';
+      }
+
+      return Result.ok({
+        title,
+        description,
+        url,
+        type: feedType,
+        faviconPath
+      });
+    } catch (parseError) {
+      // If parsing fails, try to find the feed URL in the HTML
+      const feedUrl = await extractFeedUrl(feedData, url);
+
+      // Try to get favicon from the original URL since this is likely a website
+      let faviconPath: string | undefined = undefined;
+      const downloadResult = await downloadFavicon(url);
+      if (downloadResult.isErr()) {
+        return downloadResult;
+      }
+      faviconPath = downloadResult.unwrap();
+
+      if (!feedUrl) {
+        return Result.err(new Error('No RSS or Atom feed found'));
+      }
+
+      // Try to fetch and parse the actual feed URL
+      const feedResponse = await fetch(feedUrl, {
+        headers: {
+          'User-Agent': config.app.userAgent
+        }
+      });
+      if (!feedResponse.ok) {
+        return Result.err(new Error(`HTTP error! status: ${feedResponse.status}`));
+      }
+
+      const actualFeedData = await feedResponse.text();
+      const parsedFeedData = await new Parser().parseString(actualFeedData);
+
+      if (!parsedFeedData || !parsedFeedData.title) {
+        return Result.err(new Error('Invalid feed'));
+      }
+
+      const { title, description } = parsedFeedData;
+
+      // Determine feed type
+      let feedType: 'rss' | 'atom' = 'rss';
+      if (
+        actualFeedData.includes('<feed') &&
+        actualFeedData.includes('xmlns="http://www.w3.org/2005/Atom"')
+      ) {
+        feedType = 'atom';
+      }
+
+      return Result.ok({
+        title,
+        description,
+        url: feedUrl,
+        type: feedType,
+        faviconPath
+      });
+    }
   } catch (e) {
     const error = normalizeError(e);
-    console.error('Error occurred while finding feed link:', error);
+    console.error('Error occurred while parsing feed:', error);
     return Result.err(error);
   }
 }
@@ -209,7 +256,6 @@ export default {
   updateFeed,
   findBySlug,
   countArticles,
-  extractFeedUrl,
   fetchAndParseFeed,
   updateLastSyncedAt,
   deleteForUser
