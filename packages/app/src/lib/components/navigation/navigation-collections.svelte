@@ -5,6 +5,7 @@
   import Button from '../ui/button/button.svelte';
   import { goto } from '$app/navigation';
   import { buttonVariants } from '../ui/button';
+  import { ImageIcon } from 'lucide-svelte';
 
   let {
     collections,
@@ -27,7 +28,9 @@
   }
 
   let openCollections = $state<Record<string, boolean>>(
-    Object.fromEntries(collections.map((c) => [c.id, !c.id.startsWith('default-')]))
+    Object.fromEntries(
+      collections.map((c) => [c.id, collections.length === 1 || !c.id.startsWith('default-')])
+    )
   );
 
   function toggleCollection(collectionId: string) {
@@ -48,56 +51,59 @@
   <div class="flex flex-col">
     {#each sortCollections(collections) as collection (collection.id)}
       <div class="flex flex-col">
-        <div class="flex">
-          <div class="flex flex-1">
-            {#if collectionHasFeeds(collection) && collection.feeds.length > 0}
-              <button
-                class={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), '-ml-1')}
-                onclick={(e: MouseEvent) => {
-                  e.stopPropagation();
-                  toggleCollection(collection.id);
-                }}
-              >
-                <ChevronUp
-                  class={cn(
-                    'h-5 w-5 touch-none transition-transform',
-                    !openCollections[collection.id] && 'rotate-180'
-                  )}
-                />
-              </button>
-            {/if}
-            <div class="flex-1">
-              <Button
-                variant="ghost"
-                class="w-full justify-between"
-                onclick={(e: MouseEvent) => handleClick(`/c/${collection.slug}`, e)}
-              >
-                {collection.name}
-                {#if collectionHasFeeds(collection)}
-                  <span class="text-muted-foreground text-xs">
-                    {collection.feeds.length}
-                  </span>
-                {/if}
-              </Button>
-              {#if collectionHasFeeds(collection) && collection.feeds.length > 0}
-                <div
-                  class={cn(
-                    'flex flex-col overflow-hidden transition-all',
-                    openCollections[collection.id] ? 'max-h-[500px]' : 'max-h-0'
-                  )}
-                >
-                  {#each collection.feeds as feed (feed.id)}
-                    <Button
-                      variant="ghost"
-                      class="w-full justify-start"
-                      onclick={(e: MouseEvent) => handleClick(`/f/${feed.id}`, e)}
-                    >
-                      {feed.name}
-                    </Button>
-                  {/each}
-                </div>
+        <div class="flex flex-1">
+          {#if collectionHasFeeds(collection) && collection.feeds.length > 0}
+            <button
+              class={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), '-ml-1')}
+              onclick={(e: MouseEvent) => {
+                e.stopPropagation();
+                toggleCollection(collection.id);
+              }}
+            >
+              <ChevronUp
+                class={cn(
+                  'h-5 w-5 touch-none transition-transform',
+                  !openCollections[collection.id] && 'rotate-180'
+                )}
+              />
+            </button>
+          {/if}
+          <div class="pl-0">
+            <Button
+              variant="ghost"
+              class="w-full justify-between"
+              onclick={(e: MouseEvent) => handleClick(`/c/${collection.slug}`, e)}
+            >
+              {collection.name}
+              {#if collectionHasFeeds(collection)}
+                <span class="text-muted-foreground text-xs">
+                  {collection.feeds.length}
+                </span>
               {/if}
-            </div>
+            </Button>
+            {#if collectionHasFeeds(collection) && collection.feeds.length > 0}
+              <div
+                class={cn(
+                  'flex flex-col overflow-hidden transition-all',
+                  openCollections[collection.id] ? 'max-h-[500px]' : 'max-h-0'
+                )}
+              >
+                {#each collection.feeds as feed (feed.id)}
+                  <Button
+                    variant="ghost"
+                    class="w-full justify-start"
+                    onclick={(e: MouseEvent) => handleClick(`/f/${feed.id}`, e)}
+                  >
+                    {#if feed.faviconPath}
+                      <img src={feed.faviconPath} alt={feed.name} class="mr-2 h-4 w-4" />
+                    {:else}
+                      <ImageIcon class="mr-2 h-4 w-4" />
+                    {/if}
+                    {feed.name}
+                  </Button>
+                {/each}
+              </div>
+            {/if}
           </div>
         </div>
       </div>
