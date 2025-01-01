@@ -69,7 +69,8 @@
       {
         ...newFeed,
         collectionId: data.collection.id,
-        description: newFeed.description || undefined
+        description: newFeed.description || undefined,
+        faviconPath: newFeed.faviconPath || undefined
       }
     ]);
 
