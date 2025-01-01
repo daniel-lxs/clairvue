@@ -21,34 +21,16 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 
   const feedInfoResult = await feedService.fetchAndParseFeed(feedLink);
 
-  if (feedInfoResult.isErr()) {
-    const urlResult = await feedService.extractFeedUrl(feedLink);
-
-    if (urlResult.isOk()) {
-      const parsedUrl = urlResult.unwrap();
-      const feedInfoResult = await feedService.fetchAndParseFeed(parsedUrl);
-
-      return feedInfoResult.match({
-        ok: ({ title, description, feedType }) => {
-          return new Response(
-            JSON.stringify({ title, description, url: parsedUrl, type: feedType }),
-            {
-              headers: {
-                'Content-Type': 'application/json'
-              }
-            }
-          );
-        },
-        err: (error) => {
-          return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+  return feedInfoResult.match({
+    ok: (feedInfo) => {
+      return new Response(JSON.stringify(feedInfo), {
+        headers: {
+          'Content-Type': 'application/json'
         }
       });
-    }
-  }
-  const { title, description, feedType } = feedInfoResult.unwrap();
-  return new Response(JSON.stringify({ title, description, url: feedLink, type: feedType }), {
-    headers: {
-      'Content-Type': 'application/json'
+    },
+    err: (error) => {
+      return new Response(JSON.stringify({ error: error.message }), { status: 500 });
     }
   });
 };
