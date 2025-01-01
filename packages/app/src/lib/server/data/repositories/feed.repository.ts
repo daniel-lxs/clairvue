@@ -7,7 +7,7 @@ import { normalizeError } from '$lib/utils';
 import slugify from 'slugify';
 
 async function create(
-  newFeed: Pick<Feed, 'name' | 'description' | 'link'>
+  newFeed: Pick<Feed, 'name' | 'description' | 'link' | 'faviconPath'>
 ): Promise<Result<Feed, Error>> {
   try {
     const db = getClient();
@@ -32,7 +32,8 @@ async function create(
         name: newFeed.name,
         slug,
         description: newFeed.description,
-        link: newFeed.link
+        link: newFeed.link,
+        faviconPath: newFeed.faviconPath
       })
       .returning({
         id: feedSchema.id,
@@ -40,6 +41,8 @@ async function create(
         slug: feedSchema.slug,
         description: feedSchema.description,
         link: feedSchema.link,
+        type: feedSchema.type,
+        faviconPath: feedSchema.faviconPath,
         createdAt: feedSchema.createdAt,
         updatedAt: feedSchema.updatedAt,
         syncedAt: feedSchema.syncedAt

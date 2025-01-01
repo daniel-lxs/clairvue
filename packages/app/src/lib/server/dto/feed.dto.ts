@@ -5,7 +5,8 @@ export const createFeedDto = z.object({
   description: z.string().max(1000).optional(),
   link: z.string().url(),
   type: z.enum(['rss', 'atom']),
-  collectionId: z.string().refine((val) => !val.includes(' '), 'Slug cannot contain spaces')
+  collectionId: z.string().refine((val) => !val.includes(' '), 'Slug cannot contain spaces'),
+  faviconPath: z.string().optional()
 });
 
 export type CreateFeedDto = z.infer<typeof createFeedDto>;
@@ -18,7 +19,8 @@ export const updateFeedDto = z.object({
   description: z.string().max(1000).optional(),
   link: z.string().url(),
   type: z.enum(['rss', 'atom']),
-  collectionId: z.string().refine((val) => !val.includes(' '), 'Slug cannot contain spaces')
+  collectionId: z.string().refine((val) => !val.includes(' '), 'Slug cannot contain spaces'),
+  faviconPath: z.string().optional()
 });
 
 export type UpdateFeedDto = z.infer<typeof updateFeedDto>;

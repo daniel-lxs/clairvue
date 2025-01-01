@@ -11,6 +11,7 @@ export const feedSchema = pgTable('feeds', {
   name: text('name').notNull(),
   description: text('description'),
   link: text('link').unique().notNull(),
+  faviconPath: text('faviconPath'),
   type: feedTypeEnum('type').notNull().default('rss'),
   createdAt: timestamp('createdAt').notNull().defaultNow(),
   updatedAt: timestamp('updatedAt').notNull().defaultNow(),
