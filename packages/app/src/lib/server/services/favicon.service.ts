@@ -102,3 +102,14 @@ export async function deleteFavicon(faviconPath: string): Promise<Result<true, E
     return Result.err(err instanceof Error ? err : new Error('Failed to delete favicon'));
   }
 }
+
+export async function readFavicon(filename: string): Promise<Result<Buffer, Error>> {
+  try {
+    const filePath = path.join(FAVICON_DIR, filename);
+    const buffer = await fs.readFile(filePath);
+    return Result.ok(buffer);
+  } catch (err) {
+    console.error('Error reading favicon:', err);
+    return Result.err(err instanceof Error ? err : new Error('Failed to read favicon'));
+  }
+}
