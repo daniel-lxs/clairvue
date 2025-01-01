@@ -34,7 +34,8 @@
     name: '',
     description: '',
     link: '',
-    type: 'rss'
+    type: 'rss',
+    faviconPath: null
   });
   let link: string = $state('');
 
@@ -61,9 +62,10 @@
         newFeed = {
           id: '',
           name: feedInfo.title,
-          description: feedInfo.description ?? '',
+          description: feedInfo.description ?? null,
           link: feedInfo.url,
-          type: feedInfo.type
+          type: feedInfo.type,
+          faviconPath: feedInfo.faviconPath ?? null
         };
         showFeedInfo = true;
         isLoading = false;
@@ -88,7 +90,8 @@
         name: '',
         description: '',
         link: '',
-        type: 'rss'
+        type: 'rss',
+        faviconPath: null
       };
       link = '';
       hasError = false;
