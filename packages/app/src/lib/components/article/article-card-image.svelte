@@ -21,6 +21,7 @@
     <img
       src={article.image}
       alt={article.title}
+      loading="eager"
       class="bg-muted h-full w-full object-contain {type === 'square'
         ? 'max-h-36 min-h-24 min-w-24 max-w-52'
         : ''}"
