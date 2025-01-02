@@ -129,14 +129,25 @@
     }
   });
 
-  $effect(() => {
-    if (!article.image || imageError) {
+  // Pre-calculate image type and dimensions
+  $effect.pre(() => {
+    if (!article.image) {
+      imageType = 'wide';
       descriptionLength = 500;
       return;
     }
+
     const img = new Image();
-    img.src = article.image as string;
+    img.src = article.image;
+
+    // Set a timeout to handle slow-loading or failing images
+    const timeoutId = setTimeout(() => {
+      imageError = true;
+      descriptionLength = 500;
+    }, 5000);
+
     img.onload = () => {
+      clearTimeout(timeoutId);
       imageWidth = img.naturalWidth;
       imageHeight = img.naturalHeight;
       aspectRatio = imageWidth / imageHeight;
@@ -144,12 +155,16 @@
       if (aspectRatio <= 1.3 || imageWidth < 300) {
         imageType = 'square';
         descriptionLength = 200;
+      } else {
+        imageType = 'wide';
+        descriptionLength = 300;
       }
-
-      imageLoaded = true;
     };
+
     img.onerror = () => {
+      clearTimeout(timeoutId);
       imageError = true;
+      descriptionLength = 500;
     };
   });
 </script>
@@ -174,13 +189,14 @@
     <Card.Root class="flex rounded-lg shadow-lg">
       <div class="flex w-full flex-col">
         {#if article.image && !imageError && imageType === 'wide'}
-          {#if imageLoaded}
-            <div class="w-full">
+          <div class="w-full">
+            {#if !imageLoaded}
+              <Skeleton class="h-48 w-full rounded-t-lg" />
+            {/if}
+            <div class:hidden={!imageLoaded}>
               <ArticleCardImage {article} bind:imageLoaded bind:imageError type={imageType} />
             </div>
-          {:else}
-            <Skeleton class="h-48 object-cover" />
-          {/if}
+          </div>
         {/if}
         <div class="space-y-2 p-4">
           <div class="flex w-full justify-between">
@@ -234,13 +250,14 @@
               </div>
             </div>
             {#if article.image && !imageError && imageType === 'square'}
-              {#if imageLoaded}
-                <div class="ml-2 pl-2 sm:ml-4">
+              <div class="ml-2 pl-2 sm:ml-4">
+                {#if !imageLoaded}
+                  <Skeleton class="h-36 w-36 rounded-lg" />
+                {/if}
+                <div class:hidden={!imageLoaded}>
                   <ArticleCardImage {article} bind:imageLoaded bind:imageError type={imageType} />
                 </div>
-              {:else}
-                <Skeleton class="h-48 object-cover" />
-              {/if}
+              </div>
             {/if}
             {#if isDesktop.matches}
               <DropdownMenu.Root>
